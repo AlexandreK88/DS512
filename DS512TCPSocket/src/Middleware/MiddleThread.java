@@ -255,19 +255,32 @@ public class MiddleThread extends Thread {
 				p.getContent()[0] = allTrue.toString();
 				packetToSend(p, CLIENT);
 			} else if(  p.getType().equals("querycustomer")) {
-				String newContent = "";
-				for (String arg: clientMergePackets.get(0).getContent()) {
-					newContent += arg + NetPacket.COMMAND_SEPARATOR;
+				int size = clientMergePackets.get(0).getContent().length
+						+ clientMergePackets.get(1).getContent().length
+						+ clientMergePackets.get(2).getContent().length -2;
+				
+				String[] newContent = new String[size];
+				
+				if(clientMergePackets.get(0).getContent()[0].equals("-1")
+						|| clientMergePackets.get(1).getContent()[0].equals("-1")
+						|| clientMergePackets.get(2).getContent()[0].equals("-1")){
+					newContent[0] = "-1";
 				}
-	            for(int i=1; i < clientMergePackets.get(1).getContent().length; i++){
-	                newContent=newContent+clientMergePackets.get(1).getContent()[i]+NetPacket.COMMAND_SEPARATOR;
-	            }
-	            for(int i=1; i < clientMergePackets.get(2).getContent().length; i++){
-	            	newContent=newContent+clientMergePackets.get(2).getContent()[i]+NetPacket.COMMAND_SEPARATOR;
-	            }
+				else{
+					int i = 0;
+					for (String arg: clientMergePackets.get(0).getContent()) {
+	                    newContent[i] = arg;
+	                    i++;
+	                }
+	                for(int j=1; j < clientMergePackets.get(1).getContent().length; j++){
+	                    newContent[i]=clientMergePackets.get(1).getContent()[j];
+	                }
+	                for(int j=1; j < clientMergePackets.get(2).getContent().length; j++){
+	                    newContent[i]=clientMergePackets.get(2).getContent()[j];
+	                }
+				}              
 				clientMergePackets.clear();
-				p.getContent()[0] = newContent;
-				packetToSend(p, CLIENT);
+				packetToSend(p.getType(), newContent, CLIENT);
 			} else if (p.getType().equals("newcustomer")
 					|| p.getType().equals("newcustomerid")) {
 				clientMergePackets.clear();

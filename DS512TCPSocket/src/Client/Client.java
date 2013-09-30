@@ -2,8 +2,6 @@ package Client;
 
 import java.io.*;
 import java.net.*;
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -18,6 +16,7 @@ public class Client {
 	PrintWriter out = null;
 	BufferedReader in = null;
 	LinkedList<NetPacket> toSendToServer;
+	private String answer = null;
 	String command;
 	static int Id, Cid;
 	static int flightNum;
@@ -49,40 +48,38 @@ public class Client {
 		}
 		toSendToServer = new LinkedList<NetPacket>();
 		packetID = 0;
-		stdin = new BufferedReader(new InputStreamReader(System.in));
-		runClient();
-	}
-
-	public Client(String host, int port, File script) {
-		command = "";
-		try {
-			socket = new Socket(host, port);
-			out = new PrintWriter(socket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
-		}	catch (UnknownHostException e) {
-			System.err.println("Don't know about host: " + host + ".");
-			System.exit(1);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.err.println("Couldn't get I/O for "
-					+ "the connection to: " + host + ".");
-			System.exit(1);
-		}
-		toSendToServer = new LinkedList<NetPacket>();
-		packetID = 0;
-		try {
-			stdin = new BufferedReader(new FileReader(script));
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			closeConnection();
-			e.printStackTrace();
-		}
 		runClient();
 	}
 	
-	public void runClient() {
+	public Client(String host, int port, File script) {
+        command = "";
+        try {
+            socket = new Socket(host, port);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream()));
+        }    catch (UnknownHostException e) {
+            System.err.println("Don't know about host: " + host + ".");
+            System.exit(1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Couldn't get I/O for "
+                    + "the connection to: " + host + ".");
+            System.exit(1);
+        }
+        toSendToServer = new LinkedList<NetPacket>();
+        packetID = 0;
+        try {
+            stdin = new BufferedReader(new FileReader(script));
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            closeConnection();
+            e.printStackTrace();
+        }
+        runClient();
+    }
 
+	public void runClient() {
 		try {
 			NetPacket answer = NetPacket.fromStringToPacket(in.readLine());
 			myID = Integer.parseInt(answer.getContent()[0]);
@@ -117,7 +114,6 @@ public class Client {
 					out.println(toSend.fromPacketToString());				
 				}
 				if (readFromServer) {
-					System.out.println("Waiting for answer");
 					try {
 						String line = in.readLine();
 						NetPacket answer = NetPacket.fromStringToPacket(line);
@@ -127,12 +123,9 @@ public class Client {
 						e.printStackTrace();
 					}
 				}
-
-
 			}
 		}
 	}
-
 
 	public void decode(NetPacket p) {
 		String type = p.getType();
@@ -214,7 +207,15 @@ public class Client {
 			break;
 
 		case 13: //querying Customer Information
-			System.out.println("Customer Information: "+ p.getContent()[0]);
+			if (p.getContent()[0].equals("-1")){
+				System.out.println("Customer does not exist.");
+			} else{
+				System.out.println("Customer Information: ");			
+				for (int i=0; i < p.getContent().length; i++){
+					System.out.println(p.getContent()[i]);
+				}
+			}
+			
 			break;           
 
 		case 14: //querying a flight Price
@@ -293,7 +294,24 @@ public class Client {
 		}//end of switch
 
 	}
+	//	public boolean action(Player p, String actionName, String[] actionValues);
+	//	public boolean logout();
 
+	public void waitForAnswer() {
+		while (true) {
+			synchronized(answer) {
+				if (answer != null) {
+					return;
+				}
+			}
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public boolean parse(String command)

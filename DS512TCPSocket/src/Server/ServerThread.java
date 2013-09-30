@@ -17,10 +17,10 @@ public class ServerThread extends Thread {
 	private PrintWriter out;
 	private LinkedList<NetPacket> packetsToSend;
 	public static final int ERRORCODE = -1;
-	
+
 	private int packetID;
 	private int serverID;
-	
+
 	// Used to start RM tasks and requests.
 	ResourceManagerImpl rm;
 	int Id, Cid;
@@ -34,9 +34,9 @@ public class ServerThread extends Thread {
 	int numCars;
 	String location;
 	Vector arguments;
-	
-	
-	
+
+
+
 	public ServerThread(Socket s, int sID, ResourceManagerImpl resMan) {
 		super("serverThread " + sID);
 		if (s == null || sID < 0) {
@@ -69,7 +69,7 @@ public class ServerThread extends Thread {
 			String inputLine;
 			String[] content = {Integer.toString(serverID)};
 			System.out.println("Server ready");
-			//out.println((new NetPacket(serverID,packetID,"open connection", content)).fromPacketToString());
+			out.println((new NetPacket(serverID,packetID,"open connection", content)).fromPacketToString());
 			packetID++;
 			while (!socket.isClosed()) {
 				if (in.ready()) {
@@ -86,7 +86,6 @@ public class ServerThread extends Thread {
 						out.println(p.fromPacketToString());
 					}
 				}
-
 			}
 
 		} catch (IOException e) {
@@ -120,13 +119,13 @@ public class ServerThread extends Thread {
 	public void packetToSend(NetPacket packet) {
 		packetsToSend.addLast(packet);
 	}
-	
+
 	public void packetToSend(String type, String[] content) {
 		packetToSend(new NetPacket(serverID, packetID, type, content));
 		packetID++;
 	}
-	
-/*	public int getID() {
+
+	/*	public int getID() {
 		return serverID;
 	}*/
 
@@ -379,26 +378,26 @@ public class ServerThread extends Thread {
 			break;
 
 		case 13: //querying Customer Information
-            if(arguments.size()!=3){
-                wrongNumber(t);
-                break;
-            }
-            try{
-                Id = getInt(arguments.elementAt(1));
-                int customer = getInt(arguments.elementAt(2));
-                if(rm.queryCustomerInfo(Id,customer)==""){
-                    c[0] = Integer.toString(ERRORCODE);
-                } else{
-                    c = rm.queryCustomerInfo(Id,customer).split("\n");
-                }
-                packetToSend(t,c);
-            }
-            catch(Exception e){
-                System.out.println("EXCEPTION:");
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-            }
-            break;               
+			if(arguments.size()!=3){
+				wrongNumber(t);
+				break;
+			}
+			try{
+				Id = getInt(arguments.elementAt(1));
+				int customer = getInt(arguments.elementAt(2));
+				if(rm.queryCustomerInfo(Id,customer)==""){
+					c[0] = Integer.toString(ERRORCODE);
+				} else{
+					c = rm.queryCustomerInfo(Id,customer).split("\n");
+				}
+				packetToSend(t,c);
+			}
+			catch(Exception e){
+				System.out.println("EXCEPTION:");
+				System.out.println(e.getMessage());
+				e.printStackTrace();
+			}
+			break;               
 
 		case 14: //querying a flight Price
 			if(arguments.size()!=3){
@@ -409,12 +408,11 @@ public class ServerThread extends Thread {
 				Id = getInt(arguments.elementAt(1));
 				flightNum = getInt(arguments.elementAt(2));
 				price=rm.queryFlightPrice(Id,flightNum);
-				
+
 				// If price is 0, then this flight number does not exist
 				if(price!=0){
 					c[0] = Integer.toString(price);
-				}
-				else{
+				} else{
 					c[0] = Integer.toString(ERRORCODE);
 				}
 				packetToSend(t,c);
@@ -435,7 +433,7 @@ public class ServerThread extends Thread {
 				Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(2));
 				price=rm.queryCarsPrice(Id,location);
-				
+
 				// If price is 0, then cars don't exist at this location
 				if(price!=0){
 					c[0] = Integer.toString(price);
@@ -460,9 +458,9 @@ public class ServerThread extends Thread {
 			try{
 				Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(2));
-				
+
 				price=rm.queryRoomsPrice(Id,location);
-				
+
 				// If price is 0, then rooms don't exist at this location
 				if(price!=0){
 					c[0] = Integer.toString(price);
@@ -612,7 +610,7 @@ public class ServerThread extends Thread {
 			System.out.println("Unknown command.");
 			break;
 		}//end of switch
-		
+
 	}
 
 	public Vector parse(String command)
@@ -694,13 +692,10 @@ public class ServerThread extends Thread {
 		System.out.println("\ntype help, <commandname> for detailed info(NOTE the use of comma).");
 	}
 
-
 	public void wrongNumber(String t) {
 		String[] c = {"INVALID"};
 		packetToSend(t, c);
 	}
-
-
 
 	public int getInt(Object temp) throws Exception {
 		try {

@@ -55,7 +55,7 @@ public class MiddleListener {
 		} else{
 			System.err.println ("Wrong usage");
 			System.out.println ("Usage: java middleware [port]"
-					+ "[(flight)rmihost (flight)rmiport (car)rmihost (car)rmiportCar (room)rmihost (room)rmiport]");       
+					+ "[(flight)host (flight)port (car)host (car)portCar (room)host (room)port]");       
 			System.exit(1);
 		}
 		MidUI serverInterface = new MidUI(portMW, "localhost");

@@ -1,5 +1,0 @@
-grant codeBase "file:/home/2013/cbenso7/workspace512/DS512/bin/Client/" {
-    permission java.security.AllPermission;
-};
-
-

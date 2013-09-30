@@ -1,0 +1,5 @@
+grant codeBase "file:/home/2013/cbenso7/COMP512/DSServer/servercode/" {
+    permission java.security.AllPermission;
+};
+
+

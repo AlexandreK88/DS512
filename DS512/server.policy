@@ -1,0 +1,3 @@
+grant codeBase "file:/home/2009/akishk/workspace512/DS512/bin/" {
+    permission java.security.AllPermission;
+};

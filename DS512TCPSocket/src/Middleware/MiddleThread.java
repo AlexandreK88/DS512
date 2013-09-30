@@ -1,0 +1,452 @@
+package Middleware;
+
+import NetPacket.NetPacket;
+
+import java.util.*;
+import java.io.*;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+public class MiddleThread extends Thread {
+
+	public static final int CLIENT = 1;
+	public static final int FLIGHT = 2;
+	public static final int CAR = 3;
+	public static final int ROOM = 4;
+
+	private Socket clientSocket;
+	private Socket flightSocket;
+	private Socket carSocket;
+	private Socket roomSocket;
+	private BufferedReader clientIn;
+	private PrintWriter clientOut;
+	private BufferedReader flightIn;
+	private PrintWriter flightOut;
+	private BufferedReader carIn;
+	private PrintWriter carOut;
+	private BufferedReader roomIn;
+	private PrintWriter roomOut;
+	private int packetID;
+	private int serverID;
+	LinkedList<NetPacket> flightPackets;
+	LinkedList<NetPacket> carPackets;
+	LinkedList<NetPacket> roomPackets;
+
+	LinkedList<NetPacket> clientPackets;
+	LinkedList<NetPacket> clientMergePackets;
+	boolean sendingItinerary = false;
+	String[] args;
+
+	public MiddleThread(Socket s, int sID, String flightName, int flightPort, String carName, int carPort, String roomName, int roomPort) {
+		super("MiddleThread " + sID);
+		if (s == null || sID < 0) {
+			serverID = sID;
+			this.interrupt();
+		} else {
+			clientSocket = s;
+			serverID = sID;
+			packetID = 0;
+			flightPackets = new LinkedList<NetPacket>();
+			carPackets = new LinkedList<NetPacket>();
+			roomPackets = new LinkedList<NetPacket>();
+			clientPackets = new LinkedList<NetPacket>();
+			clientMergePackets = new LinkedList<NetPacket>();
+		}
+
+		try {
+			flightSocket = new Socket(flightName, flightPort);			
+			flightOut = new PrintWriter(flightSocket.getOutputStream(), true);
+			flightIn = new BufferedReader(new InputStreamReader(
+					flightSocket.getInputStream()));
+
+		}	catch (UnknownHostException e) {
+			System.err.println("Don't know about host: " + flightName + ".");
+			System.exit(1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Couldn't get I/O for "
+					+ "the connection to: " + flightName + ".");
+			System.exit(1);
+		}
+		try {
+			carSocket = new Socket(carName, carPort);
+			carOut = new PrintWriter(carSocket.getOutputStream(), true);
+			carIn = new BufferedReader(new InputStreamReader(
+					carSocket.getInputStream()));
+		}	catch (UnknownHostException e) {
+			System.err.println("Don't know about host: " + carName + ".");
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Couldn't get I/O for "
+					+ "the connection to: " + carName + ".");
+		}
+		try {
+			roomSocket = new Socket(roomName, roomPort);
+			roomOut = new PrintWriter(roomSocket.getOutputStream(), true);
+			roomIn = new BufferedReader(new InputStreamReader(
+					roomSocket.getInputStream()));
+		}	catch (UnknownHostException e) {
+			System.err.println("Don't know about host: " + roomName + ".");
+			System.exit(1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Couldn't get I/O for "
+					+ "the connection to: " + roomName + ".");
+		}
+		if (flightIn != null && carIn != null && roomIn != null) {
+			System.out.println("Successful");
+			System.out.println("Connected to RMFlight, RMCar and RMRoom");
+		} else {
+			System.out.println("Unsuccessful");
+			close();
+		}
+		try {
+			clientOut = new PrintWriter(clientSocket.getOutputStream(), true);
+			clientIn = new BufferedReader(
+					new InputStreamReader(
+							clientSocket.getInputStream()));
+			System.err.println("Server ready");
+		} catch (Exception e) {
+			System.err.println("Server exception: " + e.toString());
+			e.printStackTrace();
+		}		
+	}
+
+
+
+
+	public void run() {
+		try {
+			String inputLine;
+			String[] content = {Integer.toString(serverID)};
+			clientOut.println((new NetPacket(serverID,packetID,"open connection", content)).fromPacketToString());
+			packetID++;
+			while (!clientSocket.isClosed() && !flightSocket.isClosed() && !carSocket.isClosed() && !roomSocket.isClosed()) {
+				if (clientIn.ready()) {
+					inputLine = clientIn.readLine();
+					NetPacket p = NetPacket.fromStringToPacket(inputLine);
+					decodeClientPacket(p);
+					if (clientSocket.isClosed()) {
+						break;
+					}
+				}
+				synchronized(clientPackets) {
+					while (!clientPackets.isEmpty()) {
+						NetPacket p = clientPackets.removeFirst();
+						clientOut.println(p.fromPacketToString());
+					}
+				}
+				if (flightIn.ready()) {
+					inputLine = flightIn.readLine();
+					NetPacket p = NetPacket.fromStringToPacket(inputLine);
+					if (p.getType().equals("newcustomer") 
+							||  p.getType().equals("newcustomerid")
+							||  p.getType().equals("querycustomer")
+							||  p.getType().equals("deletecustomer")
+							||  (p.getType().equals("queryflight") && sendingItinerary)
+							||  (p.getType().equals("reserveflight") && sendingItinerary)) {
+						regroupServerPacket(p);
+					} else {
+						packetToSend(p,CLIENT);
+					}
+					if (flightSocket.isClosed()) {
+						break;
+					}
+				}
+				synchronized(flightPackets) {
+					while (!flightPackets.isEmpty()) {
+						NetPacket p = flightPackets.removeFirst();
+						flightOut.println(p.fromPacketToString());
+					}
+				}
+				if (carIn.ready()) {
+					inputLine = carIn.readLine();
+					NetPacket p = NetPacket.fromStringToPacket(inputLine);
+					if (p.getType().equals("newcustomer") 
+							||  p.getType().equals("newcustomerid")
+							||  p.getType().equals("querycustomer")
+							||  p.getType().equals("deletecustomer")
+							||  (p.getType().equals("querycar") && sendingItinerary)
+							||  (p.getType().equals("reservecar") && sendingItinerary)) {
+						regroupServerPacket(p);
+					} else {
+						packetToSend(p,CLIENT);
+					}
+					if (carSocket.isClosed()) {
+						break;
+					}
+				}
+				synchronized(carPackets) {
+					while (!carPackets.isEmpty()) {
+						NetPacket p = carPackets.removeFirst();
+						carOut.println(p.fromPacketToString());
+					}
+				}
+				if (roomIn.ready()) {
+					inputLine = roomIn.readLine();
+					NetPacket p = NetPacket.fromStringToPacket(inputLine);
+					if (p.getType().equals("newcustomer") 
+							||  p.getType().equals("newcustomerid")
+							||  p.getType().equals("querycustomer")
+							||  p.getType().equals("deletecustomer")
+							||  (p.getType().equals("queryroom") && sendingItinerary)
+							||  (p.getType().equals("reserveroom") && sendingItinerary)){
+						regroupServerPacket(p);
+					} else {
+						packetToSend(p,CLIENT);
+					}
+					if (roomSocket.isClosed()) {
+						break;
+					}
+				}
+				synchronized(roomPackets) {
+					while (!roomPackets.isEmpty()) {
+						NetPacket p = roomPackets.removeFirst();
+						roomOut.println(p.fromPacketToString());
+					}
+				}
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void close() {
+
+		String[] empty = {"empty"};
+		NetPacket closingPacket = new NetPacket(serverID, packetID, "close connection", empty);
+		clientOut.println(closingPacket.fromPacketToString());
+		clientOut.close();
+		flightOut.println(closingPacket.fromPacketToString());
+		flightOut.close();
+		carOut.println(closingPacket.fromPacketToString());
+		carOut.close();
+		roomOut.println(closingPacket.fromPacketToString());
+		roomOut.close();
+		try {
+			clientIn.close();
+			clientSocket.close();
+			flightIn.close();
+			flightSocket.close();	
+			carIn.close();
+			carSocket.close();	
+			roomIn.close();
+			roomSocket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+
+	public void regroupServerPacket(NetPacket p) {
+		clientMergePackets.add(p);
+		if (clientMergePackets.size() == 3) {
+			if(p.getType().equals("deletecustomer")) {
+				Boolean allTrue = true;
+				for (NetPacket pack: clientMergePackets) {
+					if (!Boolean.parseBoolean(pack.getContent()[0])) {
+						allTrue = false;
+						break;
+					}
+				}
+				clientMergePackets.clear();
+				p.getContent()[0] = allTrue.toString();
+				packetToSend(p, CLIENT);
+			} else if(  p.getType().equals("querycustomer")) {
+				String newContent = "";
+				for (String arg: clientMergePackets.get(0).getContent()) {
+					newContent += arg + NetPacket.COMMAND_SEPARATOR;
+				}
+	            for(int i=1; i < clientMergePackets.get(1).getContent().length; i++){
+	                newContent=newContent+clientMergePackets.get(1).getContent()[i]+NetPacket.COMMAND_SEPARATOR;
+	            }
+	            for(int i=1; i < clientMergePackets.get(2).getContent().length; i++){
+	            	newContent=newContent+clientMergePackets.get(2).getContent()[i]+NetPacket.COMMAND_SEPARATOR;
+	            }
+				clientMergePackets.clear();
+				p.getContent()[0] = newContent;
+				packetToSend(p, CLIENT);
+			} else if (p.getType().equals("newcustomer")
+					|| p.getType().equals("newcustomerid")) {
+				clientMergePackets.clear();
+				packetToSend(p, CLIENT);		
+			} else if (p.getType().equals("queryflight") 
+					|| p.getType().equals("querycar") 
+					|| p.getType().equals("queryroom")) {
+				boolean allTrue = true;
+				for (NetPacket pack: clientMergePackets) {
+					if (!Boolean.parseBoolean(pack.getContent()[0])) {
+						allTrue = false;
+					}
+				}
+				if (allTrue) {
+					//Divide command in three (reserveFlight, reserveCar, reserveRoom)
+					for(int i=0;i<args.length-6;i++){
+						String[] reserveFlight = new String[3];
+						reserveFlight[0] = args[0]; //ID
+						reserveFlight[1] = args[1]; //customer ID
+						reserveFlight[2] = args[3+i]; // Flight Number
+						packetToSend("reserveflight", reserveFlight, FLIGHT);
+					}			
+					if (Boolean.parseBoolean(args[args.length-2])){
+						String[] reserveCar = new String[3];
+						reserveCar[0] = args[0]; //ID
+						reserveCar[1] = args[1]; //customer ID
+						reserveCar[2] = args[args.length-3]; // Location
+						packetToSend("reservecar", reserveCar, CAR);
+					}
+					if (Boolean.parseBoolean(args[args.length-1])){
+						String[] reserveRoom = new String[3];
+						reserveRoom[0] = args[0]; //ID
+						reserveRoom[1] = args[1]; //customer ID
+						reserveRoom[2] = args[args.length-3]; // Location
+						packetToSend("reserveroom", reserveRoom, ROOM);
+					}	
+				} else {
+					String[] c = {Boolean.toString(false)};
+					packetToSend("itinerary", c, CLIENT);
+				}
+				clientMergePackets.clear();
+			} else if (p.getType().equals("reserveflight") 
+					|| p.getType().equals("reservecar") 
+					|| p.getType().equals("reserveroom")) {
+				boolean allTrue = true;
+				sendingItinerary = false;
+				for (NetPacket pack: clientMergePackets) {
+					if (!Boolean.parseBoolean(pack.getContent()[0])) {
+						allTrue = false;
+					}
+				}
+				if (allTrue) {
+					String[] c = {Boolean.toString(true)};
+					packetToSend("itinerary", c, CLIENT);					
+				} else {
+					String[] c = {Boolean.toString(false)};
+					packetToSend("itinerary", c, CLIENT);
+				}
+				clientMergePackets.clear();
+			}
+		}
+	}
+
+
+	public void decodeClientPacket(NetPacket p) {
+		String command = p.getType();
+		//for (String arg: p.getContent()) {
+		//	command += NetPacket.COMMAND_SEPARATOR + arg;
+		//}
+		//readCommand(command);
+		if (command.compareToIgnoreCase("newflight")==0)
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("newcar")==0)
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("newroom")==0)
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("newcustomer")==0)
+		{
+			String cid = (new Integer(Integer.parseInt(String.valueOf(Integer.parseInt(p.getContent()[0])) +
+					String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
+					String.valueOf( Math.round( Math.random() * 100 + 1 ))))).toString();
+			String[] newContent = {p.getContent()[0], cid};
+			packetToSend("newcustomerid", newContent, FLIGHT);//flightOut.println(p.fromPacketToString());
+			packetToSend("newcustomerid", newContent, CAR); //carOut.println(p.fromPacketToString());
+			packetToSend("newcustomerid", newContent, ROOM); //roomOut.println(p.fromPacketToString());
+		}
+		else if(command.compareToIgnoreCase("deleteflight")==0)
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("deletecar")==0)
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("deleteroom")==0)
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("deletecustomer")==0)
+		{
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		}
+		else if(command.compareToIgnoreCase("queryflight")==0)
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("querycar")==0)
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("queryroom")==0)
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("querycustomer")==0)
+		{
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		}
+		else if(command.compareToIgnoreCase("queryflightprice")==0)
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("querycarprice")==0)
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("queryroomprice")==0)
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("reserveflight")==0)
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("reservecar")==0)
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("reserveroom")==0)
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		else if(command.compareToIgnoreCase("itinerary")==0)
+		{
+			args = p.getContent();
+			sendingItinerary = true;
+			
+			//Before starting any reservations, we need to check that it is possible to reserve each item
+			for(int i=0;i<args.length-6;i++){
+				String[] queryFlight = new String[2];
+				queryFlight[0] = args[0]; //ID
+				queryFlight[1] = args[3+i]; // Flight Number
+				packetToSend("queryflight", queryFlight, FLIGHT);
+			}			
+			if (Boolean.parseBoolean(args[args.length-2])){
+				String[] queryCar = new String[2];
+				queryCar[0] = args[0]; //ID
+				queryCar[1] = args[args.length-3]; // Location
+				packetToSend("querycar", queryCar, CAR);
+			}
+			if (Boolean.parseBoolean(args[args.length-1])){
+				String[] queryRoom = new String[2];
+				queryRoom[0] = args[0]; //ID
+				queryRoom[1] = args[args.length-3]; // Location
+				packetToSend("queryroom", queryRoom, ROOM);
+			}	
+		}
+		else if (command.compareToIgnoreCase("newcustomerid")==0)
+		{
+			packetToSend(p, FLIGHT); //flightOut.println(p.fromPacketToString());
+			packetToSend(p, CAR); //carOut.println(p.fromPacketToString());
+			packetToSend(p, ROOM); //roomOut.println(p.fromPacketToString());
+		}
+
+	}
+
+
+	public void packetToSend(NetPacket packet, int destination) {
+		if (destination == CLIENT) {
+			clientPackets.addLast(packet);
+		} else if (destination == FLIGHT) {
+			flightPackets.addLast(packet);
+		} else if (destination == CAR) {
+			carPackets.addLast(packet);
+		} else if (destination == ROOM) {
+			roomPackets.addLast(packet);
+		}
+	}
+
+	public void packetToSend(String type, String[] content, int destination) {
+		packetToSend(new NetPacket(serverID, packetID, type, content), destination);
+		packetID++;
+	}
+
+
+	public boolean isWorking() {
+		return (!clientSocket.isClosed());
+	}
+
+
+
+}

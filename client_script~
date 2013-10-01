@@ -1,0 +1,24 @@
+newcustomerid, 5, 589576
+newflight, 12345, 153, 50, 64
+newflight, 12543, 177, 100, 103  
+newflight, 12545, 137, 100, 101
+newcar, 31, montreal, 6, 45
+newcar, 32, ottawa, 6, 45
+newcar, 33, toronto, 6, 45
+newroom, 41, montreal, 10, 20
+newroom, 42, ottawa, 10, 20
+newroom, 43, toronto, 10, 20
+reserveflight, 5, 589576, 153
+reserveflight, 5, 589576, 137
+reserveflight, 5, 589576, 177
+reserveroom, 5, 589576, montreal
+reserveroom, 5, 589576, montreal
+reservecar, 5, 589576, ottawa
+reservecar, 5, 589576, toronto
+querycustomer, 5, 589575
+querycustomer, 5, 589576
+newcustomerid, 58, 582243
+itinerary, 58, 582243, 153, 177, 137, toronto, true, true 
+deleteroom, 43, toronto
+deletecustomer, 58, 582243
+deleteroom, 43, toronto

@@ -16,7 +16,6 @@ public class Client {
 	PrintWriter out = null;
 	BufferedReader in = null;
 	LinkedList<NetPacket> toSendToServer;
-	private String answer = null;
 	String command;
 	static int Id, Cid;
 	static int flightNum;
@@ -84,7 +83,7 @@ public class Client {
 		try {
 			NetPacket answer = NetPacket.fromStringToPacket(in.readLine());
 			myID = Integer.parseInt(answer.getContent()[0]);
-			System.out.println(answer.getType());
+			//System.out.println(answer.getType());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -96,6 +95,7 @@ public class Client {
 				try{
 					//read the next command
 					command = stdin.readLine();
+					System.out.println(command);
 				}
 				catch (IOException io){
 					System.out.println("Unable to read from standard in");

@@ -319,7 +319,7 @@ public class MiddleWare implements ResourceManager {
 	public int newCustomer(int id)
 			throws RemoteException
 			{
-
+		Trace.info("INFO: RM::newCustomer(" + id +  ") called" );
 		// Generate a globally unique ID for the new customer
 		int cid = Integer.parseInt( String.valueOf(id) +
 				String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +

@@ -5,6 +5,8 @@ import java.io.File;
 public class RunClient {
 
     public static void main(String[] args) {
+    	
+    	System.out.println("We're using GIT, YOUHOUUUUUU");
         
         int port = 10121;
         String host = "localhost";

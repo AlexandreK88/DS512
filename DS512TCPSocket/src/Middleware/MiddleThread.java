@@ -325,12 +325,12 @@ public class MiddleThread extends Thread {
 				if (allTrue) {
 					//Divide command in three (reserveFlight, reserveCar, reserveRoom)
 					System.out.println("All reservations are available, completing itinerary reservation.");
-					for(int i=0;i<args.length-6;i++){
+					for(int i=0;i<args.length-5;i++){
 						String[] reserveFlight = new String[3];
 						reserveFlight[0] = args[0]; //ID
 						reserveFlight[1] = args[1]; //customer ID
-						reserveFlight[2] = args[3+i]; // Flight Number
-						System.out.println("Reserving flight with details " + reserveFlight.toString());
+						reserveFlight[2] = args[2+i]; // Flight Number
+						System.out.println("Reserving flight with details " + readableForm(reserveFlight));
 						packetToSend("reserveflight", reserveFlight, FLIGHT);
 					}			
 					if (Boolean.parseBoolean(args[args.length-2])){
@@ -472,10 +472,10 @@ public class MiddleThread extends Thread {
 			
 			//Before starting any reservations, we need to check that it is possible to reserve each item
 			mergePacketSizeExpected--;
-			for(int i=0;i<args.length-6;i++){
+			for(int i=0;i<args.length-5;i++){
 				String[] queryFlight = new String[2];
 				queryFlight[0] = args[0]; //ID
-				queryFlight[1] = args[3+i]; // Flight Number
+				queryFlight[1] = args[2+i]; // Flight Number
 				packetToSend("queryflight", queryFlight, FLIGHT);
 				mergePacketSizeExpected++;
 			}			

@@ -237,7 +237,7 @@ public class Client {
 			break; 
 
 		case 16: //querying a Room price
-			if(Integer.parseInt(p.getContent()[0]) == 0){
+			if(Integer.parseInt(p.getContent()[0]) == -1){
 				System.out.println("There are no rooms at this location.");
 			}else{
 				System.out.println("Price of a room at this location: "+ p.getContent()[0]);

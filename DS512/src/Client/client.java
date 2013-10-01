@@ -25,11 +25,11 @@ public class client
 	static String location;
 	static Vector arguments;
 	static client obj;
+	static BufferedReader stdin;
 	
 	public static void main(String args[])
 	{
 		obj = new client();
-		BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 		String command = "";
 		arguments  = new Vector();
 
@@ -37,17 +37,28 @@ public class client
 
 		String server = "localhost";
 		int port = 1099;
-		if (args.length > 0)
+		if (args.length == 1)
 		{
 			server = args[0];
-		}
-		if (args.length > 1)
+			stdin = new BufferedReader(new InputStreamReader(System.in));
+		} else 	if (args.length == 2)
 		{
+			server = args[0];
 			port = Integer.parseInt(args[1]);
-		}
-		if (args.length > 2)
+			stdin = new BufferedReader(new InputStreamReader(System.in));
+		} else	if (args.length == 4)
 		{
-			System.out.println ("Usage: java client [rmihost [rmiport]]");
+			if (args[2].equals("-RS")) {
+				File file = new File (args[3]);
+				try {
+					stdin = new BufferedReader(new FileReader(file));
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} else {
+			System.out.println ("Usage: java client [rmihost [rmiport]] [-RS ScriptPath/ScriptName]");
 			System.exit(1);
 		}
 
@@ -577,15 +588,6 @@ public class client
 				e.printStackTrace();
 			}
 			break;
-		case 101:
-			if(arguments.size() != 2) {
-				obj.wrongNumber();
-				break;
-			}
-			System.out.println("Running script " + arguments.elementAt(1));
-			//File file = new File(command, arguments.elementAt(1));
-			System.out.println("Running script IS NOT AVAILABLE yet. Keep calm and code it down (if you want), or wait XD");
-			break;
 		default:
 			System.out.println("The interface does not support this command.");
 			break;
@@ -652,8 +654,6 @@ public class client
 			return 21;
 		else if (argument.compareToIgnoreCase("newcustomerid")==0)
 			return 22;
-		else if (argument.compareToIgnoreCase("runscript")==0)
-			return 101;
 		else
 			return 666;
 

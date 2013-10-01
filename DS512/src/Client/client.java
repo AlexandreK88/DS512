@@ -579,7 +579,7 @@ public class client
 			try{
 				Id = obj.getInt(arguments.elementAt(1));
 				Cid = obj.getInt(arguments.elementAt(2));
-				//boolean customer=rm.newCustomer(Id,Cid);
+				boolean customer=rm.newCustomer(Id,Cid);
 				System.out.println("new customer id:"+Cid);
 			}
 			catch(Exception e){

@@ -69,7 +69,6 @@ public class ServerThread extends Thread {
 			String inputLine;
 			String[] content = {Integer.toString(serverID)};
 			System.out.println("Server ready");
-			out.println((new NetPacket(serverID,packetID,"open connection", content)).fromPacketToString());
 			packetID++;
 			while (!socket.isClosed()) {
 				if (in.ready()) {

@@ -72,7 +72,7 @@ public class MiddleListener {
 			for (; i < listOfMids.size(); i++) {
 				if (!listOfMids.get(i).isAlive()) {
 					MiddleThread thread = listOfMids.remove(i);
-					thread.close();
+					thread.close(false);
 					i--;
 				}
 			}
@@ -101,7 +101,7 @@ public class MiddleListener {
 		
 		for (MiddleThread thread: listOfMids) {
 			if (thread != null && !thread.isWorking()) {
-				thread.close();
+				thread.close(true);
 			}
 		}
 		try {

@@ -46,6 +46,7 @@ public class Client {
 					+ "the connection to: " + host + ".");
 			System.exit(1);
 		}
+		stdin = new BufferedReader(new InputStreamReader(System.in));
 		toSendToServer = new LinkedList<NetPacket>();
 		packetID = 0;
 		runClient();
@@ -98,19 +99,18 @@ public class Client {
 				}
 				catch (IOException io){
 					System.out.println("Unable to read from standard in");
+					closeConnection();
 					System.exit(1);
 				}
-				
+				if (command == null) {
+					closeConnection();
+					System.out.print("\n\n System closed properly.");
+					System.exit(1);
+				}
 				readFromServer = parse(command);
 				
 				while (!toSendToServer.isEmpty()) {
 					NetPacket toSend = toSendToServer.removeFirst();
-					if (toSend.getType().equals("close connection")) {
-						out.println(toSend.toString());
-						closeConnection();
-						runNetwork = false;
-						return;
-					}
 					out.println(toSend.fromPacketToString());				
 				}
 				if (readFromServer) {
@@ -293,24 +293,6 @@ public class Client {
 			break;
 		}//end of switch
 
-	}
-	//	public boolean action(Player p, String actionName, String[] actionValues);
-	//	public boolean logout();
-
-	public void waitForAnswer() {
-		while (true) {
-			synchronized(answer) {
-				if (answer != null) {
-					return;
-				}
-			}
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -1063,8 +1045,11 @@ public class Client {
 
 	public void closeConnection() {
 		try {
+			String[] args = {"CLOSE NAO! NAAAAAOOOOO!"};
+			packetToSend("Close Connection", args);
 			out.close();
 			in.close();
+			stdin.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

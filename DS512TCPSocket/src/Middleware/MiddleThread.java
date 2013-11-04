@@ -471,7 +471,7 @@ public class MiddleThread extends Thread {
 			sendingItinerary = true;
 			
 			//Before starting any reservations, we need to check that it is possible to reserve each item
-			mergePacketSizeExpected--;
+			mergePacketSizeExpected = 0;
 			for(int i=0;i<args.length-6;i++){
 				String[] queryFlight = new String[2];
 				queryFlight[0] = args[0]; //ID
@@ -484,12 +484,14 @@ public class MiddleThread extends Thread {
 				queryCar[0] = args[0]; //ID
 				queryCar[1] = args[args.length-3]; // Location
 				packetToSend("querycar", queryCar, CAR);
+				mergePacketSizeExpected++;
 			}
 			if (Boolean.parseBoolean(args[args.length-1])){
 				String[] queryRoom = new String[2];
 				queryRoom[0] = args[0]; //ID
 				queryRoom[1] = args[args.length-3]; // Location
 				packetToSend("queryroom", queryRoom, ROOM);
+				mergePacketSizeExpected++;
 			}	
 		} else if (command.compareToIgnoreCase("newcustomerid")==0) {
 			System.out.println("\nClient requesting to add a customer with specified ID " + readableForm(p.getContent()));

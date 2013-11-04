@@ -5,6 +5,8 @@
 package Server.ResImpl;
 
 import ResInterface.*;
+import Server.ResInterface.InvalidTransactionException;
+import Server.ResInterface.TransactionAbortedException;
 
 import java.util.*;
 
@@ -18,14 +20,14 @@ public class ResourceManagerImpl implements ResourceManager
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
-
+	int transactionCount;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
 		String server = "localhost";
 		int port = 1099;
 		String responsibility = "";
-
+		
 		if (args.length > 0) {
 			responsibility = args[0];           
 		}
@@ -64,6 +66,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
+		transactionCount = 0;
 	}
 
 
@@ -486,4 +489,25 @@ public class ResourceManagerImpl implements ResourceManager
 		return false;
 			}
 
+    public int start() 
+    throws RemoteException {
+    	transactionCount++;
+    	return transactionCount;
+    }
+    
+    public boolean commit(int transactionId) 
+    throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+    	return true;
+    }
+    
+    public void abort(int transactionId) 
+    throws RemoteException, InvalidTransactionException {
+    	
+    }
+    
+    public boolean shutdown() 
+    throws RemoteException {
+    	return false;
+    }
+	
 }

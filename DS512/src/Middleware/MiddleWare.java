@@ -1,6 +1,8 @@
 package Middleware;
 
 import ResInterface.*;
+import Server.ResInterface.InvalidTransactionException;
+import Server.ResInterface.TransactionAbortedException;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -18,7 +20,7 @@ public class MiddleWare implements ResourceManager {
 	static ResourceManager rmFlight = null;
 	static ResourceManager rmCar = null;
 	static ResourceManager rmRoom = null;
-
+	int transactionCount;
 
 	public static void main(String args[]) {
 
@@ -31,7 +33,7 @@ public class MiddleWare implements ResourceManager {
 		int port2 = 1099;
 		int port3 = 1099;
 		int portMW = 1099;
-
+		
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
 			portMW = Integer.parseInt(args[0]);
@@ -106,6 +108,7 @@ public class MiddleWare implements ResourceManager {
 	}
 
 	public MiddleWare() throws RemoteException {
+		transactionCount = 0;
 	}
 
 
@@ -313,7 +316,7 @@ public class MiddleWare implements ResourceManager {
 			e.printStackTrace();
 			throw e;
 		} 
-		
+
 	}
 
 	public int newCustomer(int id)
@@ -338,7 +341,7 @@ public class MiddleWare implements ResourceManager {
 			e.printStackTrace();
 			throw e;
 		}
-	}
+			}
 
 	// I opted to pass in customerID instead. This makes testing easier
 	public boolean newCustomer(int id, int customerID )
@@ -389,7 +392,7 @@ public class MiddleWare implements ResourceManager {
 
 			// remove the customer from the storage
 			removeData(id, cust.getKey());
-			
+
 			try{
 				rmFlight.deleteCustomer(id,customerID);
 				rmCar.deleteCustomer(id,customerID);
@@ -404,112 +407,112 @@ public class MiddleWare implements ResourceManager {
 		}
 	}
 
-		// Adds car reservation to this customer. 
-		public boolean reserveCar(int id, int customerID, String location)
-				throws RemoteException {
-			try{
-				if(rmCar.reserveCar(id,customerID,location))
-					return true;
-				else
+	// Adds car reservation to this customer. 
+	public boolean reserveCar(int id, int customerID, String location)
+			throws RemoteException {
+		try{
+			if(rmCar.reserveCar(id,customerID,location))
+				return true;
+			else
+				return false;
+		}
+		catch(Exception e){
+			System.out.println("EXCEPTION:");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
+
+	}
+
+
+	// Adds room reservation to this customer. 
+	public boolean reserveRoom(int id, int customerID, String location)
+			throws RemoteException {
+		try{
+			if(rmRoom.reserveRoom(id,customerID,location))
+				return true;
+			else
+				return false;
+		}
+		catch(Exception e){
+			System.out.println("EXCEPTION:");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+
+	// Adds flight reservation to this customer.  
+	public boolean reserveFlight(int id, int customerID, int flightNum)
+			throws RemoteException {
+		try{
+			if(rmFlight.reserveFlight(id,customerID,flightNum))
+				return true;
+			else
+				return false;
+		}
+		catch(Exception e){
+			System.out.println("EXCEPTION:");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	// Reserve an itinerary 
+	public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean Car,boolean Room)
+			throws RemoteException {
+		try{
+			//CUSTOMER
+
+			//Check if flights available
+			for(int i = 0; i<flightNumbers.size(); i++){
+				if(rmFlight.queryFlight(id, Integer.parseInt(flightNumbers.get(i).toString())) == 0)
 					return false;
 			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-				throw e;
-			}
-			
-		}
-
-
-		// Adds room reservation to this customer. 
-		public boolean reserveRoom(int id, int customerID, String location)
-				throws RemoteException {
-			try{
-				if(rmRoom.reserveRoom(id,customerID,location))
-					return true;
-				else
+			//If car wanted, check if available
+			if(Car){
+				if (rmCar.queryCars(id, location) == 0)
 					return false;
 			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-				throw e;
-			}
-		}
-
-
-		// Adds flight reservation to this customer.  
-		public boolean reserveFlight(int id, int customerID, int flightNum)
-				throws RemoteException {
-			try{
-				if(rmFlight.reserveFlight(id,customerID,flightNum))
-					return true;
-				else
+			//If room wanted, check if available
+			if(Room){
+				if (rmRoom.queryRooms(id, location) == 0)
 					return false;
 			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-				throw e;
+
+			//Reserve flight
+			for(int i = 0; i<flightNumbers.size(); i++){
+				rmFlight.reserveFlight(id, customer, Integer.parseInt(flightNumbers.get(i).toString()));
+			}
+			//Reserve car, if wanted
+			if(Car){
+				rmCar.reserveCar(id, customer, location);
+			}
+			//Reserve room, if wanted
+			if(Room){
+				rmRoom.reserveRoom(id, customer, location);
 			}
 		}
-
-		// Reserve an itinerary 
-		public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean Car,boolean Room)
-				throws RemoteException {
-			try{
-				//CUSTOMER
-
-				//Check if flights available
-				for(int i = 0; i<flightNumbers.size(); i++){
-					if(rmFlight.queryFlight(id, Integer.parseInt(flightNumbers.get(i).toString())) == 0)
-						return false;
-				}
-				//If car wanted, check if available
-				if(Car){
-					if (rmCar.queryCars(id, location) == 0)
-						return false;
-				}
-				//If room wanted, check if available
-				if(Room){
-					if (rmRoom.queryRooms(id, location) == 0)
-						return false;
-				}
-
-				//Reserve flight
-				for(int i = 0; i<flightNumbers.size(); i++){
-					rmFlight.reserveFlight(id, customer, Integer.parseInt(flightNumbers.get(i).toString()));
-				}
-				//Reserve car, if wanted
-				if(Car){
-					rmCar.reserveCar(id, customer, location);
-				}
-				//Reserve room, if wanted
-				if(Room){
-					rmRoom.reserveRoom(id, customer, location);
-				}
-			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			return true;
+		catch(Exception e){
+			System.out.println("EXCEPTION:");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
+		return true;
+	}
 
-		@Override
-		public String queryCustomerInfo(int id, int customerID)
-				throws RemoteException {
-			try{
-	            String[] bill1=rmFlight.queryCustomerInfo(id, customerID).split("\\n");
-	            String[] bill2=rmCar.queryCustomerInfo(id, customerID).split("\\n");
-	            String[] bill3=rmRoom.queryCustomerInfo(id, customerID).split("\\n");
-	 
-	            /*Querying Customer information using id: 5
+	@Override
+	public String queryCustomerInfo(int id, int customerID)
+			throws RemoteException {
+		try{
+			String[] bill1=rmFlight.queryCustomerInfo(id, customerID).split("\\n");
+			String[] bill2=rmCar.queryCustomerInfo(id, customerID).split("\\n");
+			String[] bill3=rmRoom.queryCustomerInfo(id, customerID).split("\\n");
+
+			/*Querying Customer information using id: 5
 	                Customer id: 589576
 	                Customer info:Bill for customer 589576
 	                1 car-ottawa $45
@@ -518,26 +521,47 @@ public class MiddleWare implements ResourceManager {
 	                1 flight-177 $103
 	                1 flight-153 $64
 	                1 flight-137 $101*/
-	            String bill = bill1[0] + "\n";
-	 
-	            for(int i=1; i < bill1.length; i++){
-	                bill=bill+bill1[i]+"\n";
-	            }
-	            for(int i=1; i < bill2.length; i++){
-	                bill=bill+bill2[i]+"\n";
-	            }
-	            for(int i=1; i < bill3.length; i++){
-	                bill=bill+bill3[i]+"\n";
-	            }
-	            return bill;
+			String bill = bill1[0] + "\n";
+
+			for(int i=1; i < bill1.length; i++){
+				bill=bill+bill1[i]+"\n";
 			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
+			for(int i=1; i < bill2.length; i++){
+				bill=bill+bill2[i]+"\n";
 			}
-			return null;
+			for(int i=1; i < bill3.length; i++){
+				bill=bill+bill3[i]+"\n";
+			}
+			return bill;
+		}	
+		catch(Exception e){
+			System.out.println("EXCEPTION:");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
 		}
+		return null;
+	}
 
+    public int start() 
+    throws RemoteException {
+    	transactionCount++;
+    	return transactionCount;
+    }
+    
+    public boolean commit(int transactionId) 
+    throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+    	return true;
+    }
+    
+    public void abort(int transactionId) 
+    throws RemoteException, InvalidTransactionException {
+    	
+    }
+    
+    public boolean shutdown() 
+    throws RemoteException {
+    	return false;
+    }
+    			
 
-			}
+}

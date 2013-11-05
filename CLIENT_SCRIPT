@@ -47,4 +47,5 @@ reserveroom, 58, 582243, montreal
 deletecustomer, 58, 582243
 deleteroom, 1, toronto
 deleteflight, 2, 153
-deletecar, 3, ottawa 
+deletecar, 3, ottawa
+quit

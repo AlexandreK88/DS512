@@ -48,6 +48,8 @@ public class client
 			stdin = new BufferedReader(new InputStreamReader(System.in));
 		} else	if (args.length == 4)
 		{
+			server = args[0];
+			port = Integer.parseInt(args[1]);
 			if (args[2].equals("-RS")) {
 				File file = new File (args[3]);
 				try {

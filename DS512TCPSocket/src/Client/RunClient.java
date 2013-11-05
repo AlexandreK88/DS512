@@ -6,15 +6,6 @@ public class RunClient {
 
     public static void main(String[] args) {
     	
-<<<<<<< HEAD
-    	//System.out.println("We're using GIT, YOUHOUUUUUU");
-        
-    	//System.out.println("1. You add .");System.out.println("2. You commit -m \"commit details\"");
-    	//System.out.println("3. You pull");System.out.println("4. You push");
-    	
-=======
->>>>>>> e68213f68a96568e8744262cd69b038d7dfe6ea4
-    	
         int port = 10121;
         String host = "localhost";
         if (args.length == 0) {

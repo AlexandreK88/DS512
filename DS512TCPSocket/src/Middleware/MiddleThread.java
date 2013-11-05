@@ -471,13 +471,8 @@ public class MiddleThread extends Thread {
 			sendingItinerary = true;
 			
 			//Before starting any reservations, we need to check that it is possible to reserve each item
-<<<<<<< HEAD
-			mergePacketSizeExpected--;
-			for(int i=0;i<args.length-5;i++){
-=======
 			mergePacketSizeExpected = 0;
 			for(int i=0;i<args.length-6;i++){
->>>>>>> e68213f68a96568e8744262cd69b038d7dfe6ea4
 				String[] queryFlight = new String[2];
 				queryFlight[0] = args[0]; //ID
 				queryFlight[1] = args[2+i]; // Flight Number

@@ -2,7 +2,6 @@ package Middleware;
 
 import java.rmi.RemoteException;
 import java.util.LinkedList;
-
 import Server.ResInterface.*;
 
 public class TransactionManager {

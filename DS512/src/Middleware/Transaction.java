@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 import Server.ResInterface.*;
 
+
 public class Transaction {
 	int id;
 //	LinkedList<String[]> writeRequests;

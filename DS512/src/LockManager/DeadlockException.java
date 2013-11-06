@@ -5,8 +5,10 @@ package LockManager;
 */
 
 public class DeadlockException extends Exception
+
 {
-    private int xid = 0;
+	private static final long serialVersionUID = -6929979863997608424L;
+	private int xid = 0;
     
     public DeadlockException (int xid, String msg)
     {

@@ -16,6 +16,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
+import transaction.Operation;
 import transaction.Transaction;
 
 import Server.ResInterface.*;
@@ -27,6 +28,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
+	int trCount;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -73,6 +75,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 
 	public ResourceManagerImpl() throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
+		trCount = 0;
 	}
 
 
@@ -190,6 +193,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
 			throws RemoteException
 			{
+		
 		Trace.info("RM::addFlight(" + id + ", " + flightNum + ", $" + flightPrice + ", " + flightSeats + ") called" );
 		Flight curObj = (Flight) readData( id, Flight.getKey(flightNum) );
 		if ( curObj == null ) {
@@ -198,9 +202,15 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			writeData( id, newObj.getKey(), newObj );
 			Trace.info("RM::addFlight(" + id + ") created new flight " + flightNum + ", seats=" +
 					flightSeats + ", price=$" + flightPrice );
+			String[] parameters = {((Integer)flightNum).toString(),((Integer)flightSeats).toString(), ((Integer)flightPrice).toString()}; 
+			Operation op = new Operation("newflight", parameters, this);
+			addOperation(id, op);
 		} else {
 			// add seats to existing flight and update the price...
 			curObj.setCount( curObj.getCount() + flightSeats );
+			String[] parameters = {((Integer)flightNum).toString(),((Integer)flightSeats).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("newflight", parameters, this);
+			addOperation(id, op);
 			if ( flightPrice > 0 ) {
 				curObj.setPrice( flightPrice );
 			} // if
@@ -209,7 +219,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		} // else
 		return(true);
 			}
-
 
 
 	public boolean deleteFlight(int id, int flightNum)
@@ -232,9 +241,15 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Hotel newObj = new Hotel( location, count, price );
 			writeData( id, newObj.getKey(), newObj );
 			Trace.info("RM::addRooms(" + id + ") created new room location " + location + ", count=" + count + ", price=$" + price );
+			String[] parameters = {location,((Integer)count).toString(), ((Integer)price).toString()}; 
+			Operation op = new Operation("newroom", parameters, this);
+			addOperation(id, op);
 		} else {
 			// add count to existing object and update price...
 			curObj.setCount( curObj.getCount() + count );
+			String[] parameters = {location,((Integer)count).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("newroom", parameters, this);
+			addOperation(id, op);
 			if ( price > 0 ) {
 				curObj.setPrice( price );
 			} // if
@@ -263,9 +278,15 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Car newObj = new Car( location, count, price );
 			writeData( id, newObj.getKey(), newObj );
 			Trace.info("RM::addCars(" + id + ") created new location " + location + ", count=" + count + ", price=$" + price );
+			String[] parameters = {location,((Integer)count).toString(), ((Integer)price).toString()}; 
+			Operation op = new Operation("newcar", parameters, this);
+			addOperation(id, op);
 		} else {
 			// add count to existing car location and update price...
 			curObj.setCount( curObj.getCount() + count );
+			String[] parameters = {location,((Integer)count).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("newcar", parameters, this);
+			addOperation(id, op);
 			if ( price > 0 ) {
 				curObj.setPrice( price );
 			} // if
@@ -393,6 +414,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				String.valueOf( Math.round( Math.random() * 100 + 1 )));
 		Customer cust = new Customer( cid );
 		writeData( id, cust.getKey(), cust );
+		String[] parameters = {((Integer)cid).toString()}; 
+		Operation op = new Operation("newcustomer", parameters, this);
+		addOperation(id, op);
 		Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
 		return cid;
 			}
@@ -407,6 +431,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			cust = new Customer(customerID);
 			writeData( id, cust.getKey(), cust );
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
+			String[] parameters = {((Integer)customerID).toString()}; 
+			Operation op = new Operation("newcustomer", parameters, this);
+			addOperation(id, op);
 			return true;
 		} else {
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
@@ -500,16 +527,21 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		return false;
 	}
 
-	@Override
+	// stub
 	public int start() throws RemoteException {
-		// TODO Auto-generated method stub
-		return 0;
+		trCount++;
+		return trCount;
 	}
 
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {
-		// TODO Auto-generated method stub
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				ongoingTransactions.remove(ongoingTransactions.get(i));
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -517,7 +549,139 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	public void abort(int transactionId) throws RemoteException,
 			InvalidTransactionException {
 		// TODO Auto-generated method stub
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				ongoingTransactions.get(i).undo();
+				ongoingTransactions.remove(ongoingTransactions.get(i));
+			}
+		}		
+	}
+
+	@Override
+	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
+	public void cancelNewFlight(String[] parameters) {
+		int flightNum = Integer.parseInt(parameters[0]);
+		Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
+		if ( curObj != null ) {
+
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice( Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj );
+			} else {
+				try {
+					deleteFlight(0, flightNum);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} // else
 		
+	}
+
+	@Override
+	// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
+	public void cancelNewCar(String[] parameters) {
+		
+		Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
+		if (curObj != null) {
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice(Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj);
+			} else {
+				try { 
+					deleteCars(0, parameters[0]);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	@Override
+	// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
+	public void cancelNewRoom(String[] parameters) {
+		Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
+		if ( curObj != null ) {
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice(Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj);
+			} else {
+				try { 
+					deleteRooms(0, parameters[0]);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} 
+	}
+
+	// Parameter 0: cid
+	public void cancelNewCustomer(String[] parameters) {
+		// Generate a globally unique ID for the new customer
+		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
+	}
+
+	@Override
+	public void cancelFlightDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCarDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelRoomDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCustomerDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelFlightReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCarReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelRoomReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	
+	
+	private void addOperation(int id, Operation op) {
+		for (Transaction t: ongoingTransactions) {
+			if (t.getID() == id) {
+				t.addOp(op);
+				return;
+			}
+		}
+		Transaction t = new Transaction(id);
+		t.addOp(op);
+		ongoingTransactions.add(t);
 	}
 
 }

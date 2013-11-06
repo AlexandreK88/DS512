@@ -710,4 +710,70 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		lockManager.UnlockAll(transactionId);
 	}
 
+	@Override
+	public void cancelNewFlight(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelNewCar(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelNewRoom(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelNewCustomer(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelFlightDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCarDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelRoomDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCustomerDeletion(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelFlightReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelCarReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancelRoomReservation(String[] parameters) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

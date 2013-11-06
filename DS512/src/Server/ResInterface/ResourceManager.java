@@ -144,5 +144,28 @@ public interface ResourceManager extends Remote
     
     public boolean shutdown() 
     throws RemoteException;
+
+
+	public void cancelNewFlight(String[] parameters);
+
+	public void cancelNewCar(String[] parameters);
+
+	public void cancelNewRoom(String[] parameters);
+
+	public void cancelNewCustomer(String[] parameters);
+
+	public void cancelFlightDeletion(String[] parameters);
+
+	public void cancelCarDeletion(String[] parameters);
+
+	public void cancelRoomDeletion(String[] parameters);
+
+	public void cancelCustomerDeletion(String[] parameters);
+
+	public void cancelFlightReservation(String[] parameters);
+
+	public void cancelCarReservation(String[] parameters);
+	
+	public void cancelRoomReservation(String[] parameters);
     			
 }

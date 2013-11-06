@@ -1,12 +1,15 @@
 package Client;
 
-import ResInterface.*;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 //import java.rmi.RMISecurityManager;
 
 import java.util.*;
 import java.io.*;
+
+import LockManager.DeadlockException;
+import Server.ResInterface.*;
 
 
 public class client
@@ -152,8 +155,20 @@ public class client
 				else{
 					System.out.println("Flight could not be added");
 				}		
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -179,8 +194,20 @@ public class client
 				else{
 					System.out.println("Cars could not be added");
 				}
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -204,14 +231,24 @@ public class client
 				price = obj.getInt(arguments.elementAt(3));
 				if(rm.addRooms(transactionID,location,numRooms,price)){
 					System.out.println("Rooms added");
-					rm.commit(Id);
 				}					
 				else{
 					System.out.println("Rooms could not be added");
-					rm.abort(Id);
 				}		
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -250,8 +287,20 @@ public class client
 					System.out.println("Flight Deleted");
 				else
 					System.out.println("Flight could not be deleted");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -273,8 +322,20 @@ public class client
 					System.out.println("Cars Deleted");
 				else
 					System.out.println("Cars could not be deleted");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -295,8 +356,20 @@ public class client
 					System.out.println("Rooms Deleted");
 				else
 					System.out.println("Rooms could not be deleted");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -317,8 +390,20 @@ public class client
 					System.out.println("Customer Deleted");
 				else
 					System.out.println("Customer could not be deleted");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -337,8 +422,20 @@ public class client
 				flightNum = obj.getInt(arguments.elementAt(1));
 				int seats=rm.queryFlight(transactionID,flightNum);
 				System.out.println("Number of seats available: " +seats);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -357,8 +454,20 @@ public class client
 				location = obj.getString(arguments.elementAt(1));
 				numCars=rm.queryCars(transactionID, location);
 				System.out.println("number of Cars at this location: " + numCars);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -377,8 +486,20 @@ public class client
 				location = obj.getString(arguments.elementAt(1));
 				numRooms=rm.queryRooms(transactionID,location);
 				System.out.println("number of Rooms at this location: " + numRooms);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -397,8 +518,20 @@ public class client
 				int customer = obj.getInt(arguments.elementAt(1));
 				String bill=rm.queryCustomerInfo(transactionID,customer);
 				System.out.println("Customer info: " + bill);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -417,8 +550,20 @@ public class client
 				flightNum = obj.getInt(arguments.elementAt(1));
 				price=rm.queryFlightPrice(transactionID,flightNum);
 				System.out.println("Price of a seat:"+price);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -437,8 +582,20 @@ public class client
 				location = obj.getString(arguments.elementAt(1));
 				price=rm.queryCarsPrice(transactionID,location);
 				System.out.println("Price of a car at this location: " + price);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -457,8 +614,20 @@ public class client
 				location = obj.getString(arguments.elementAt(1));
 				price=rm.queryRoomsPrice(transactionID,location);
 				System.out.println("Price of Rooms at this location: " + price);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -481,8 +650,20 @@ public class client
 					System.out.println("Flight Reserved");
 				else
 					System.out.println("Flight could not be reserved.");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -506,8 +687,20 @@ public class client
 					System.out.println("Car Reserved");
 				else
 					System.out.println("Car could not be reserved.");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -530,8 +723,20 @@ public class client
 					System.out.println("Room Reserved");
 				else
 					System.out.println("Room could not be reserved.");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -563,8 +768,20 @@ public class client
 					System.out.println("Itinerary Reserved");
 				else
 					System.out.println("Itinerary could not be reserved.");
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -591,8 +808,20 @@ public class client
 				Cid = obj.getInt(arguments.elementAt(2));
 				boolean customer=rm.newCustomer(transactionID,Cid);
 				System.out.println("New customer id: "+ customer);
-			}
-			catch(Exception e){
+			}catch(DeadlockException e){
+				try {
+					System.out.println(e.getMessage());
+					rm.abort(transactionID);
+					transactionID = -1;
+					System.out.println("Transaction aborted.");
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (InvalidTransactionException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -622,9 +851,7 @@ public class client
 				obj.wrongNumber();
 				break;
 			}
-			//System.out.println("Commit transaction with id: "+ arguments.elementAt(1));
 			try{
-				//Id = obj.getInt(arguments.elementAt(1));
 				rm.commit(transactionID);
 				transactionID = -1;
 			}
@@ -634,14 +861,12 @@ public class client
 				e.printStackTrace();
 			}
 			break;
-		case 25: 
+		case 25: //abort
 			if(arguments.size()!=2){
 				obj.wrongNumber();
 				break;
 			}
-			//System.out.println("Abort transaction with id: "+ arguments.elementAt(1));
 			try{
-				//Id = obj.getInt(arguments.elementAt(1));
 				rm.abort(transactionID);
 				transactionID = -1;
 			}
@@ -651,7 +876,7 @@ public class client
 				e.printStackTrace();
 			}
 			break;
-		default: //abort
+		default:
 			System.out.println("The interface does not support this command.");
 			break;
 		}//end of switch

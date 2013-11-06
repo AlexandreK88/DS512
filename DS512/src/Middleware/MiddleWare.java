@@ -2,10 +2,9 @@ package Middleware;
 
 import LockManager.DeadlockException;
 import LockManager.LockManager;
-import ResInterface.*;
 import Server.ResInterface.InvalidTransactionException;
+import Server.ResInterface.ResourceManager;
 import Server.ResInterface.TransactionAbortedException;
-
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
@@ -15,14 +14,20 @@ import java.rmi.server.UnicastRemoteObject;
 
 import java.util.*;
 
-public class MiddleWare implements ResourceManager {
+import transaction.Transaction;
+import transaction.TransactionManager;
+
+public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	static ResourceManager rmFlight = null;
 	static ResourceManager rmCar = null;
 	static ResourceManager rmRoom = null;
-	static LockManager lockManager = new LockManager();
-	int transactionCount;
+	static LockManager lockManager;
+	static TransactionManager transactionManager;
+	LinkedList<Transaction> ongoingTransactions;
+	LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
+
 
 	public static void main(String args[]) {
 
@@ -35,6 +40,8 @@ public class MiddleWare implements ResourceManager {
 		int port2 = 1099;
 		int port3 = 1099;
 		int portMW = 1099;
+		lockManager = new LockManager();
+		transactionManager = new TransactionManager();
 
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
@@ -110,7 +117,7 @@ public class MiddleWare implements ResourceManager {
 	}
 
 	public MiddleWare() throws RemoteException {
-		transactionCount = 0;
+		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 
@@ -139,9 +146,12 @@ public class MiddleWare implements ResourceManager {
 	// Create a new flight, or add seats to existing flight
 	// NOTE: if flightPrice <= 0 and the flight already exists, it maintains its current price
 	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
-			throws RemoteException, DeadlockException{
-		try{
-			if(lockManager.Lock(id, "Flight"+flightNum+flightNum, LockManager.WRITE)){
+			throws RemoteException, DeadlockException {
+		try{		
+			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
+				rmList.add(rmFlight);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmFlight.addFlight(id,flightNum,flightSeats,flightPrice);
 			}
 			return false;
@@ -156,13 +166,15 @@ public class MiddleWare implements ResourceManager {
 	}
 
 	public boolean deleteFlight(int id, int flightNum)
-			throws RemoteException, DeadlockException{
+			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Flight"+flightNum+flightNum, LockManager.WRITE)){
+				rmList.add(rmFlight);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmFlight.deleteFlight(id,flightNum);
 			}
 			return false;
-
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -180,6 +192,9 @@ public class MiddleWare implements ResourceManager {
 			throws RemoteException, DeadlockException {
 		try {
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
+				rmList.add(rmRoom);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmRoom.addRooms(id,location,count,price);
 			}
 			return false;
@@ -197,6 +212,9 @@ public class MiddleWare implements ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
+				rmList.add(rmRoom);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmRoom.deleteRooms(id,location);
 			}
 			return false;
@@ -215,6 +233,9 @@ public class MiddleWare implements ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
+				rmList.add(rmCar);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmCar.addCars(id,location, count, price);
 			}
 			return false;
@@ -232,6 +253,9 @@ public class MiddleWare implements ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
+				rmList.add(rmCar);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmCar.deleteCars(id,location);
 			}
 			return false;
@@ -261,8 +285,6 @@ public class MiddleWare implements ResourceManager {
 		} 
 	}
 
-
-
 	// Returns price of this flight
 	public int queryFlightPrice(int id, int flightNum )
 			throws RemoteException, DeadlockException {
@@ -280,7 +302,6 @@ public class MiddleWare implements ResourceManager {
 		}
 
 	}
-
 
 	// Returns the number of rooms available at a location
 	public int queryRooms(int id, String location)
@@ -334,7 +355,6 @@ public class MiddleWare implements ResourceManager {
 		}
 	}
 
-
 	// Returns price of cars at this location
 	public int queryCarsPrice(int id, String location)
 			throws RemoteException, DeadlockException {
@@ -351,7 +371,6 @@ public class MiddleWare implements ResourceManager {
 			e.printStackTrace();
 			throw e;
 		} 
-
 	}
 
 	public int newCustomer(int id)
@@ -366,6 +385,13 @@ public class MiddleWare implements ResourceManager {
 		writeData(id, cust.getKey(), cust);
 		try{
 			if(lockManager.Lock(id, "Customer"+cid, LockManager.WRITE)){
+				rmList.add(rmFlight);
+				rmList.add(rmCar);
+				rmList.add(rmRoom);
+				rmList.add(this);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
+				
 				rmFlight.newCustomer(id, cid); 
 				rmCar.newCustomer(id, cid);
 				rmRoom.newCustomer(id, cid);
@@ -391,6 +417,13 @@ public class MiddleWare implements ResourceManager {
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
 			try{
 				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){
+					rmList.add(rmFlight);
+					rmList.add(rmCar);
+					rmList.add(rmRoom);
+					rmList.add(this);
+					transactionManager.enlist(id, rmList);
+					rmList.clear();
+					
 					rmFlight.newCustomer(id,customerID); 
 					rmCar.newCustomer(id,customerID);
 					rmRoom.newCustomer(id,customerID);
@@ -407,8 +440,6 @@ public class MiddleWare implements ResourceManager {
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
 			return false;
 		}
-
-
 	}
 
 	// Deletes customer from the database. 
@@ -427,14 +458,50 @@ public class MiddleWare implements ResourceManager {
 				item.setReserved(item.getReserved()-reserveditem.getCount());
 				item.setCount(item.getCount()+reserveditem.getCount());
 			}
+			
+			String[] billFlight = null;
+			String[] billCar = null;
+			String[] billRoom = null;
+			if(lockManager.Lock(id, "Customer"+customerID, LockManager.READ)){
+				billFlight=rmFlight.queryCustomerInfo(id, customerID).split("\\n");
+				billCar=rmCar.queryCustomerInfo(id, customerID).split("\\n");
+				billRoom=rmRoom.queryCustomerInfo(id, customerID).split("\\n");
+			}
+			rmList.add(rmFlight);
+			rmList.add(rmCar);
+			rmList.add(rmRoom);
+			rmList.add(this);
+			transactionManager.enlist(id, rmList);
+			rmList.clear();
+			
+			String[] info = null;
+			int flightNumber = 0;
+			String location = "";
+			for(int i=1; i < billFlight.length; i++){
+				info = billFlight[i].split(" ");
+				flightNumber = Integer.parseInt(info[1].substring(7));
+				lockManager.Lock(id, "Flight"+flightNumber, LockManager.WRITE);
+			}
+			for(int i=1; i < billCar.length; i++){
+				info = billCar[i].split(" ");
+				location = info[1].substring(4);
+				lockManager.Lock(id, "Car"+location, LockManager.WRITE);
+			}
+			for(int i=1; i < billRoom.length; i++){
+				info = billRoom[i].split(" ");
+				location = info[1].substring(5);
+				lockManager.Lock(id, "Room"+location, LockManager.WRITE);
+			}
 
 			// remove the customer from the storage
 			removeData(id, cust.getKey());
 
 			try{
-				rmFlight.deleteCustomer(id,customerID);
-				rmCar.deleteCustomer(id,customerID);
-				rmRoom.deleteCustomer(id,customerID);
+				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){					
+					rmFlight.deleteCustomer(id,customerID);
+					rmCar.deleteCustomer(id,customerID);
+					rmRoom.deleteCustomer(id,customerID);
+				}
 				return true;
 			} catch(Exception e){
 				System.out.println("EXCEPTION:");
@@ -450,13 +517,14 @@ public class MiddleWare implements ResourceManager {
 			throws RemoteException, DeadlockException{
 		try{
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
+				rmList.add(rmCar);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmCar.reserveCar(id,customerID,location);
 			}
 			else{
 				return false;
 			}
-				
-				
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -465,19 +533,20 @@ public class MiddleWare implements ResourceManager {
 			throw e;
 		}
 	}
-
 
 	// Adds room reservation to this customer. 
 	public boolean reserveRoom(int id, int customerID, String location)
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
+				rmList.add(rmRoom);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmRoom.reserveRoom(id,customerID,location);
 			}
 			else{
 				return false;
-			}
-				
+			}		
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -487,12 +556,14 @@ public class MiddleWare implements ResourceManager {
 		}
 	}
 
-
 	// Adds flight reservation to this customer.  
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
+				rmList.add(rmFlight);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmFlight.reserveFlight(id,customerID,flightNum);
 			}
 			else{
@@ -511,22 +582,30 @@ public class MiddleWare implements ResourceManager {
 	public boolean itinerary(int id, int customer, Vector flightNumbers,String location,boolean Car,boolean Room)
 			throws RemoteException, DeadlockException {
 		try{
-
 			//Check if flights available
 			for(int i = 0; i<flightNumbers.size(); i++){
-				if(rmFlight.queryFlight(id, Integer.parseInt(flightNumbers.get(i).toString())) == 0)
-					return false;
+				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.READ)){
+					if(rmFlight.queryFlight(id, Integer.parseInt(flightNumbers.get(i).toString())) == 0)
+						return false;
+				}
 			}
 			//If car wanted, check if available
 			if(Car){
-				if (rmCar.queryCars(id, location) == 0)
-					return false;
+				if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
+					if (rmCar.queryCars(id, location) == 0)
+						return false;
+				}
+				
 			}
 			//If room wanted, check if available
 			if(Room){
-				if (rmRoom.queryRooms(id, location) == 0)
-					return false;
+				if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
+					if (rmRoom.queryRooms(id, location) == 0)
+						return false;
+				}				
 			}
+			
+			rmList.add(rmFlight);
 
 			//Reserve flight
 			for(int i = 0; i<flightNumbers.size(); i++){
@@ -536,16 +615,20 @@ public class MiddleWare implements ResourceManager {
 			}
 			//Reserve car, if wanted
 			if(Car){
+				rmList.add(rmCar);
 				if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
 					rmCar.reserveCar(id, customer, location);
 				}				
 			}
 			//Reserve room, if wanted
 			if(Room){
+				rmList.add(rmRoom);
 				if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
 					rmRoom.reserveRoom(id, customer, location);
 				}				
 			}
+			transactionManager.enlist(id, rmList);
+			rmList.clear();
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -601,26 +684,30 @@ public class MiddleWare implements ResourceManager {
 		return null;
 	}
 
-	public int start() 
-			throws RemoteException {
-		transactionCount++;
-		return transactionCount;
-	}
-
-	public boolean commit(int transactionId) 
-			throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-		return true;
-	}
-
-	public void abort(int transactionId) 
-			throws RemoteException, InvalidTransactionException {
-
-	}
-
-	public boolean shutdown() 
-			throws RemoteException {
+	@Override
+	public boolean shutdown() throws RemoteException {
+		// TODO Auto-generated method stub
 		return false;
 	}
 
+	@Override
+	public int start() throws RemoteException {
+		return transactionManager.start();
+	}
+
+	@Override
+	public boolean commit(int transactionId) throws RemoteException,
+			TransactionAbortedException, InvalidTransactionException {		
+		boolean returnValue = transactionManager.commit(transactionId);
+		lockManager.UnlockAll(transactionId);
+		//ongoingTransactions.remove(transactionID)
+		return returnValue;
+	}
+
+	@Override
+	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
+		transactionManager.abort(transactionId);
+		lockManager.UnlockAll(transactionId);
+	}
 
 }

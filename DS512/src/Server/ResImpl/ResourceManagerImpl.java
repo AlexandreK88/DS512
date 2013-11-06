@@ -2,13 +2,13 @@
 // adapted from Kevin T. Manley
 // CSE 593
 //
+
 package Server.ResImpl;
 
-import ResInterface.*;
-import Server.ResInterface.InvalidTransactionException;
-import Server.ResInterface.TransactionAbortedException;
+
 
 import java.util.*;
+
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -16,11 +16,17 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
-public class ResourceManagerImpl implements ResourceManager 
+import transaction.Transaction;
+
+import Server.ResInterface.*;
+
+
+
+public class ResourceManagerImpl implements Server.ResInterface.ResourceManager 
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
-	int transactionCount;
+	private LinkedList<Transaction> ongoingTransactions;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -66,7 +72,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
-		transactionCount = 0;
+		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 
@@ -243,7 +249,6 @@ public class ResourceManagerImpl implements ResourceManager
 			throws RemoteException
 			{
 		return deleteItem(id, Hotel.getKey(location));
-
 			}
 
 	// Create a new car location or add cars to an existing location
@@ -438,7 +443,7 @@ public class ResourceManagerImpl implements ResourceManager
 			Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
 			return true;
 		} // if
-			}
+	}
 
 
 
@@ -489,25 +494,30 @@ public class ResourceManagerImpl implements ResourceManager
 		return false;
 			}
 
-    public int start() 
-    throws RemoteException {
-    	transactionCount++;
-    	return transactionCount;
-    }
-    
-    public boolean commit(int transactionId) 
-    throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-    	return true;
-    }
-    
-    public void abort(int transactionId) 
-    throws RemoteException, InvalidTransactionException {
-    	
-    }
-    
-    public boolean shutdown() 
-    throws RemoteException {
-    	return false;
-    }
-	
+	@Override
+	public boolean shutdown() throws RemoteException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int start() throws RemoteException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean commit(int transactionId) throws RemoteException,
+			TransactionAbortedException, InvalidTransactionException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void abort(int transactionId) throws RemoteException,
+			InvalidTransactionException {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

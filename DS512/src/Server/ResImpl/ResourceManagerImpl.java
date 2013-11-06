@@ -16,6 +16,8 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
+import transaction.Transaction;
+
 import Server.ResInterface.*;
 
 
@@ -24,7 +26,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
-	
+	private LinkedList<Transaction> ongoingTransactions;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -70,7 +72,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
-
+		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 
@@ -247,7 +249,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			throws RemoteException
 			{
 		return deleteItem(id, Hotel.getKey(location));
-
 			}
 
 	// Create a new car location or add cars to an existing location
@@ -442,7 +443,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
 			return true;
 		} // if
-			}
+	}
 
 
 

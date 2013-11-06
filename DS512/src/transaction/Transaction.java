@@ -1,18 +1,20 @@
-package Middleware;
+package transaction;
 
 import java.util.LinkedList;
+import java.util.Stack;
 
 import Server.ResInterface.*;
 
 
 public class Transaction {
 	int id;
-//	LinkedList<String[]> writeRequests;
+	Stack<Operation> writeRequests;
 	LinkedList<ResourceManager> rmList;
+	
 	
 	public Transaction(int i) {
 		id = i;
-//		writeRequests = new LinkedList<String[]>();
+		writeRequests = new Stack<Operation>();
 		rmList = new LinkedList<ResourceManager>();
 	}
 	
@@ -20,24 +22,15 @@ public class Transaction {
 		return id;
 	}
 	
-	//public void addWR(String[] request) {
-		//addrmL(rmL);
-		//writeRequests.add(request);
-	//}
-	
 	public void addrm(ResourceManager rm) {
 		if (!rmList.contains(rm)) {
 			rmList.add(rm);
 		}
 	}
 	
-	/*public LinkedList<String[]> getWR() {
-		LinkedList<String[]> wrCopy = new LinkedList<String[]>();
-		for (String[] sa: writeRequests) {
-			wrCopy.add(sa.clone());
-		}
-		return wrCopy;
-	}*/
+	public void addOp(Operation op) {
+		writeRequests.push(op);
+	}
 	
 	public LinkedList<ResourceManager> getRMList() {
 		return rmList;

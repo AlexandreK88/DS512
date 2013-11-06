@@ -15,6 +15,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.io.*;
 
+import transaction.Transaction;
+import transaction.TransactionManager;
+
 import Server.ResInterface.*;
 
 public class MiddleWare implements Server.ResInterface.ResourceManager {
@@ -23,7 +26,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	static ResourceManager rmFlight = null;
 	static ResourceManager rmCar = null;
 	static ResourceManager rmRoom = null;
-	static LockManager lockManager = new LockManager();
+	static LockManager lockManager;
+	static TransactionManager transactionManager;
+	LinkedList<Transaction> ongoingTransactions;
 
 
 	public static void main(String args[]) {
@@ -37,6 +42,8 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		int port2 = 1099;
 		int port3 = 1099;
 		int portMW = 1099;
+		lockManager = new LockManager();
+		transactionManager = new TransactionManager();
 
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
@@ -112,7 +119,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	}
 
 	public MiddleWare() throws RemoteException {
-
+		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 
@@ -612,22 +619,23 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	@Override
 	public int start() throws RemoteException {
-		// TODO Auto-generated method stub
-		return 0;
+		return transactionManager.start();
 	}
 
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {
-		// TODO Auto-generated method stub
-		return false;
+		
+		boolean returnValue = transactionManager.commit(transactionId);
+		lockManager.UnlockAll(transactionId);
+		return returnValue;
 	}
 
 	@Override
 	public void abort(int transactionId) throws RemoteException,
 			InvalidTransactionException {
-		// TODO Auto-generated method stub
-		
+		transactionManager.abort(transactionId);
+		lockManager.UnlockAll(transactionId);
 	}
 
 }

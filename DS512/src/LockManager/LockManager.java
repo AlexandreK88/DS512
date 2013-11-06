@@ -106,7 +106,6 @@ public class LockManager
 					// just ignore the redundant lock request
 					return true;
 				} 
-
 				return true;
 	}
 

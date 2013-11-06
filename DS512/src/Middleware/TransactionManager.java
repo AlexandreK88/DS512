@@ -1,7 +1,6 @@
 package Middleware;
 
 import java.util.LinkedList;
-
 import ResInterface.*;
 
 public class TransactionManager {
@@ -32,7 +31,7 @@ public class TransactionManager {
 					t.addWR(request);
 				} else {
 					for (ResourceManager rm: rmL) {	
-						//t.addrm((ResInterface.ResourceManager)rm);
+						//t.addrm(rm);
 					}
 				}
 				return true;

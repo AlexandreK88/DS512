@@ -2,7 +2,6 @@ package Middleware;
 
 import LockManager.DeadlockException;
 import LockManager.LockManager;
-import LockManager.RedundantLockRequestException;
 import ResInterface.*;
 import Server.ResInterface.InvalidTransactionException;
 import Server.ResInterface.TransactionAbortedException;
@@ -15,7 +14,6 @@ import java.rmi.server.UnicastRemoteObject;
 
 
 import java.util.*;
-import java.io.*;
 
 public class MiddleWare implements ResourceManager {
 

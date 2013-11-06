@@ -28,6 +28,13 @@ public class Transaction {
 		}
 	}
 	
+	public void undo() {
+		while (!writeRequests.isEmpty()) {
+			Operation op = writeRequests.pop();
+			op.undoOp();
+		}
+	}
+	
 	public void addOp(Operation op) {
 		writeRequests.push(op);
 	}

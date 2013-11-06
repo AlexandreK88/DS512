@@ -20,6 +20,7 @@ public class MiddleWare implements ResourceManager {
 	static ResourceManager rmFlight = null;
 	static ResourceManager rmCar = null;
 	static ResourceManager rmRoom = null;
+	static TransactionManager tm;
 
 	public static void main(String args[]) {
 

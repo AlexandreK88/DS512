@@ -2,6 +2,7 @@ package Middleware;
 
 import java.util.LinkedList;
 
+
 public class Transaction {
 	int id;
 //	LinkedList<String[]> writeRequests;

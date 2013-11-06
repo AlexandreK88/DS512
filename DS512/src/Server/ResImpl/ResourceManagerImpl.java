@@ -20,7 +20,7 @@ public class ResourceManagerImpl implements ResourceManager
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
-	int transactionCount;
+	
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -66,7 +66,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
-		transactionCount = 0;
+
 	}
 
 
@@ -491,8 +491,7 @@ public class ResourceManagerImpl implements ResourceManager
 
     public int start() 
     throws RemoteException {
-    	transactionCount++;
-    	return transactionCount;
+    	return -1;
     }
     
     public boolean commit(int transactionId) 

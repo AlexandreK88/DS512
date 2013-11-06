@@ -1,6 +1,5 @@
 package Middleware;
 
-import ResInterface.*;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -12,7 +11,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.io.*;
 
-public class MiddleWare implements ResourceManager {
+import Server.ResInterface.*;
+
+public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	static ResourceManager rmFlight = null;
@@ -537,6 +538,32 @@ public class MiddleWare implements ResourceManager {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	@Override
+	public boolean shutdown() throws RemoteException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int start() throws RemoteException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean commit(int transactionId) throws RemoteException,
+			TransactionAbortedException, InvalidTransactionException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void abort(int transactionId) throws RemoteException,
+			InvalidTransactionException {
+		// TODO Auto-generated method stub
+		
 	}
 
 

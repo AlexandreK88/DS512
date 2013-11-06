@@ -1,7 +1,8 @@
 package Middleware;
 
 import java.util.LinkedList;
-import ResInterface.*;
+
+import Server.ResInterface.*;
 
 public class Transaction {
 	int id;

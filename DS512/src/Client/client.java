@@ -1,12 +1,13 @@
 package Client;
 
-import ResInterface.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 //import java.rmi.RMISecurityManager;
 
 import java.util.*;
 import java.io.*;
+
+import Server.ResInterface.*;
 
 
 public class client

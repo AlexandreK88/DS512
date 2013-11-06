@@ -2,7 +2,8 @@ package Middleware;
 
 import java.rmi.RemoteException;
 import java.util.LinkedList;
-import ResInterface.*;
+
+import Server.ResInterface.*;
 
 public class TransactionManager {
 
@@ -29,9 +30,7 @@ public class TransactionManager {
 		for (Transaction t: onGoingTransactions) {
 			if (t.getID() == tid) {
 				for (ResourceManager rm: rmL) {
-					if (!t.getRMList().contains(rm)) {
-						t.addrm(rm);
-					}
+					t.addrm(rm);
 				}
 				return true;
 			}
@@ -45,7 +44,13 @@ public class TransactionManager {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
-
+					try {
+						rm.commit(tid);
+					} catch (RemoteException | TransactionAbortedException
+							| InvalidTransactionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				return true;
 			}
@@ -58,7 +63,12 @@ public class TransactionManager {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
-
+					try {
+						rm.abort(tid);
+					} catch (RemoteException | InvalidTransactionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		}

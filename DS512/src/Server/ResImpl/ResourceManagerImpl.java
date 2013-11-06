@@ -8,7 +8,7 @@ package Server.ResImpl;
 
 
 import java.util.*;
-import ResInterface.*;
+
 
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -16,7 +16,11 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
-public class ResourceManagerImpl implements ResourceManager 
+import Server.ResInterface.*;
+
+
+
+public class ResourceManagerImpl implements Server.ResInterface.ResourceManager 
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
@@ -488,5 +492,31 @@ public class ResourceManagerImpl implements ResourceManager
 			{
 		return false;
 			}
+
+	@Override
+	public boolean shutdown() throws RemoteException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int start() throws RemoteException {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean commit(int transactionId) throws RemoteException,
+			TransactionAbortedException, InvalidTransactionException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void abort(int transactionId) throws RemoteException,
+			InvalidTransactionException {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

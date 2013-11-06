@@ -204,11 +204,11 @@ public class client
 				price = obj.getInt(arguments.elementAt(3));
 				if(rm.addRooms(transactionID,location,numRooms,price)){
 					System.out.println("Rooms added");
-					rm.commit(Id);
+//					rm.commit(Id);
 				}					
 				else{
 					System.out.println("Rooms could not be added");
-					rm.abort(Id);
+//					rm.abort(Id);
 				}		
 			}
 			catch(Exception e){
@@ -625,7 +625,7 @@ public class client
 			//System.out.println("Commit transaction with id: "+ arguments.elementAt(1));
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
-				rm.commit(transactionID);
+//				rm.commit(transactionID);
 				transactionID = -1;
 			}
 			catch(Exception e){
@@ -642,7 +642,7 @@ public class client
 			//System.out.println("Abort transaction with id: "+ arguments.elementAt(1));
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
-				rm.abort(transactionID);
+//				rm.abort(transactionID);
 				transactionID = -1;
 			}
 			catch(Exception e){

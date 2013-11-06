@@ -2,7 +2,7 @@ package Middleware;
 
 import java.rmi.RemoteException;
 import java.util.LinkedList;
-
+import ResInterface.*;
 
 public class TransactionManager {
 
@@ -12,9 +12,9 @@ public class TransactionManager {
 	int latestTransaction;
 	LinkedList<Transaction> onGoingTransactions;
 	
-	LinkedList<ResInterface.ResourceManager> rmList;
+	LinkedList<ResourceManager> rmList;
 	
-	public TransactionManager(LinkedList<ResInterface.ResourceManager> rmL) {
+	public TransactionManager(LinkedList<ResourceManager> rmL) {
 		latestTransaction = 0;
 		rmList = rmL;
 	}
@@ -25,12 +25,12 @@ public class TransactionManager {
 		return latestTransaction;
 	}
 	
-	public boolean addOperation(int tid, String[] request, LinkedList<ResInterface.ResourceManager> rmL) {
+	public boolean addOperation(int tid, String[] request, LinkedList<ResourceManager> rmL) {
 		for (Transaction t: onGoingTransactions) {
 			if (t.getID() == tid) {
-				for (ResInterface.ResourceManager rm: rmL) {
+				for (ResourceManager rm: rmL) {
 					if (!t.getRMList().contains(rm)) {
-						t.addrm(((ResInterface.ResourceManager)rm));
+						t.addrm(rm);
 					}
 				}
 				return true;
@@ -44,9 +44,9 @@ public class TransactionManager {
 		for (int i=0; i < onGoingTransactions.size(); i++) {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
-				//for (ResInterface.ResourceManager rm: t.getRMList()) {
-				//	rm.commit(tid);
-				//}
+				for (ResourceManager rm: t.getRMList()) {
+
+				}
 				return true;
 			}
 		}
@@ -57,9 +57,9 @@ public class TransactionManager {
 		for (int i=0; i < onGoingTransactions.size(); i++) {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
-				//for (ResInterface.ResourceManager rm: t.getRMList()) {
-				//	rm.abort(tid);
-				//}
+				for (ResourceManager rm: t.getRMList()) {
+
+				}
 			}
 		}
 				

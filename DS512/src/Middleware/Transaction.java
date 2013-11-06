@@ -1,16 +1,17 @@
 package Middleware;
 
 import java.util.LinkedList;
+import ResInterface.*;
 
 public class Transaction {
 	int id;
 //	LinkedList<String[]> writeRequests;
-	LinkedList<ResInterface.ResourceManager> rmList;
+	LinkedList<ResourceManager> rmList;
 	
 	public Transaction(int i) {
 		id = i;
 //		writeRequests = new LinkedList<String[]>();
-		rmList = new LinkedList<ResInterface.ResourceManager>();
+		rmList = new LinkedList<ResourceManager>();
 	}
 	
 	public int getID() {
@@ -22,7 +23,7 @@ public class Transaction {
 		//writeRequests.add(request);
 	//}
 	
-	public void addrm(ResInterface.ResourceManager rm) {
+	public void addrm(ResourceManager rm) {
 		if (!rmList.contains(rm)) {
 			rmList.add(rm);
 		}
@@ -36,7 +37,7 @@ public class Transaction {
 		return wrCopy;
 	}*/
 	
-	public LinkedList<ResInterface.ResourceManager> getRMList() {
+	public LinkedList<ResourceManager> getRMList() {
 		return rmList;
 	}
 

@@ -1,8 +1,6 @@
 package Middleware;
 
 import ResInterface.*;
-import Server.ResInterface.InvalidTransactionException;
-import Server.ResInterface.TransactionAbortedException;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -541,25 +539,5 @@ public class MiddleWare implements ResourceManager {
 		return null;
 	}
 
-    public int start() 
-    throws RemoteException {
-    	return -1;
-    }
-    
-    public boolean commit(int transactionId) 
-    throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-    	return true;
-    }
-    
-    public void abort(int transactionId) 
-    throws RemoteException, InvalidTransactionException {
-    	
-    }
-    
-    public boolean shutdown() 
-    throws RemoteException {
-    	return false;
-    }
-    			
 
 }

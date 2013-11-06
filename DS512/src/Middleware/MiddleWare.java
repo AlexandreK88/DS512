@@ -114,8 +114,28 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
+		
 	}
 
+	private void verifyIfShutdown() {
+
+		// time = current time;
+		// timer = 0;
+		while (true) {
+			/* if no transactions waiting
+			 *		timer += currenttime - time;
+			 *		time = current time
+			 *		if timer reaches threshold
+			 *		shutdown
+			 *		endif
+			 *	else
+			 *		timer = 0;
+			 *  endif 	
+			 *  sleep maybe to avoid consuming CPU resources. 
+			 */		
+		}
+	}
+	
 	public MiddleWare() throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
 	}
@@ -698,15 +718,25 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {		
-		boolean returnValue = transactionManager.commit(transactionId);
+		boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);
-		//ongoingTransactions.remove(transactionID)
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+			}
+		}
 		return returnValue;
 	}
 
 	@Override
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
-		transactionManager.abort(transactionId);
+		transactionManager.abort(transactionId, this);
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				ongoingTransactions.get(i).undo();
+				ongoingTransactions.remove(ongoingTransactions.get(i));
+			}
+		}
 		lockManager.UnlockAll(transactionId);
 	}
 

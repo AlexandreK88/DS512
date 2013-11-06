@@ -71,8 +71,28 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
+		
 	}
 
+	private void verifyIfShutdown() {
+
+		// time = current time;
+		// timer = 0;
+		while (true) {
+			/* if no transactions waiting
+			 *		timer += currenttime - time;
+			 *		time = current time
+			 *		if timer reaches threshold
+			 *		shutdown
+			 *		endif
+			 *	else
+			 *		timer = 0;
+			 *  endif 	
+			 *  sleep maybe to avoid consuming CPU resources. 
+			 */		
+		}
+	}
+	
 	public ResourceManagerImpl() throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
@@ -554,7 +574,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				ongoingTransactions.get(i).undo();
 				ongoingTransactions.remove(ongoingTransactions.get(i));
 			}
-		}		
+		}
 	}
 
 	@Override

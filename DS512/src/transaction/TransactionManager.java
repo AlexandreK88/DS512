@@ -36,17 +36,19 @@ public class TransactionManager {
 		return false;
 	}
 	
-	public boolean commit(int tid) {
+	public boolean commit(int tid, ResourceManager middleware) {
 		for (int i=0; i < onGoingTransactions.size(); i++) {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
-					try {
-						rm.commit(tid);
-					} catch (RemoteException | TransactionAbortedException
-							| InvalidTransactionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					if (rm != middleware) {
+						try {
+							rm.commit(tid);
+						} catch (RemoteException | TransactionAbortedException
+								| InvalidTransactionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				}
 				return true;
@@ -55,13 +57,15 @@ public class TransactionManager {
 		return false;	
 	}
 	
-	public void abort(int tid) {
+	public void abort(int tid, ResourceManager middleware) {
 		for (int i=0; i < onGoingTransactions.size(); i++) {
 			if (onGoingTransactions.get(i).getID() == tid) {
 				Transaction t = onGoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
 					try {
-						rm.abort(tid);
+						if (rm != middleware) {
+							rm.abort(tid);
+						}
 					} catch (RemoteException | InvalidTransactionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

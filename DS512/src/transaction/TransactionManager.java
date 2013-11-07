@@ -34,7 +34,7 @@ public class TransactionManager {
 				return true;
 			}
 		}		
-		throw new InvalidTransactionException();
+		throw new InvalidTransactionException(tid, "The transaction was idle for too long.");
 	}
 	
 	public boolean commit(int tid, ResourceManager middleware) {

@@ -823,8 +823,14 @@ public class client
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
 				Cid = obj.getInt(arguments.elementAt(1));
-				boolean customer=rm.newCustomer(transactionID,Cid);
-				System.out.println("New customer id: "+ customer);
+				boolean customer=rm.newCustomer(transactionID, Cid);
+				if(customer){
+					System.out.println("New customer id: "+ Cid);
+				}
+				else{
+					System.out.println("Customer could not be added: A customer with this ID already exists.");
+				}
+				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());

@@ -99,7 +99,7 @@ public class Client
 	}
 	
 
-	public static Vector readCommand(String command) {
+	public Vector readCommand(String command) {
 
 		//remove heading and trailing white space
 		Vector returnValue = new Vector();

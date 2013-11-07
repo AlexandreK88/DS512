@@ -603,7 +603,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 	}
 
-	@Override
+
 	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
 	public void cancelNewFlight(String[] parameters) {
 		int flightNum = Integer.parseInt(parameters[0]);
@@ -621,7 +621,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		
 	}
 
-	@Override
 	// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
 	public void cancelNewCar(String[] parameters) {
 		
@@ -638,7 +637,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 
 	}
 
-	@Override
 	// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
 	public void cancelNewRoom(String[] parameters) {
 		Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
@@ -660,7 +658,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	}
 
 	
-	@Override
 	public void cancelFlightDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
 		try {
@@ -672,7 +669,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 	}
 
-	@Override
 	public void cancelCarDeletion(String[] parameters) {
 		try {
 			Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
@@ -683,7 +679,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}		
 	}
 
-	@Override
 	public void cancelRoomDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
 		try {
@@ -715,7 +710,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	}
 
 	
-	@Override
 	public void cancelFlightReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
@@ -732,7 +726,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 	}
 
-	@Override
 	public void cancelCarReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
@@ -749,7 +742,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 	}
 
-	@Override
 	public void cancelRoomReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
@@ -765,7 +757,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			}
 		}	
 	}
-	
 	
 	
 	private void addOperation(int id, Operation op) {

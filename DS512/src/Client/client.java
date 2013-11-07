@@ -115,7 +115,7 @@ public class client
 		command = command.trim();
 		arguments = obj.parse(command);
 		
-		if(transactionID > 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
+		if(transactionID < 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
 								|| (obj.findChoice(arguments.elementAt(0).toString()) != 1))){
 			System.out.println("There is no ongoing transaction.");
 			System.out.println("Type start for a new one");

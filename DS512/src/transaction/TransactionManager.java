@@ -14,6 +14,7 @@ public class TransactionManager {
 	
 	public TransactionManager() {
 		latestTransaction = 0;
+		ongoingTransactions = new LinkedList<Transaction>();
 	}
 	
 	public int start() {

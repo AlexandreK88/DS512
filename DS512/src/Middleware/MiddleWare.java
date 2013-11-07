@@ -14,6 +14,7 @@ import java.rmi.server.UnicastRemoteObject;
 
 import java.util.*;
 
+import transaction.Operation;
 import transaction.Transaction;
 import transaction.TransactionManager;
 
@@ -116,29 +117,35 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-
-		try{
-			if(obj != null){
-				obj.verifyIfShutdown();
-				obj.timeToLive();
-			}		
-		}catch(Exception e){
-			System.out.println(e.getMessage());
+		while(true){
+			try{
+				if(obj != null){
+					obj.verifyIfShutdown();
+					obj.timeToLive();
+				}
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}catch(Exception e){
+				System.out.println(e.getMessage());
+			}
 		}
 	}
 
 	private void timeToLive() throws TransactionAbortedException{
 		Date date;
-		while(true){
-			LinkedList<Transaction> ongoingTxns = transactionManager.getOngoingTransactions();
-			for (int i=0; i < ongoingTxns.size(); i++) {
-				date = new Date();
-				if((date.getTime() - ongoingTxns.get(i).getTime()) >= TIME_TO_LIVE){
-					transactionManager.abort(ongoingTxns.get(i).getID(), this);
-					throw new TransactionAbortedException(ongoingTxns.get(i).getID(), "Transaction expired");
-				}
+		LinkedList<Transaction> ongoingTxns = transactionManager.getOngoingTransactions();
+		for (int i=0; i < ongoingTxns.size(); i++) {
+			date = new Date();
+			if((date.getTime() - ongoingTxns.get(i).getTime()) >= TIME_TO_LIVE){
+				transactionManager.abort(ongoingTxns.get(i).getID(), this);
+				throw new TransactionAbortedException(ongoingTxns.get(i).getID(), "Transaction expired");
 			}
 		}
+
 	}
 	
 	private void verifyIfShutdown() throws RemoteException {
@@ -458,6 +465,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				String.valueOf( Math.round( Math.random() * 100 + 1 )));
 		Customer cust = new Customer( cid );
 		writeData(id, cust.getKey(), cust);
+		String[] parameters = {((Integer)cid).toString()}; 
+		Operation op = new Operation("newcustomer", parameters, this);
+		addOperation(id, op);
 		try{
 			if(lockManager.Lock(id, "Customer"+cid, LockManager.WRITE)){
 				rmList.add(rmFlight);
@@ -466,7 +476,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				rmList.add(this);
 				transactionManager.enlist(id, rmList);
 				rmList.clear();
-
 				rmFlight.newCustomer(id, cid); 
 				rmCar.newCustomer(id, cid);
 				rmRoom.newCustomer(id, cid);
@@ -489,6 +498,10 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		if ( cust == null ) {
 			cust = new Customer(customerID);
 			writeData( id, cust.getKey(), cust );
+			writeData(id, cust.getKey(), cust);
+			String[] parameters = {((Integer)customerID).toString()}; 
+			Operation op = new Operation("newcustomer", parameters, this);
+			addOperation(id, op);
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
 			try{
 				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){
@@ -568,22 +581,47 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				lockManager.Lock(id, "Room"+location, LockManager.WRITE);
 			}
 
-			// remove the customer from the storage
-			removeData(id, cust.getKey());
+
 
 			try{
 				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){					
 					rmFlight.deleteCustomer(id,customerID);
 					rmCar.deleteCustomer(id,customerID);
 					rmRoom.deleteCustomer(id,customerID);
+					
+					String[] opParameters = new String[3];
+					opParameters[0] = ((Integer)customerID).toString();
+					opParameters[1] = "";
+					opParameters[2] = "";
+					String rawData = queryCustomerInfo(id, customerID);
+					String[] lines = rawData.split("\n");
+					for (int i = 1; i < lines.length; i++) {
+						String[] parameters = lines[i].split(" ");
+						for (int j = 0; j < Integer.parseInt(parameters[0]); j++) {
+							String[] resTypeAndKey = parameters[1].split("-");
+							opParameters[1] += "::" + resTypeAndKey[0];
+							opParameters[2] += "::" + resTypeAndKey[1];
+						}
+					}
+					opParameters[1] = opParameters[1].substring(2);
+					opParameters[2] = opParameters[2].substring(2);
+					Operation op = new Operation("deletecustomer", opParameters, this);
+					addOperation(id, op);			
+					
+					// remove the customer from the storage
+					removeData(id, cust.getKey());
+					
+					
+					
+					return true;
 				}
-				return true;
 			} catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
 				throw e;
 			}
+			return false;
 		}
 	}
 
@@ -767,7 +805,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	@Override
 	public int start() throws RemoteException {
-		return transactionManager.start();
+		int newTr = transactionManager.start();
+		System.out.println("New transaction " + newTr + " started.");
+		return newTr;
 	}
 
 	@Override
@@ -795,44 +835,40 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		lockManager.UnlockAll(transactionId);
 	}
 
-	@Override
 	public void cancelNewFlight(String[] parameters) {
 
 	}
 
-	@Override
 	public void cancelNewCar(String[] parameters) {
 	}
 
-	@Override
 	public void cancelNewRoom(String[] parameters) {
 	}
 
-	@Override
 	public void cancelNewCustomer(String[] parameters) {
-		// TODO Auto-generated method stub
-
+		// Generate a globally unique ID for the new customer
+		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
 	}
 
-	@Override
+	
 	public void cancelFlightDeletion(String[] parameters) {
+
 	}
 
-	@Override
 	public void cancelCarDeletion(String[] parameters) {
 	}
 
-	@Override
 	public void cancelRoomDeletion(String[] parameters) {
 	}
 
-	@Override
+	// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
 	public void cancelCustomerDeletion(String[] parameters) {
-		// TODO Auto-generated method stub
+		int cID = Integer.parseInt(parameters[0]);
+		Customer cust = new Customer(cID);
+		writeData( 0, cust.getKey(), cust );
 
 	}
 
-	@Override
 	public void cancelFlightReservation(String[] parameters) {
 		// TODO Auto-generated method stub
 
@@ -848,6 +884,18 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public void cancelRoomReservation(String[] parameters) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	private void addOperation(int id, Operation op) {
+		for (Transaction t: ongoingTransactions) {
+			if (t.getID() == id) {
+				t.addOp(op);
+				return;
+			}
+		}
+		Transaction t = new Transaction(id);
+		t.addOp(op);
+		ongoingTransactions.add(t);
 	}
 
 }

@@ -222,7 +222,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				return rmFlight.addFlight(id,flightNum,flightSeats,flightPrice);
 			}
 			return false;
-
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");

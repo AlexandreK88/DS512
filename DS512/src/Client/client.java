@@ -116,7 +116,8 @@ public class client
 		arguments = obj.parse(command);
 
 		if(transactionID < 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
-				&& (obj.findChoice(arguments.elementAt(0).toString()) != 1))){
+				&& (obj.findChoice(arguments.elementAt(0).toString()) != 1))
+				&& (obj.findChoice(arguments.elementAt(0).toString()) != 21)){
 			System.out.println("There is no ongoing transaction.");
 			System.out.println("Type start for a new one");
 			return;
@@ -823,8 +824,14 @@ public class client
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
 				Cid = obj.getInt(arguments.elementAt(1));
-				boolean customer=rm.newCustomer(transactionID,Cid);
-				System.out.println("New customer id: "+ customer);
+				boolean customer=rm.newCustomer(transactionID, Cid);
+				if(customer){
+					System.out.println("New customer id: "+ Cid);
+				}
+				else{
+					System.out.println("Customer could not be added: A customer with this ID already exists.");
+				}
+				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());

@@ -132,7 +132,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		int value = 0;  
 		if ( curObj != null ) {
 			value = curObj.getCount();
-		} // else
+		}else{
+			return -1;
+		}
 		Trace.info("RM::queryNum(" + id + ", " + key + ") returns count=" + value);
 		return value;
 	}    
@@ -144,7 +146,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		int value = 0; 
 		if ( curObj != null ) {
 			value = curObj.getPrice();
-		} // else
+		}else{
+			return -1;
+		}
 		Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") returns cost=$" + value );
 		return value;        
 	}

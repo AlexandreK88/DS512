@@ -1,5 +1,6 @@
 package transaction;
 
+import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -31,7 +32,7 @@ public class Transaction {
 		}
 	}
 
-	public void undo() {
+	public void undo() throws RemoteException {
 		while (!writeRequests.isEmpty()) {
 			Operation op = writeRequests.pop();
 			op.undoOp();

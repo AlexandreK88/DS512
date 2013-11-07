@@ -1,5 +1,7 @@
 package transaction;
 
+import java.rmi.RemoteException;
+
 import Server.ResInterface.ResourceManager;
 
 public class Operation {
@@ -14,7 +16,7 @@ public class Operation {
 		rm = rMan;
 	}
 	
-	public void undoOp() {
+	public void undoOp() throws RemoteException {
 		if (opName.equals("newflight")) {
 			rm.cancelNewFlight(parameters);
 		} else if (opName.equals("newcar")) {

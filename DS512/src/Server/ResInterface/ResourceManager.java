@@ -146,26 +146,26 @@ public interface ResourceManager extends Remote
     throws RemoteException;
 
 
-	public void cancelNewFlight(String[] parameters);
+	public void cancelNewFlight(String[] parameters) throws RemoteException;
 
-	public void cancelNewCar(String[] parameters);
+	public void cancelNewCar(String[] parameters) throws RemoteException;
 
-	public void cancelNewRoom(String[] parameters);
+	public void cancelNewRoom(String[] parameters) throws RemoteException;
 
-	public void cancelNewCustomer(String[] parameters);
+	public void cancelNewCustomer(String[] parameters) throws RemoteException;
 
-	public void cancelFlightDeletion(String[] parameters);
+	public void cancelFlightDeletion(String[] parameters) throws RemoteException;
 
-	public void cancelCarDeletion(String[] parameters);
+	public void cancelCarDeletion(String[] parameters) throws RemoteException;
 
-	public void cancelRoomDeletion(String[] parameters);
+	public void cancelRoomDeletion(String[] parameters) throws RemoteException;
 
-	public void cancelCustomerDeletion(String[] parameters);
+	public void cancelCustomerDeletion(String[] parameters) throws RemoteException;
 
-	public void cancelFlightReservation(String[] parameters);
+	public void cancelFlightReservation(String[] parameters) throws RemoteException;
 
-	public void cancelCarReservation(String[] parameters);
+	public void cancelCarReservation(String[] parameters) throws RemoteException;
 	
-	public void cancelRoomReservation(String[] parameters);
+	public void cancelRoomReservation(String[] parameters) throws RemoteException;
     			
 }

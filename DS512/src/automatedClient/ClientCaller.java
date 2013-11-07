@@ -34,11 +34,11 @@ public class ClientCaller
 	Client obj;
 	static LinkedList<String> globalCommands;
 	static LinkedList<String> flightCommands;
-	static LinkedList<Integer> livingCustomersID;
+	static LinkedList<Integer> CustomersID;
 	static LinkedList<Integer> flightNumbers;
 	static LinkedList<String> locations;
 	
-	static LinkedList<Integer> dynamicCustomerID;
+	static LinkedList<Integer> dynamicCustomersID;
 	static LinkedList<Integer> dynamicFlightNumbers;
 	static LinkedList<String> dynamicLocations;
 	
@@ -54,14 +54,14 @@ public class ClientCaller
 	
 	public ClientCaller(){
 		globalCommands = new LinkedList<String>(Arrays.asList
-				("newflight","newcar","newroom","newcustomer","newcusomterid","deleteflight","deletecar",
+				("newflight","newcar","newroom","newcusomterid","deleteflight","deletecar",
 				"deleteroom","deletecustomer","queryflight","querycar","queryroom","querycustomer","queryflightprice",
 				"querycarprice","queryroomprice","reserveflight","reservecar","reserveroom","itinerary"));
 		
 		flightCommands = new LinkedList<String>(Arrays.asList
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 		
-		livingCustomersID = new LinkedList<Integer>(Arrays.asList(11221, 11332, 33221, 14421, 11551, 88221, 12345, 78985, 78945));
+		CustomersID = new LinkedList<Integer>(Arrays.asList(11221, 11332, 33221, 14421, 11551, 88221, 12345, 78985, 78945));
 		
 		flightNumbers = new LinkedList<Integer>(Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108, 109));
 		
@@ -90,96 +90,128 @@ public class ClientCaller
 		}
 	}
 	
-	private static String commandGenerator(int commandType){
-		
+	private static String commandGenerator(int commandType){		
 		int rng = 0;
 		Random r = new Random();
 		String command = "";
 		String completeCommand = "";
+		boolean dynamic = false;
 		
 		switch(commandType){
 		case FLIGHT:
-			rng = (int)(Math.random() * flightCommands.size());
+			rng = r.nextInt(flightCommands.size());
 			command = flightCommands.get(rng);
 		case GLOBAL:
-			rng = (int)(Math.random() * globalCommands.size());
+			rng = r.nextInt(globalCommands.size());
 			command = globalCommands.get(rng);
 		default:
 		}
 		
 		switch(findChoice(command)){
 		case 2: //new flight
+			flightNum = r.nextInt(100);
+			completeCommand = command + "," + flightNum+ "," + r.nextInt(100) + "," + r.nextInt(100);
+			dynamicFlightNumbers.add(flightNum);
 		case 3: //new car
+			location = "miami"+r.nextInt(100);
+			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+			dynamicLocations.add(location);
 		case 4: //new room
-		case 5: //new customer
+			location = "miami"+r.nextInt(100);
+			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+			dynamicLocations.add(location);
+		/*case 5: //new customer*/
 		case 6: //delete flight
-			flightNum = dynamicFlightNumbers.get((int)(Math.random() * dynamicFlightNumbers.size()));
+			flightNum = dynamicFlightNumbers.get(r.nextInt(dynamicFlightNumbers.size()));
 			completeCommand = command + "," + flightNum;
 			dynamicFlightNumbers.remove(flightNum);
 		case 7: //delete car
-			location = dynamicLocations.get((int)(Math.random() * dynamicLocations.size()));
-			numCars = (int)(Math.random() * 100);
+			location = dynamicLocations.get(r.nextInt(dynamicLocations.size()));
+			numCars = r.nextInt(100);
 			completeCommand = command + "," + location + "," + numCars;
 			dynamicLocations.remove(location);
 		case 8: //delete room
-			location = dynamicLocations.get((int)(Math.random() * dynamicLocations.size()));
-			numRooms = (int)(Math.random() * 100);
+			location = dynamicLocations.get(r.nextInt(dynamicLocations.size()));
+			numRooms = r.nextInt(100);
 			completeCommand = command + "," + location + "," + numRooms;
 			dynamicLocations.remove(location);
 		case 9: //delete customer
-			customerID = dynamicCustomerID.get((int)(Math.random() * dynamicCustomerID.size()));
+			customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			completeCommand = command + "," + customerID;
 			dynamicFlightNumbers.remove(customerID);
 		case 10: //query flight
-			flightNum = flightNumbers.get((int)(Math.random() * flightNumbers.size()));
+			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));
 			completeCommand = command + "," + flightNum;
 		case 11: //query car
-			location = locations.get((int)(Math.random() * locations.size()));
+			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
 		case 12: //query room
-			location = locations.get((int)(Math.random() * locations.size()));
+			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
 		case 13: //query customer
-			customerID = livingCustomersID.get((int)(Math.random() * livingCustomersID.size()));
+			customerID = CustomersID.get(r.nextInt(CustomersID.size()));
 			completeCommand = command + "," + customerID;
 		case 14: //query flight price
-			flightNum = flightNumbers.get((int)(Math.random() * flightNumbers.size()));
+			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));
 			completeCommand = command + "," + flightNum;
 		case 15: //query car price
-			location = locations.get((int)(Math.random() * locations.size()));
+			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
 		case 16: //query room price
-			location = locations.get((int)(Math.random() * locations.size()));
+			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
 		case 17: //reserve flight
-			flightNum = flightNumbers.get((int)(Math.random() * flightNumbers.size()));
-			customerID = livingCustomersID.get((int)(Math.random() * livingCustomersID.size()));
+			dynamic = r.nextBoolean();
+			if(dynamic){
+				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
+			}else{
+				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+			}
+			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));			
 			completeCommand = command + "," + customerID + "," + flightNum;
 		case 18: //reserve car
-			location = locations.get((int)(Math.random() * locations.size()));
-			customerID = livingCustomersID.get((int)(Math.random() * livingCustomersID.size()));
-			numCars = (int)(Math.random() * 5);
+			dynamic = r.nextBoolean();
+			if(dynamic){
+				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
+			}else{
+				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+			}
+			location = locations.get(r.nextInt(locations.size()));
+			numCars = r.nextInt(5);
 			completeCommand = command + "," + customerID + "," + location + "," + numCars;
 		case 19: //reserve room
-			location = locations.get((int)(Math.random() * locations.size()));
-			customerID = livingCustomersID.get((int)(Math.random() * livingCustomersID.size()));
-			numRooms = (int)(Math.random() * 5);
+			dynamic = r.nextBoolean();
+			if(dynamic){
+				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
+			}else{
+				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+			}
+			location = locations.get(r.nextInt(locations.size()));
+			numRooms = r.nextInt(5);
 			completeCommand = command + "," + customerID + "," + location + "," + numRooms;
 		case 20: //itinerary
 			int n = 0;
 			boolean Car = false;
-			boolean Room = false;
-			n = flightNumbers.get((int)(Math.random() * flightNumbers.size()));			
-			customerID = livingCustomersID.get((int)(Math.random() * livingCustomersID.size()));
+			boolean Room = false;		
+			n = flightNumbers.get(r.nextInt(flightNumbers.size()));			
+			dynamic = r.nextBoolean();
+			if(dynamic){
+				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
+			}else{
+				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+			}
 			completeCommand = command + "," + customerID;
 			for (int i = 0; i < n; i++){
-				completeCommand += "," + flightNumbers.get((int)(Math.random() * flightNumbers.size()));
+				completeCommand += "," + flightNumbers.get(r.nextInt(flightNumbers.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));
 			Car = r.nextBoolean();
 			Room = r.nextBoolean();
 			completeCommand += location + "," + Car + "," + Room;
 		case 21: //new customer id
+			customerID = r.nextInt(10000);
+			completeCommand = command + "," + customerID;
+			dynamicCustomersID.add(customerID);
 		default:
 		}
 		

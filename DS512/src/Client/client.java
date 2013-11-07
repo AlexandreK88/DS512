@@ -115,8 +115,8 @@ public class client
 		command = command.trim();
 		arguments = obj.parse(command);
 		
-		if(transactionID > 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
-								|| (obj.findChoice(arguments.elementAt(0).toString()) != 1))){
+		if(transactionID < 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
+								&& (obj.findChoice(arguments.elementAt(0).toString()) != 1))){
 			System.out.println("There is no ongoing transaction.");
 			System.out.println("Type start for a new one");
 			return;
@@ -406,7 +406,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				flightNum = obj.getInt(arguments.elementAt(1));
 				int seats=rm.queryFlight(transactionID,flightNum);
-				System.out.println("Number of seats available: " +seats);
+				if(price < 0){
+					System.out.println("There are no existing flights with this flight number.");
+				}else{
+					System.out.println("Number of seats available: " +seats);
+				}	
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -436,7 +440,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				location = obj.getString(arguments.elementAt(1));
 				numCars=rm.queryCars(transactionID, location);
-				System.out.println("number of Cars at this location: " + numCars);
+				if(price < 0){
+					System.out.println("There are no car rentals at this location.");
+				}else{
+					System.out.println("Number of cars at this location: " + numCars);
+				}
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -466,7 +474,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				location = obj.getString(arguments.elementAt(1));
 				numRooms=rm.queryRooms(transactionID,location);
-				System.out.println("number of Rooms at this location: " + numRooms);
+				if(price < 0){
+					System.out.println("There are no car rentals at this location.");
+				}else{
+					System.out.println("Number of rooms at this location: " + numRooms);
+				}				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -526,7 +538,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				flightNum = obj.getInt(arguments.elementAt(1));
 				price=rm.queryFlightPrice(transactionID,flightNum);
-				System.out.println("Price of a seat:"+price);
+				if(price < 0){
+					System.out.println("There are no existing flights with this flight number");
+				}else{
+					System.out.println("Price of a seat: " + price);
+				}			
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -556,7 +572,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				location = obj.getString(arguments.elementAt(1));
 				price=rm.queryCarsPrice(transactionID,location);
-				System.out.println("Price of a car at this location: " + price);
+				if(price < 0){
+					System.out.println("There are no car rentals at this location.");
+				}else{
+					System.out.println("Price of a car at this location: " + price);
+				}				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -586,7 +606,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				location = obj.getString(arguments.elementAt(1));
 				price=rm.queryRoomsPrice(transactionID,location);
-				System.out.println("Price of Rooms at this location: " + price);
+				if(price < 0){
+					System.out.println("There are no hotels at this location.");
+				}else{
+					System.out.println("Price of Rooms at this location: " + price);
+				}			
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -765,10 +789,10 @@ public class client
 				obj.wrongNumber();
 				break;
 			}
-			System.out.println("Adding a new Customer using customer ID " +arguments.elementAt(2));
+			System.out.println("Adding a new Customer using customer ID " +arguments.elementAt(1));
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
-				Cid = obj.getInt(arguments.elementAt(2));
+				Cid = obj.getInt(arguments.elementAt(1));
 				boolean customer=rm.newCustomer(transactionID,Cid);
 				System.out.println("New customer id: "+ customer);
 			}catch(DeadlockException e){
@@ -800,6 +824,7 @@ public class client
 					break;
 				}
 				transactionID = rm.start();
+				System.out.println("A transaction with id " + transactionID + " is now started.");
 			}
 			catch(Exception e){
 				System.out.println("EXCEPTION:");
@@ -823,7 +848,7 @@ public class client
 			}
 			break;
 		case 25: //abort
-			if(arguments.size()!=2){
+			if(arguments.size()!=1){
 				obj.wrongNumber();
 				break;
 			}

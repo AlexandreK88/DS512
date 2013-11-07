@@ -1,18 +1,16 @@
 package automatedClient;
 
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
+import java.net.Socket;
+import java.net.UnknownHostException;
 //import java.rmi.RMISecurityManager;
 
 import java.util.*;
 import java.io.*;
 
-import LockManager.DeadlockException;
-import Server.ResInterface.*;
+import NetPacket.NetPacket;
 
 
-public class ClientCaller
+public class ClientCaller extends Thread 
 {
 	//static String message = "blank";
 	//static ResourceManager rm = null;
@@ -32,6 +30,13 @@ public class ClientCaller
 	//static int transactionID = -1; 
 	
 	Client obj;
+	Socket socket;
+	private int myID;
+	private int packetID;
+	PrintWriter out = null;
+	BufferedReader in = null;
+	LinkedList<NetPacket> toSendToServer;
+	
 	static LinkedList<String> globalCommands;
 	static LinkedList<String> flightCommands;
 	static LinkedList<Integer> livingCustomersID;
@@ -52,7 +57,28 @@ public class ClientCaller
 	static final int LONG_FLIGHT_TXN = 5;
 	static final int LONG_GLOBAL_TXN = 6;
 	
-	public ClientCaller(){
+	public static final int NUMBER_OF_TRANSACTIONS = 100;
+	
+	public ClientCaller(String host, int port) {
+		super("Sup!");
+		
+		try {
+			socket = new Socket(host, port);
+			out = new PrintWriter(socket.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(
+					socket.getInputStream()));
+		}	catch (UnknownHostException e) {
+			System.err.println("Don't know about host: " + host + ".");
+			System.exit(1);
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Couldn't get I/O for "
+					+ "the connection to: " + host + ".");
+			System.exit(1);
+		}
+		toSendToServer = new LinkedList<NetPacket>();
+		packetID = 0;
+		
 		globalCommands = new LinkedList<String>(Arrays.asList
 				("newflight","newcar","newroom","newcustomer","newcusomterid","deleteflight","deletecar",
 				"deleteroom","deletecustomer","queryflight","querycar","queryroom","querycustomer","queryflightprice",
@@ -67,9 +93,54 @@ public class ClientCaller
 		
 		locations = new LinkedList<String>(Arrays.asList
 				("miami","paris","sydney","beijing","moscou"));
+		
 	}
 	
-	public void newText(int testType, long delay)
+	public void run() {
+		try {
+			NetPacket answer = NetPacket.fromStringToPacket(in.readLine());
+			myID = Integer.parseInt(answer.getContent()[0]);
+			//System.out.println(answer.getType());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		synchronized (toSendToServer) {
+			boolean readFromServer = true;
+			
+			while (!toSendToServer.isEmpty()) {
+				NetPacket toSend = toSendToServer.removeFirst();
+				out.println(toSend.fromPacketToString());				
+			}
+			if (readFromServer) {
+				try {
+					String line = in.readLine();
+					NetPacket answer = NetPacket.fromStringToPacket(line);
+					decode(answer);
+				} catch (IOException e) {
+					// 	TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+	
+	public void decode(NetPacket p) {
+		
+		if (p.getType().equalsIgnoreCase("Throughput")) {
+			
+		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
+			
+		} else if (p.getType().equalsIgnoreCase("Startup")) {
+			
+		}
+		
+	}
+	
+	
+	public void newTest(int testType, long delay)
 	{
 		switch(testType){
 		case SHORT_FLIGHT_TXN:
@@ -244,6 +315,24 @@ public class ClientCaller
 
 	}
 	
+	public void closeConnection() {
+		try {
+			out.close();
+			in.close();
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
+	public void packetToSend(NetPacket packet) {
+		toSendToServer.addLast(packet);
+	}
+
+	public void packetToSend(String type, String[] content) {
+		packetToSend(new NetPacket(myID, packetID, type, content));
+		packetID++;
+	}
 	
 }

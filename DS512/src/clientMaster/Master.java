@@ -97,6 +97,11 @@ public class Master {
 						}
 					} else if (commandDetails[0].equalsIgnoreCase("Done")) {
 						performanceTestsCompleted = true;	
+					} else {
+						System.out.println("Unknown command");
+					}
+					if (awaitedResponses > MAX_NUMBER_OF_CLIENTS) {
+						awaitedResponses = MAX_NUMBER_OF_CLIENTS;
 					}
 					while(awaitedResponses > 0) {
 						try {

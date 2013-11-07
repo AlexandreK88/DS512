@@ -5,11 +5,7 @@
 
 package Server.ResImpl;
 
-
-
 import java.util.*;
-
-
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -72,25 +68,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			System.setSecurityManager(new RMISecurityManager());
 		}
 		
-	}
-
-	private void verifyIfShutdown() {
-
-		// time = current time;
-		// timer = 0;
-		while (true) {
-			/* if no transactions waiting
-			 *		timer += currenttime - time;
-			 *		time = current time
-			 *		if timer reaches threshold
-			 *		shutdown
-			 *		endif
-			 *	else
-			 *		timer = 0;
-			 *  endif 	
-			 *  sleep maybe to avoid consuming CPU resources. 
-			 */		
-		}
 	}
 	
 	public ResourceManagerImpl() throws RemoteException {
@@ -544,7 +521,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	@Override
 	public boolean shutdown() throws RemoteException {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	// stub

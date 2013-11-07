@@ -57,7 +57,6 @@ public class client
 				try {
 					stdin = new BufferedReader(new FileReader(file));
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -162,10 +161,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -201,10 +198,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -242,10 +237,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -294,10 +287,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -329,10 +320,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -363,10 +352,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -397,10 +384,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -429,10 +414,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -461,10 +444,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -493,10 +474,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -525,10 +504,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -557,10 +534,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -589,10 +564,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -621,10 +594,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -657,10 +628,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -694,10 +663,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -730,10 +697,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -775,10 +740,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){
@@ -815,10 +778,8 @@ public class client
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (RemoteException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				} catch (InvalidTransactionException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}catch(Exception e){

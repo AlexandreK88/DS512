@@ -28,9 +28,11 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	LinkedList<Transaction> ongoingTransactions;
 	LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 
+	private static int SHUTDOWN_TIMEOUT = 30000;
+	private static int TIME_TO_LIVE = 500000;
+
 
 	public static void main(String args[]) {
-
 		// Figure out where server is running		
 		String server1 = "localhost";
 		String server2 = "localhost"; 
@@ -42,6 +44,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		int portMW = 1099;
 		lockManager = new LockManager();
 		transactionManager = new TransactionManager();
+		MiddleWare obj = null;
 
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
@@ -68,7 +71,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					+ "[(flight)rmihost (flight)rmiport (car)rmihost (car)rmiportCar (room)rmihost (room)rmiport]");       
 			System.exit(1);
 		}
-
 
 		//Connection to RMIs
 		try {
@@ -97,7 +99,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		//Getting server ready
 		try{
 			// create a new Server object
-			MiddleWare obj = new MiddleWare();
+			obj = new MiddleWare();
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -114,13 +116,37 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-		
+
+		try{
+			if(obj != null){
+				obj.verifyIfShutdown();
+				obj.timeToLive();
+			}		
+		}catch(Exception e){
+			System.out.println(e.getMessage());
+		}
 	}
 
-	private void verifyIfShutdown() {
-
+	private void timeToLive() throws TransactionAbortedException{
+		Date date;
+		while(true){
+			LinkedList<Transaction> ongoingTxns = transactionManager.getOngoingTransactions();
+			for (int i=0; i < ongoingTxns.size(); i++) {
+				date = new Date();
+				if((date.getTime() - ongoingTxns.get(i).getTime()) >= TIME_TO_LIVE){
+					transactionManager.abort(ongoingTxns.get(i).getID(), this);
+					throw new TransactionAbortedException(ongoingTxns.get(i).getID(), "Transaction expired");
+				}
+			}
+		}
+	}
+	
+	private void verifyIfShutdown() throws RemoteException {
 		// time = current time;
+		Date date = new Date();
+		long time = date.getTime();
 		// timer = 0;
+		long timer = 0;
 		while (true) {
 			/* if no transactions waiting
 			 *		timer += currenttime - time;
@@ -133,13 +159,25 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			 *  endif 	
 			 *  sleep maybe to avoid consuming CPU resources. 
 			 */		
+			if(!transactionManager.hasOngoingTransactions()){
+				date = new Date();
+				timer += date.getTime() - time;
+				time = date.getTime();
+				if(timer >= SHUTDOWN_TIMEOUT){
+					if(rmFlight.shutdown() && rmCar.shutdown() && rmRoom.shutdown()){
+						shutdown();
+					}	
+				}
+				else{
+					timer = 0;
+				}
+			}
 		}
 	}
-	
+
 	public MiddleWare() throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
 	}
-
 
 	// Reads a data item
 	private RMItem readData( int id, String key )
@@ -293,6 +331,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
+				rmList.add(rmFlight);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmFlight.queryFlight(id,flightNum);
 			}
 			return 0;
@@ -310,6 +351,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
+				rmList.add(rmFlight);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmFlight.queryFlightPrice(id,flightNum);
 			}
 			return -1;
@@ -328,6 +372,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException	{
 		try{
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
+				rmList.add(rmRoom);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmRoom.queryRooms(id,location);
 			}
 			return 0;
@@ -345,6 +392,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException	{
 		try{
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
+				rmList.add(rmRoom);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmRoom.queryRoomsPrice(id,location);
 			}
 			return -1;
@@ -362,10 +412,13 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
+				rmList.add(rmCar);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmCar.queryCars(id,location);
 			}
 			return 0;
-			
+
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -380,10 +433,12 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException {
 		try{
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
+				rmList.add(rmCar);
+				transactionManager.enlist(id, rmList);
+				rmList.clear();
 				return rmCar.queryCarsPrice(id,location);
 			}
 			return -1;
-			
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -411,7 +466,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				rmList.add(this);
 				transactionManager.enlist(id, rmList);
 				rmList.clear();
-				
+
 				rmFlight.newCustomer(id, cid); 
 				rmCar.newCustomer(id, cid);
 				rmRoom.newCustomer(id, cid);
@@ -443,7 +498,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					rmList.add(this);
 					transactionManager.enlist(id, rmList);
 					rmList.clear();
-					
+
 					rmFlight.newCustomer(id,customerID); 
 					rmCar.newCustomer(id,customerID);
 					rmRoom.newCustomer(id,customerID);
@@ -478,7 +533,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				item.setReserved(item.getReserved()-reserveditem.getCount());
 				item.setCount(item.getCount()+reserveditem.getCount());
 			}
-			
+
 			String[] billFlight = null;
 			String[] billCar = null;
 			String[] billRoom = null;
@@ -493,7 +548,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			rmList.add(this);
 			transactionManager.enlist(id, rmList);
 			rmList.clear();
-			
+
 			String[] info = null;
 			int flightNumber = 0;
 			String location = "";
@@ -615,7 +670,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					if (rmCar.queryCars(id, location) == 0)
 						return false;
 				}
-				
+
 			}
 			//If room wanted, check if available
 			if(Room){
@@ -624,7 +679,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 						return false;
 				}				
 			}
-			
+
 			rmList.add(rmFlight);
 
 			//Reserve flight
@@ -707,7 +762,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public boolean shutdown() throws RemoteException {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
@@ -717,7 +772,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
-			TransactionAbortedException, InvalidTransactionException {		
+	TransactionAbortedException, InvalidTransactionException {		
 		boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
@@ -743,67 +798,67 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public void cancelNewFlight(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelNewCar(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelNewRoom(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelNewCustomer(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelFlightDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelCarDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelRoomDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelCustomerDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelFlightReservation(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelCarReservation(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void cancelRoomReservation(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

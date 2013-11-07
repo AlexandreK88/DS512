@@ -10,7 +10,7 @@ public class TransactionManager {
 	public static final int WRITE_REQUEST = 1;
 	
 	int latestTransaction;
-	LinkedList<Transaction> onGoingTransactions;
+	LinkedList<Transaction> ongoingTransactions;
 	
 	public TransactionManager() {
 		latestTransaction = 0;
@@ -19,27 +19,27 @@ public class TransactionManager {
 	public int start() {
 		latestTransaction++;
 		Transaction t = new Transaction(latestTransaction);
-		onGoingTransactions.add(t);
+		ongoingTransactions.add(t);
 		return latestTransaction;
 	}
 	
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) {
-		for (Transaction t: onGoingTransactions) {
+		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == tid) {
 				for (ResourceManager rm: rmL) {
 					t.addrm(rm);
+					t.setCurrentTime();
 				}
 				return true;
 			}
-		}
-		
+		}		
 		return false;
 	}
 	
 	public boolean commit(int tid, ResourceManager middleware) {
-		for (int i=0; i < onGoingTransactions.size(); i++) {
-			if (onGoingTransactions.get(i).getID() == tid) {
-				Transaction t = onGoingTransactions.remove(i);
+		for (int i=0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == tid) {
+				Transaction t = ongoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
 					if (rm != middleware) {
 						try {
@@ -58,9 +58,9 @@ public class TransactionManager {
 	}
 	
 	public void abort(int tid, ResourceManager middleware) {
-		for (int i=0; i < onGoingTransactions.size(); i++) {
-			if (onGoingTransactions.get(i).getID() == tid) {
-				Transaction t = onGoingTransactions.remove(i);
+		for (int i=0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == tid) {
+				Transaction t = ongoingTransactions.remove(i);
 				for (ResourceManager rm: t.getRMList()) {
 					try {
 						if (rm != middleware) {
@@ -72,8 +72,13 @@ public class TransactionManager {
 					}
 				}
 			}
-		}
-				
+		}		
+	}
+	public LinkedList<Transaction> getOngoingTransactions(){
+		return ongoingTransactions;
+	}
+	public boolean hasOngoingTransactions(){
+		return !ongoingTransactions.isEmpty();
 	}
 	
 }

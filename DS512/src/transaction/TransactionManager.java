@@ -24,7 +24,7 @@ public class TransactionManager {
 		return latestTransaction;
 	}
 	
-	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) {
+	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == tid) {
 				for (ResourceManager rm: rmL) {
@@ -34,7 +34,7 @@ public class TransactionManager {
 				return true;
 			}
 		}		
-		return false;
+		throw new InvalidTransactionException();
 	}
 	
 	public boolean commit(int tid, ResourceManager middleware) {

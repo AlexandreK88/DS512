@@ -220,9 +220,17 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 
 	public boolean deleteFlight(int id, int flightNum)
 			throws RemoteException
-			{
-		return deleteItem(id, Flight.getKey(flightNum));
-			}
+	{
+		Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
+		if (deleteItem(id, Flight.getKey(flightNum))) {
+			String[] parameters = {((Integer)flightNum).toString(),((Integer)curObj.getCount()).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("deleteflight", parameters, this);
+			addOperation(id, op);			
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 
 
@@ -259,9 +267,17 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	// Delete rooms from a location
 	public boolean deleteRooms(int id, String location)
 			throws RemoteException
-			{
-		return deleteItem(id, Hotel.getKey(location));
-			}
+	{
+		Hotel curObj = (Hotel) readData( id, Hotel.getKey(location) );
+		if (deleteItem(id, Hotel.getKey(location))) {
+			String[] parameters = {location,((Integer)curObj.getCount()).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("deleteroom", parameters, this);
+			addOperation(id, op);
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	// Create a new car location or add cars to an existing location
 	//  NOTE: if price <= 0 and the location already exists, it maintains its current price
@@ -291,15 +307,23 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
 		} // else
 		return(true);
-			}
+	}
 
 
 	// Delete cars from a location
 	public boolean deleteCars(int id, String location)
 			throws RemoteException
 			{
-		return deleteItem(id, Car.getKey(location));
-			}
+		Car curObj = (Car) readData( id, Car.getKey(location) );
+		if (deleteItem(id, Car.getKey(location))) {
+			String[] parameters = {location,((Integer)curObj.getCount()).toString(), ((Integer)curObj.getPrice()).toString()}; 
+			Operation op = new Operation("deletecar", parameters, this);
+			addOperation(id, op);
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 
 
@@ -449,8 +473,28 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
 			return false;
 		} else {            
-			// Increase the reserved numbers of all reservable items which the customer reserved. 
+			// Increase the reserved numbers of all reservable items which the customer reserved.
+			String[] opParameters = new String[3];
+			opParameters[0] = ((Integer)customerID).toString();
+			opParameters[1] = "";
+			opParameters[2] = "";
+			String rawData = queryCustomerInfo(id, customerID);
+			String[] lines = rawData.split("\n");
+			for (int i = 1; i < lines.length; i++) {
+				String[] parameters = lines[i].split(" ");
+				for (int j = 0; j < Integer.parseInt(parameters[0]); j++) {
+					String[] resTypeAndKey = parameters[1].split("-");
+					opParameters[1] += "::" + resTypeAndKey[0];
+					opParameters[2] += "::" + resTypeAndKey[1];
+				}
+			}
+			opParameters[1] = opParameters[1].substring(2);
+			opParameters[2] = opParameters[2].substring(2);
+			Operation op = new Operation("deletecustomer", opParameters, this);
+			addOperation(id, op);			
+
 			RMHashtable reservationHT = cust.getReservations();
+
 			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 				String reservedkey = (String) (e.nextElement());
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
@@ -460,6 +504,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				item.setReserved(item.getReserved()-reserveditem.getCount());
 				item.setCount(item.getCount()+reserveditem.getCount());
 			}
+			 
 
 			// remove the customer from the storage
 			removeData(id, cust.getKey());
@@ -471,44 +516,48 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 
 
 
-	/*
-    // Frees flight reservation record. Flight reservation records help us make sure we
-    // don't delete a flight if one or more customers are holding reservations
-    public boolean freeFlightReservation(int id, int flightNum)
-        throws RemoteException
-    {
-        Trace.info("RM::freeFlightReservations(" + id + ", " + flightNum + ") called" );
-        RMInteger numReservations = (RMInteger) readData( id, Flight.getNumReservationsKey(flightNum) );
-        if ( numReservations != null ) {
-            numReservations = new RMInteger( Math.max( 0, numReservations.getValue()-1) );
-        } // if
-        writeData(id, Flight.getNumReservationsKey(flightNum), numReservations );
-        Trace.info("RM::freeFlightReservations(" + id + ", " + flightNum + ") succeeded, this flight now has "
-                + numReservations + " reservations" );
-        return true;
-    }
-	 */
-
-
 	// Adds car reservation to this customer. 
 	public boolean reserveCar(int id, int customerID, String location)
 			throws RemoteException
-			{
-		return reserveItem(id, customerID, Car.getKey(location), location);
-			}
+	{
+		if (reserveItem(id, customerID, Car.getKey(location), location)) {
+			String[] parameters = {String.valueOf(customerID), Car.getKey(location)};		 
+			Operation op = new Operation("reservecar", parameters, this);
+			addOperation(id, op);
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 
 	// Adds room reservation to this customer. 
 	public boolean reserveRoom(int id, int customerID, String location)
 			throws RemoteException
 			{
-		return reserveItem(id, customerID, Hotel.getKey(location), location);
+		if (reserveItem(id, customerID, Hotel.getKey(location), location)) {
+			String[] parameters = {String.valueOf(customerID), Hotel.getKey(location)};		 
+			Operation op = new Operation("reserveroom", parameters, this);
+			addOperation(id, op);
+			return true;
+		} else {
+			return false;
+		}
+		
 			}
 	// Adds flight reservation to this customer.  
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 			throws RemoteException
 			{
-		return reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum));
+		if (reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum))) {
+			String[] parameters = {String.valueOf(customerID), Flight.getKey(flightNum)};		 
+			Operation op = new Operation("reserveflight", parameters, this);
+			addOperation(id, op);
+			return true;
+		} else {
+			return false;
+		}
+		
 			}
 
 	// Reserve an itinerary 
@@ -566,12 +615,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				curObj.setPrice( Integer.parseInt(parameters[2]));
 				writeData( 0, curObj.getKey(), curObj );
 			} else {
-				try {
-					deleteFlight(0, flightNum);
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				deleteItem(0, Flight.getKey(flightNum));
 			}
 		} // else
 		
@@ -588,12 +632,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				curObj.setPrice(Integer.parseInt(parameters[2]));
 				writeData( 0, curObj.getKey(), curObj);
 			} else {
-				try { 
-					deleteCars(0, parameters[0]);
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				deleteItem(0, Car.getKey(parameters[0]));
 			}
 		}
 
@@ -609,12 +648,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				curObj.setPrice(Integer.parseInt(parameters[2]));
 				writeData( 0, curObj.getKey(), curObj);
 			} else {
-				try { 
-					deleteRooms(0, parameters[0]);
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				deleteItem(0, Hotel.getKey(parameters[0]));
 			}
 		} 
 	}
@@ -625,46 +659,111 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
 	}
 
+	
 	@Override
 	public void cancelFlightDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+		try {
+			Flight newObj = new Flight(Integer.parseInt(parameters[0]), Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData( 0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
 	public void cancelCarDeletion(String[] parameters) {
-		// TODO Auto-generated method stub
-		
+		try {
+			Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData(0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 	}
 
 	@Override
 	public void cancelRoomDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
-		
+		try {
+			Hotel newObj = new Hotel( parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData( 0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 	}
 
-	@Override
+	// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
 	public void cancelCustomerDeletion(String[] parameters) {
-		// TODO Auto-generated method stub
+		int cID = Integer.parseInt(parameters[0]);
+		Customer cust = new Customer(cID);
+		writeData( 0, cust.getKey(), cust );
+		String[] reservationType = parameters[1].split("::");
+		String[] reservationIdentifier = parameters[2].split("::");
 		
+		for (int i = 0; i < reservationType.length; i++) {
+			if (reservationType[i].equals("flight")) {
+				reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
+			} else if (reservationType[i].equals("car")) {
+				reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
+			} else if (reservationType[i].equals("room")) {
+				reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
+			}
+		}
 	}
 
+	
 	@Override
 	public void cancelFlightReservation(String[] parameters) {
-		// TODO Auto-generated method stub
-		
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				return;
+			}
+		}
 	}
 
 	@Override
 	public void cancelCarReservation(String[] parameters) {
-		// TODO Auto-generated method stub
-		
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				return;
+			}
+		}
 	}
 
 	@Override
 	public void cancelRoomReservation(String[] parameters) {
-		// TODO Auto-generated method stub
-		
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				return;
+			}
+		}	
 	}
 	
 	

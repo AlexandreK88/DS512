@@ -31,7 +31,7 @@ public class ClientCaller extends Thread
 	
 	Client obj;
 	Socket socket;
-	private int myID;
+
 	private int packetID;
 	PrintWriter out = null;
 	BufferedReader in = null;
@@ -61,7 +61,8 @@ public class ClientCaller extends Thread
 	
 	public ClientCaller(String host, int port) {
 		super("Sup!");
-		
+		String[] args = {"teaching", "10121"};
+		obj = new Client(args);
 		try {
 			socket = new Socket(host, port);
 			out = new PrintWriter(socket.getOutputStream(), true);
@@ -97,14 +98,6 @@ public class ClientCaller extends Thread
 	}
 	
 	public void run() {
-		try {
-			NetPacket answer = NetPacket.fromStringToPacket(in.readLine());
-			myID = Integer.parseInt(answer.getContent()[0]);
-			//System.out.println(answer.getType());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		synchronized (toSendToServer) {
 			boolean readFromServer = true;
@@ -130,12 +123,59 @@ public class ClientCaller extends Thread
 	public void decode(NetPacket p) {
 		
 		if (p.getType().equalsIgnoreCase("Throughput")) {
-			
+			String length = p.getContent()[1];
+			int baseValue;
+			if (length.equalsIgnoreCase("SHORT")) {
+				baseValue = ClientCaller.SHORT_FLIGHT_TXN;
+			} else if (length.equalsIgnoreCase("AVERAGE")) {
+				baseValue = ClientCaller.AVERAGE_FLIGHT_TXN;
+			} else {
+				baseValue = ClientCaller.LONG_FLIGHT_TXN;
+			}
+			if (p.getContent()[0].equalsIgnoreCase("Global")) {
+				newTest(baseValue+1, 0);
+			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
+				newTest(baseValue, 0);
+			}
 		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
-			
+			String length = p.getContent()[2];
+			int baseValue;
+			if (length.equalsIgnoreCase("SHORT")) {
+				baseValue = ClientCaller.SHORT_FLIGHT_TXN;
+			} else if (length.equalsIgnoreCase("AVERAGE")) {
+				baseValue = ClientCaller.AVERAGE_FLIGHT_TXN;
+			} else {
+				baseValue = ClientCaller.LONG_FLIGHT_TXN;
+			}
+			if (p.getContent()[0].equalsIgnoreCase("Global")) {
+				newTest(baseValue+1, Long.parseLong(p.getContent()[1]));
+			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
+				newTest(baseValue, Long.parseLong(p.getContent()[1]));
+			}			
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
-			
+			startup();
 		}
+		
+	}
+	
+	
+	public void startup() {
+		obj.readCommand("start");
+		for (int cID: CustomersID) {
+			obj.readCommand("newcustomerid, " + cID);
+		}
+
+		for (int fID: flightNumbers) {
+			obj.readCommand("newflight, " + fID + ", 100, 1000");
+		}
+
+		for (String loc: locations) {
+			obj.readCommand("newcar, " + loc + ", 100, 200");
+			obj.readCommand("newroom, " + loc + ", 100, 200");
+		}
+		obj.readCommand("commit");
+		String[] args = {"Done"};
+		packetToSend("Startup", args);
 		
 	}
 	
@@ -363,7 +403,7 @@ public class ClientCaller extends Thread
 	}
 
 	public void packetToSend(String type, String[] content) {
-		packetToSend(new NetPacket(myID, packetID, type, content));
+		packetToSend(new NetPacket(1, packetID, type, content));
 		packetID++;
 	}
 	

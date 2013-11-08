@@ -54,6 +54,7 @@ public class Master {
 			
 			while(awaitedResponses > 0) {
 				try {
+					System.out.println("Waiting for " + awaitedResponses + " responses.");
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
@@ -63,18 +64,23 @@ public class Master {
 			
 			while (!performanceTestsCompleted) {
 				try{
-					//read the next command
+					// read the next command
+					// Commands have the form:
+					// ResponseTime [Global/Single] [Delay] [SHORT/AVERAGE/LONG] [Number of clients]
+					// Throughput [Global/Single] [SHORT/AVERAGE/LONG] [Number of clients]
+					// Done
 					command =stdin.readLine();
 					String[] commandDetails = command.split(" ");
 					if (commandDetails[0].equalsIgnoreCase("ResponseTime")) {
-						if (commandDetails.length != 4) {
+						if (commandDetails.length != 5) {
 							System.out.println("Wrong number of arguments.");
 						} else {
-							int awaitedResponses = Integer.parseInt(commandDetails[3]);
+							int awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
 							for (int i = 0; (i < awaitedResponses || i < MAX_NUMBER_OF_CLIENTS); i++) {
-								if (commandDetails[1].equals("Global") || commandDetails[1].equals("Single")
-								&& Integer.parseInt(commandDetails[2]) >= 0) {
-									String[] details = {commandDetails[1], commandDetails[2], Integer.toString(testCounter)};
+								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
+								&& Integer.parseInt(commandDetails[2]) >= 0 
+								&& (commandDetails[3].equalsIgnoreCase("SHORT") || commandDetails[3].equalsIgnoreCase("AVERAGE") || commandDetails[3].equalsIgnoreCase("LONG"))) {
+									String[] details = {commandDetails[1], commandDetails[2], commandDetails[3], Integer.toString(testCounter)};
 									commMC.get(i).packetToSend(commandDetails[0], details);
 								} else {
 									System.out.println("Wrong parameters");
@@ -82,13 +88,14 @@ public class Master {
 							}
 						}
 					} else if (commandDetails[0].equalsIgnoreCase("Throughput")) {
-						if (commandDetails.length != 3) {
+						if (commandDetails.length != 4) {
 							System.out.println("Wrong number of arguments.");
 						} else {
-							awaitedResponses = Integer.parseInt(commandDetails[2]);
+							awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
 							for (int i = 0; (i < awaitedResponses|| i < MAX_NUMBER_OF_CLIENTS); i++) {
-								if (commandDetails[1].equals("Global") || commandDetails[1].equals("Single")) {
-									String[] details = {commandDetails[1], Integer.toString(testCounter)};
+								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
+								&& (commandDetails[2].equalsIgnoreCase("SHORT") || commandDetails[2].equalsIgnoreCase("AVERAGE") || commandDetails[2].equalsIgnoreCase("LONG"))) {
+									String[] details = {commandDetails[1], commandDetails[2], Integer.toString(testCounter)};
 									commMC.get(i).packetToSend(commandDetails[0], details);
 								} else {
 									System.out.println("Wrong parameters");
@@ -105,6 +112,7 @@ public class Master {
 					}
 					while(awaitedResponses > 0) {
 						try {
+							System.out.println("Waiting for " + awaitedResponses + " responses.");
 							Thread.sleep(1000);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block

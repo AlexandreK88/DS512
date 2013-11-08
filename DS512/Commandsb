@@ -1,6 +1,6 @@
-ResponseTime global 25 short 1
-ResponseTime global 25 short 2
-ResponseTime global 25 short 3
-ResponseTime global 25 short 4
-ResponseTime global 25 short 5
+ResponseTime global 0 short 5
+ResponseTime global 0 short 10
+ResponseTime global 0 short 20
+ResponseTime global 0 short 30
+ResponseTime global 0 short 40
 done

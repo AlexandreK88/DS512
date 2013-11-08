@@ -100,8 +100,8 @@ public class ClientCaller extends Thread
 		dynamicRoomLocations = new LinkedList<String>();
 	}
 
-	public ClientCaller(String host, int port) {
-		super("Sup!");
+	public ClientCaller(String host, int port, int i) {
+		super("Sup!" + i);
 
 		String[] args = {"teaching", "10121"};
 		obj = new Client(args);

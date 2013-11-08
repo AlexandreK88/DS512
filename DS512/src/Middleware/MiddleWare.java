@@ -27,10 +27,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	static LockManager lockManager;
 	static TransactionManager transactionManager;
 	LinkedList<Transaction> ongoingTransactions;
-	LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
-	private static int TIME_TO_LIVE = 20000;
+	private static int TIME_TO_LIVE = 120000;
 
 
 	public static void main(String args[]) {
@@ -215,6 +214,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{		
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
@@ -234,6 +234,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean deleteFlight(int id, int flightNum)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum+flightNum, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
@@ -257,6 +258,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean addRooms(int id, String location, int count, int price)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try {
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
 				rmList.add(rmRoom);
 				transactionManager.enlist(id, rmList);
@@ -277,6 +279,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean deleteRooms(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
 				rmList.add(rmRoom);
 				transactionManager.enlist(id, rmList);
@@ -298,6 +301,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean addCars(int id, String location, int count, int price)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
 				rmList.add(rmCar);
 				transactionManager.enlist(id, rmList);
@@ -318,6 +322,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean deleteCars(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
 				rmList.add(rmCar);
 				transactionManager.enlist(id, rmList);
@@ -338,6 +343,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryFlight(int id, int flightNum)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
@@ -358,6 +364,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryFlightPrice(int id, int flightNum )
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
@@ -379,6 +386,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryRooms(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException	{
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
 				rmList.add(rmRoom);
 				transactionManager.enlist(id, rmList);
@@ -399,6 +407,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryRoomsPrice(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException	{
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
 				rmList.add(rmRoom);
 				transactionManager.enlist(id, rmList);
@@ -419,6 +428,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryCars(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
 				rmList.add(rmCar);
 				transactionManager.enlist(id, rmList);
@@ -440,6 +450,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public int queryCarsPrice(int id, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
 				rmList.add(rmCar);
 				transactionManager.enlist(id, rmList);
@@ -470,6 +481,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		Operation op = new Operation("newcustomer", parameters, this);
 		addOperation(id, op);
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Customer"+cid, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				rmList.add(rmCar);
@@ -505,6 +517,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			addOperation(id, op);
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
 			try{
+				LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){
 					rmList.add(rmFlight);
 					rmList.add(rmCar);
@@ -556,6 +569,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				billCar=rmCar.queryCustomerInfo(id, customerID).split("\\n");
 				billRoom=rmRoom.queryCustomerInfo(id, customerID).split("\\n");
 			}
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			rmList.add(rmFlight);
 			rmList.add(rmCar);
 			rmList.add(rmRoom);
@@ -618,6 +632,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean reserveCar(int id, int customerID, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException{
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
 				rmList.add(rmCar);
 				transactionManager.enlist(id, rmList);
@@ -640,6 +655,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean reserveRoom(int id, int customerID, String location)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
 				rmList.add(rmRoom);
 				transactionManager.enlist(id, rmList);
@@ -662,6 +678,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
@@ -684,6 +701,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	public boolean itinerary(int id, int customer, Vector flightNumbers,String location,boolean Car,boolean Room)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
+			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			//Check if flights available
 			for(int i = 0; i<flightNumbers.size(); i++){
 				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.READ)){
@@ -767,7 +785,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	                1 flight-137 $101*/
 			
 			String bill = "";
-			if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){
+			//if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){
 				bill = bill1[0] + "\n";
 
 				for(int i=1; i < bill1.length; i++){
@@ -779,7 +797,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				for(int i=1; i < bill3.length; i++){
 					bill=bill+bill3[i]+"\n";
 				}
-			}			
+			//}			
 			return bill;
 		}	
 		catch(Exception e){

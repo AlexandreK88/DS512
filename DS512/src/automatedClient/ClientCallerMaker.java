@@ -29,7 +29,7 @@ public class ClientCallerMaker {
         }
         ClientCaller.initCaller();
         for (int i = 0; i < numberOfThreads; i++) {
-        	ClientCaller cc = new ClientCaller(host, port);
+        	ClientCaller cc = new ClientCaller(host, port, i);
         	cc.start();
         }
 	}

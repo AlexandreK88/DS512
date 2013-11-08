@@ -755,7 +755,7 @@ public class Client
 			}
 			//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
 			System.out.println("Customer id: "+arguments.elementAt(1));
-			for(int i=0;i<arguments.size()-5;i++)
+			for(int i=0;i<arguments.size()-3;i++)
 				System.out.println("Flight number: "+arguments.elementAt(2+i));
 			System.out.println("Location for Car/Room booking: "+arguments.elementAt(arguments.size()-3));
 			System.out.println("Car to book?: "+arguments.elementAt(arguments.size()-2));
@@ -858,8 +858,7 @@ public class Client
 			try{
 				rm.commit(transactionID);
 				System.out.println("Transaction with id " + transactionID + " committed successfully.");
-				transactionID = -1;
-				
+				transactionID = -1;				
 			}
 			catch(Exception e){
 				System.out.println("EXCEPTION:");

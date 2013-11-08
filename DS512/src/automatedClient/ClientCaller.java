@@ -71,7 +71,7 @@ public class ClientCaller extends Thread
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 
 		customersID = new LinkedList<Integer>();
-		for (int i = 19376; i < 101210; i+=163) {
+		for (int i = 19376; i < 101210; i+=1637) {
 			customersID.add(i);
 		}
 		

@@ -9,7 +9,7 @@ import java.util.LinkedList;
 
 public class Master {
 	
-	public static final int MAX_NUMBER_OF_CLIENTS = 10;
+	public static final int MAX_NUMBER_OF_CLIENTS = 5;
 	static ServerSocket serverSocket = null;
 	static LinkedList<MCPipe> commMC;
 	static BufferedReader stdin;
@@ -76,7 +76,7 @@ public class Master {
 							System.out.println("Wrong number of arguments.");
 						} else {
 							int awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
-							for (int i = 0; (i < awaitedResponses || i < MAX_NUMBER_OF_CLIENTS); i++) {
+							for (int i = 0; (i < awaitedResponses && i < MAX_NUMBER_OF_CLIENTS); i++) {
 								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
 								&& Integer.parseInt(commandDetails[2]) >= 0 
 								&& (commandDetails[3].equalsIgnoreCase("SHORT") || commandDetails[3].equalsIgnoreCase("AVERAGE") || commandDetails[3].equalsIgnoreCase("LONG"))) {
@@ -92,7 +92,7 @@ public class Master {
 							System.out.println("Wrong number of arguments.");
 						} else {
 							awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
-							for (int i = 0; (i < awaitedResponses|| i < MAX_NUMBER_OF_CLIENTS); i++) {
+							for (int i = 0; (i < awaitedResponses && i < MAX_NUMBER_OF_CLIENTS); i++) {
 								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
 								&& (commandDetails[2].equalsIgnoreCase("SHORT") || commandDetails[2].equalsIgnoreCase("AVERAGE") || commandDetails[2].equalsIgnoreCase("LONG"))) {
 									String[] details = {commandDetails[1], commandDetails[2], Integer.toString(testCounter)};
@@ -107,6 +107,7 @@ public class Master {
 					} else {
 						System.out.println("Unknown command");
 					}
+					System.out.println(awaitedResponses + " responses awaited.");
 					if (awaitedResponses > MAX_NUMBER_OF_CLIENTS) {
 						awaitedResponses = MAX_NUMBER_OF_CLIENTS;
 					}

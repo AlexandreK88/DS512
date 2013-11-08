@@ -6,7 +6,7 @@ import java.io.BufferedReader;
 public class ClientCallerMaker {
 
 	public static void main(String[] args) {
-		int numberOfThreads = 2;
+		int numberOfThreads = 1;
         int port = 10121;
         String host = "localhost";
         

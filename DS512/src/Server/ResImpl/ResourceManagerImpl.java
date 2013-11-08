@@ -492,8 +492,10 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 					opParameters[2] += "::" + resTypeAndKey[1];
 				}
 			}
-			opParameters[1] = opParameters[1].substring(2);
-			opParameters[2] = opParameters[2].substring(2);
+			if (opParameters[1].length() > 0) {
+				opParameters[1] = opParameters[1].substring(2);
+				opParameters[2] = opParameters[2].substring(2);
+			}
 			Operation op = new Operation("deletecustomer", opParameters, this);
 			addOperation(id, op);			
 

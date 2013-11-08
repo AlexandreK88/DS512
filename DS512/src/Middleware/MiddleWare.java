@@ -596,16 +596,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					opParameters[2] = "";
 					String rawData = queryCustomerInfo(id, customerID);
 					String[] lines = rawData.split("\n");
-					for (int i = 1; i < lines.length; i++) {
-						String[] parameters = lines[i].split(" ");
-						for (int j = 0; j < Integer.parseInt(parameters[0]); j++) {
-							String[] resTypeAndKey = parameters[1].split("-");
-							opParameters[1] += "::" + resTypeAndKey[0];
-							opParameters[2] += "::" + resTypeAndKey[1];
-						}
-					}
-					opParameters[1] = opParameters[1].substring(2);
-					opParameters[2] = opParameters[2].substring(2);
 					Operation op = new Operation("deletecustomer", opParameters, this);
 					addOperation(id, op);			
 					

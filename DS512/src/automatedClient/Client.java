@@ -854,8 +854,11 @@ public class Client
 				break;
 			}
 			try{
-				rm.commit(transactionID);
-				System.out.println("Transaction with id " + transactionID + " committed successfully.");
+				if (rm.commit(transactionID)) {
+					System.out.println("Transaction with id " + transactionID + " committed successfully.");
+				} else {
+					System.out.println("Transaction with id " + transactionID + " commit failed.");
+				}
 				transactionID = -1;
 				
 			}

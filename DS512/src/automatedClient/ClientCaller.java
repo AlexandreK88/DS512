@@ -7,6 +7,8 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.io.*;
 
+import clientMaster.TestResult;
+
 import NetPacket.NetPacket;
 
 
@@ -156,7 +158,8 @@ public class ClientCaller extends Thread
 
 
 	public void decode(NetPacket p) {
-
+		LinkedList<Long> latencies = new LinkedList<Long>(); 
+		
 		if (p.getType().equalsIgnoreCase("Throughput")) {
 			String length = p.getContent()[1];
 			int baseValue;
@@ -168,10 +171,16 @@ public class ClientCaller extends Thread
 				baseValue = ClientCaller.LONG_FLIGHT_TXN;
 			}
 			if (p.getContent()[0].equalsIgnoreCase("Global")) {
-				newTest(baseValue+1, 0);
+				latencies = newTest(baseValue+1, 0);
 			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
-				newTest(baseValue, 0);
+				latencies = newTest(baseValue, 0);
 			}
+			String results = "All the latencies compiled: \n";
+			for (Long latency: latencies) {
+				results += latency.toString() + ", ";
+			}
+			String[] args = {p.getContent()[0], p.getContent()[p.getContent().length-1], results};
+			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
 			String length = p.getContent()[2];
 			int baseValue;
@@ -183,10 +192,16 @@ public class ClientCaller extends Thread
 				baseValue = ClientCaller.LONG_FLIGHT_TXN;
 			}
 			if (p.getContent()[0].equalsIgnoreCase("Global")) {
-				newTest(baseValue+1, Long.parseLong(p.getContent()[1]));
+				latencies = newTest(baseValue+1, Long.parseLong(p.getContent()[1]));
 			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
-				newTest(baseValue, Long.parseLong(p.getContent()[1]));
-			}			
+				latencies = newTest(baseValue, Long.parseLong(p.getContent()[1]));
+			}
+			String results = "All the latencies compiled: \n";
+			for (Long latency: latencies) {
+				results += latency.toString() + ", ";
+			}
+			String[] args = {p.getContent()[0], p.getContent()[1], p.getContent()[p.getContent().length-1], results};
+			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
 			startup();
 		}
@@ -399,8 +414,7 @@ public class ClientCaller extends Thread
 				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));
-			numCars = r.nextInt(5);
-			completeCommand = command + "," + customerID + "," + location + "," + numCars;
+			completeCommand = command + "," + customerID + "," + location;
 			break;
 		case 19: //reserve room
 			//dynamic = r.nextBoolean();
@@ -410,8 +424,7 @@ public class ClientCaller extends Thread
 				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));
-			numRooms = r.nextInt(5);
-			completeCommand = command + "," + customerID + "," + location + "," + numRooms;
+			completeCommand = command + "," + customerID + "," + location;
 			break;
 		case 20: //itinerary
 			int n = 0;

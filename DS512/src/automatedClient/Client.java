@@ -121,7 +121,7 @@ public class Client
 
 		case 2:  //new flight
 			if(arguments.size()!=4){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Adding a new Flight using id: "+arguments.elementAt(1));
@@ -161,7 +161,7 @@ public class Client
 
 		case 3:  //new Car
 			if(arguments.size()!=4){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Adding a new Car using id: "+arguments.elementAt(1));
@@ -200,7 +200,7 @@ public class Client
 
 		case 4:  //new Room
 			if(arguments.size()!=4){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Adding a new Room using id: "+arguments.elementAt(1));			
@@ -239,7 +239,7 @@ public class Client
 
 		case 5:  //new Customer
 			if(arguments.size()!=1){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Adding a new Customer using id:"+arguments.elementAt(1));
@@ -268,7 +268,7 @@ public class Client
 
 		case 6: //delete Flight
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting a flight using id: "+arguments.elementAt(1));
@@ -301,7 +301,7 @@ public class Client
 
 		case 7: //delete Car
 			if(arguments.size()!=3){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting the cars from a particular location  using id: "+arguments.elementAt(1));
@@ -336,7 +336,7 @@ public class Client
 
 		case 8: //delete Room
 			if(arguments.size()!=3){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting all rooms from a particular location  using id: "+arguments.elementAt(1));
@@ -370,7 +370,7 @@ public class Client
 
 		case 9: //delete Customer
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting a customer from the database using id: "+arguments.elementAt(1));
@@ -403,7 +403,7 @@ public class Client
 
 		case 10: //querying a flight
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a flight using id: "+arguments.elementAt(1));
@@ -438,7 +438,7 @@ public class Client
 
 		case 11: //querying a Car Location
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a car location using id: "+arguments.elementAt(1));
@@ -473,7 +473,7 @@ public class Client
 
 		case 12: //querying a Room location
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a room location using id: "+arguments.elementAt(1));
@@ -508,7 +508,7 @@ public class Client
 
 		case 13: //querying Customer Information
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying Customer information using id: "+arguments.elementAt(1));
@@ -539,7 +539,7 @@ public class Client
 
 		case 14: //querying a flight Price
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a flight Price using id: "+arguments.elementAt(1));
@@ -574,7 +574,7 @@ public class Client
 
 		case 15: //querying a Car Price
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a car price using id: "+arguments.elementAt(1));
@@ -609,7 +609,7 @@ public class Client
 
 		case 16: //querying a Room price
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Querying a room price using id: "+arguments.elementAt(1));
@@ -644,7 +644,7 @@ public class Client
 
 		case 17:  //reserve a flight
 			if(arguments.size()!=3){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Reserving a seat on a flight using id: "+arguments.elementAt(1));
@@ -679,7 +679,7 @@ public class Client
 
 		case 18:  //reserve a car
 			if(arguments.size()!=3){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Reserving a car at a location using id: "+arguments.elementAt(1));
@@ -714,8 +714,8 @@ public class Client
 			break;
 
 		case 19:  //reserve a room
-			if(arguments.size()!=3){
-				wrongNumber();
+			if(arguments.size()!=4){
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Reserving a room at a location using id: "+arguments.elementAt(1));
@@ -724,7 +724,7 @@ public class Client
 			try{
 				//Id = getInt(arguments.elementAt(1));
 				int customer = getInt(arguments.elementAt(1));
-				location = getString(arguments.elementAt(1));
+				location = getString(arguments.elementAt(2));
 				if(rm.reserveRoom(transactionID,customer,location))
 					System.out.println("Room Reserved");
 				else
@@ -750,7 +750,7 @@ public class Client
 
 		case 20:  //reserve an Itinerary
 			if(arguments.size()<6){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
@@ -794,7 +794,7 @@ public class Client
 
 		case 21:  //quit the client
 			if(arguments.size()!=1){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			System.out.println("Quitting client.");
@@ -803,7 +803,7 @@ public class Client
 
 		case 22:  //new Customer given id
 			if(arguments.size()!=2){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			System.out.println("Adding a new Customer using customer ID " +arguments.elementAt(1));
@@ -832,7 +832,7 @@ public class Client
 			break;
 		case 23: //start
 			if(arguments.size()!=1){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			try{
@@ -852,7 +852,7 @@ public class Client
 			break;
 		case 24: //commit
 			if(arguments.size()!=1){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			try{
@@ -872,7 +872,7 @@ public class Client
 			break;
 		case 25: //abort
 			if(arguments.size()!=1){
-				wrongNumber();
+				wrongNumber(command);
 				break;
 			}
 			try{
@@ -1120,17 +1120,17 @@ public class Client
 		case 18:  //reserve a car
 			System.out.println("Reserving a Car.");
 			System.out.println("Purpose:");
-			System.out.println("\tReserve a given number of cars for a customer at a particular location.");
+			System.out.println("\tReserve a car for a customer at a particular location.");
 			System.out.println("\nUsage:");
-			System.out.println("\treservecar,<customerid>,<location>,<nummberofCars>");
+			System.out.println("\treservecar,<customerid>,<location>");
 			break;
 
 		case 19:  //reserve a room
 			System.out.println("Reserving a Room.");
 			System.out.println("Purpose:");
-			System.out.println("\tReserve a given number of rooms for a customer at a particular location.");
+			System.out.println("\tReserve a room for a customer at a particular location.");
 			System.out.println("\nUsage:");
-			System.out.println("\treserveroom,<customerid>,<location>,<nummberofRooms>");
+			System.out.println("\treserveroom,<customerid>,<location>");
 			break;
 
 		case 20:  //reserve an Itinerary
@@ -1183,7 +1183,8 @@ public class Client
 		}
 	}
 
-	public void wrongNumber() {
+	public void wrongNumber(String command) {
+		System.out.println(command);
 		System.out.println("The number of arguments provided in this command are wrong.");
 		System.out.println("Type help, <commandname> to check usage of this command.");
 	}

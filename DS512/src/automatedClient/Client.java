@@ -300,12 +300,13 @@ public class Client
 			break;
 
 		case 7: //delete Car
-			if(arguments.size()!=2){
+			if(arguments.size()!=3){
 				wrongNumber();
 				break;
 			}
 			//System.out.println("Deleting the cars from a particular location  using id: "+arguments.elementAt(1));
 			System.out.println("Car Location: "+arguments.elementAt(1));
+			System.out.println("Number of cars to delete: "+arguments.elementAt(2));
 			try{
 				//Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(1));
@@ -334,12 +335,13 @@ public class Client
 			break;
 
 		case 8: //delete Room
-			if(arguments.size()!=2){
+			if(arguments.size()!=3){
 				wrongNumber();
 				break;
 			}
 			//System.out.println("Deleting all rooms from a particular location  using id: "+arguments.elementAt(1));
 			System.out.println("Room Location: "+arguments.elementAt(1));
+			System.out.println("Number of rooms to delete: "+arguments.elementAt(2));
 			try{
 				//Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(1));
@@ -753,7 +755,7 @@ public class Client
 			}
 			//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
 			System.out.println("Customer id: "+arguments.elementAt(1));
-			for(int i=0;i<arguments.size()-5;i++)
+			for(int i=0;i<arguments.size()-3;i++)
 				System.out.println("Flight number: "+arguments.elementAt(2+i));
 			System.out.println("Location for Car/Room booking: "+arguments.elementAt(arguments.size()-3));
 			System.out.println("Car to book?: "+arguments.elementAt(arguments.size()-2));

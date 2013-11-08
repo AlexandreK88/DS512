@@ -1017,7 +1017,7 @@ public class client
 			System.out.println("Purpose:");
 			System.out.println("\tAdd information about a new car location.");
 			System.out.println("\nUsage:");
-			System.out.println("\tnewcar<location>,<numberofcars>,<pricepercar>");
+			System.out.println("\tnewcar,<location>,<numberofcars>,<pricepercar>");
 			break;
 
 		case 4:  //new Room

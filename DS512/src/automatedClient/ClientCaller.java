@@ -59,7 +59,7 @@ public class ClientCaller extends Thread
 	static final int LONG_FLIGHT_TXN = 5;
 	static final int LONG_GLOBAL_TXN = 6;
 
-	public static final int NUMBER_OF_TRANSACTIONS = 100;
+	public static final int NUMBER_OF_TRANSACTIONS = 50;
 
 	public static void initCaller() {
 		globalCommands = new LinkedList<String>(Arrays.asList
@@ -120,22 +120,30 @@ public class ClientCaller extends Thread
 	}
 
 	public void run() {
-
-		synchronized (toSendToServer) {
+		while (true) {
 			boolean readFromServer = true;
+			synchronized (toSendToServer) {
 
-			while (!toSendToServer.isEmpty()) {
-				NetPacket toSend = toSendToServer.removeFirst();
-				out.println(toSend.fromPacketToString());
-				readFromServer = true;
+
+				while (!toSendToServer.isEmpty()) {
+					NetPacket toSend = toSendToServer.removeFirst();
+					System.out.println("Sending to server that " + toSend.getType());
+					out.println(toSend.fromPacketToString());
+					readFromServer = true;
+				}
 			}
 			if (readFromServer) {
 				try {
-					String line = in.readLine();
+					String line;
+					if (in.ready()) {
+						line = in.readLine();
+					} else { 
+						continue;
+					}
 					NetPacket answer = NetPacket.fromStringToPacket(line);
-					
+
 					if (answer == null) {closeConnection();}
-					
+
 					decode(answer);
 					readFromServer = false;
 				} catch (IOException e) {
@@ -145,6 +153,7 @@ public class ClientCaller extends Thread
 			}
 		}
 	}
+
 
 	public void decode(NetPacket p) {
 
@@ -181,13 +190,13 @@ public class ClientCaller extends Thread
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
 			startup();
 		}
-		
+
 	}
-	
-	
+
+
 	public void startup() {
 		obj.readCommand("start");
-		
+
 		for (int cID: customersID) {
 			obj.readCommand("newcustomerid, " + cID);
 		}
@@ -202,8 +211,10 @@ public class ClientCaller extends Thread
 		}
 		obj.readCommand("commit");
 		String[] args = {"Done"};
+		System.out.println("Sending a response that the startup is done.");
 		packetToSend("Startup", args);
-		
+		System.out.println("Response sent.");
+
 	}
 
 	public LinkedList<Long> newTest(int testType, long delay)
@@ -371,7 +382,7 @@ public class ClientCaller extends Thread
 			completeCommand = command + "," + location;
 			break;
 		case 17: //reserve flight
-			dynamic = r.nextBoolean();
+			//dynamic = r.nextBoolean();
 			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
@@ -381,7 +392,7 @@ public class ClientCaller extends Thread
 			completeCommand = command + "," + customerID + "," + flightNum;
 			break;
 		case 18: //reserve car
-			dynamic = r.nextBoolean();
+			//dynamic = r.nextBoolean();
 			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
@@ -392,7 +403,7 @@ public class ClientCaller extends Thread
 			completeCommand = command + "," + customerID + "," + location + "," + numCars;
 			break;
 		case 19: //reserve room
-			dynamic = r.nextBoolean();
+			//dynamic = r.nextBoolean();
 			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
@@ -406,15 +417,15 @@ public class ClientCaller extends Thread
 			int n = 0;
 			boolean Car = false;
 			boolean Room = false;		
-			n = r.nextInt(flightNumbers.size());			
-			dynamic = r.nextBoolean();
+			n = r.nextInt(10);			
+			//dynamic = r.nextBoolean();
 			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
 				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			completeCommand = command + "," + customerID;
-			for (int i = 0; i < n; i++){
+			for (int i = 0; i < n+1; i++){
 				completeCommand += "," + flightNumbers.get(r.nextInt(flightNumbers.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));

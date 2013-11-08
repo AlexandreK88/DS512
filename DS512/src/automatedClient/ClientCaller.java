@@ -25,43 +25,67 @@ public class ClientCaller extends Thread
 	static int numRooms;
 	static int numCars;
 	static String location;
+	static Random r = new Random();
 	//static Vector arguments;
 	//static BufferedReader stdin;
 	//static int transactionID = -1; 
-	
-	Client obj;
+
+	static Client obj;
 	Socket socket;
 	private int myID;
 	private int packetID;
 	PrintWriter out = null;
 	BufferedReader in = null;
 	LinkedList<NetPacket> toSendToServer;
-	
+
 	static LinkedList<String> globalCommands;
 	static LinkedList<String> flightCommands;
-	static LinkedList<Integer> CustomersID;
+	static LinkedList<Integer> customersID;
 	static LinkedList<Integer> flightNumbers;
 	static LinkedList<String> locations;
-	
+
 	static LinkedList<Integer> dynamicCustomersID;
 	static LinkedList<Integer> dynamicFlightNumbers;
-	static LinkedList<String> dynamicLocations;
-	
+	static LinkedList<String> dynamicCarLocations;
+	static LinkedList<String> dynamicRoomLocations;
+
 	static final int FLIGHT = 1;
 	static final int GLOBAL = 2;
-	
+
 	static final int SHORT_FLIGHT_TXN = 1;
 	static final int SHORT_GLOBAL_TXN = 2;
 	static final int AVERAGE_FLIGHT_TXN = 3;
 	static final int AVERAGE_GLOBAL_TXN = 4;
 	static final int LONG_FLIGHT_TXN = 5;
 	static final int LONG_GLOBAL_TXN = 6;
-	
+
 	public static final int NUMBER_OF_TRANSACTIONS = 100;
-	
+
+	public static void initCaller() {
+		globalCommands = new LinkedList<String>(Arrays.asList
+				("newflight","newcar","newroom","newcustomerid","deleteflight","deletecar",
+						"deleteroom","deletecustomer","queryflight","querycar","queryroom","querycustomer","queryflightprice",
+						"querycarprice","queryroomprice","reserveflight","reservecar","reserveroom","itinerary"));
+
+		flightCommands = new LinkedList<String>(Arrays.asList
+				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
+
+		customersID = new LinkedList<Integer>(Arrays.asList(11221, 11332, 33221, 14421, 11551, 88221, 12345, 78985, 78945));
+
+		flightNumbers = new LinkedList<Integer>(Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108, 109));
+
+		locations = new LinkedList<String>(Arrays.asList
+				("miami","paris","sydney","beijing","moscou"));
+
+		dynamicCustomersID = new LinkedList<Integer>() ;
+		dynamicFlightNumbers = new  LinkedList<Integer>();
+		dynamicCarLocations = new LinkedList<String>();
+		dynamicRoomLocations = new LinkedList<String>();
+	}
+
 	public ClientCaller(String host, int port) {
 		super("Sup!");
-		
+
 		try {
 			socket = new Socket(host, port);
 			out = new PrintWriter(socket.getOutputStream(), true);
@@ -78,24 +102,9 @@ public class ClientCaller extends Thread
 		}
 		toSendToServer = new LinkedList<NetPacket>();
 		packetID = 0;
-		
-		globalCommands = new LinkedList<String>(Arrays.asList
-				("newflight","newcar","newroom","newcusomterid","deleteflight","deletecar",
-				"deleteroom","deletecustomer","queryflight","querycar","queryroom","querycustomer","queryflightprice",
-				"querycarprice","queryroomprice","reserveflight","reservecar","reserveroom","itinerary"));
-		
-		flightCommands = new LinkedList<String>(Arrays.asList
-				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
-		
-		CustomersID = new LinkedList<Integer>(Arrays.asList(11221, 11332, 33221, 14421, 11551, 88221, 12345, 78985, 78945));
-		
-		flightNumbers = new LinkedList<Integer>(Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108, 109));
-		
-		locations = new LinkedList<String>(Arrays.asList
-				("miami","paris","sydney","beijing","moscou"));
-		
+
 	}
-	
+
 	public void run() {
 		try {
 			NetPacket answer = NetPacket.fromStringToPacket(in.readLine());
@@ -108,7 +117,7 @@ public class ClientCaller extends Thread
 
 		synchronized (toSendToServer) {
 			boolean readFromServer = true;
-			
+
 			while (!toSendToServer.isEmpty()) {
 				NetPacket toSend = toSendToServer.removeFirst();
 				out.println(toSend.fromPacketToString());				
@@ -124,152 +133,225 @@ public class ClientCaller extends Thread
 				}
 			}
 		}
+	}
 
-	}
-	
 	public void decode(NetPacket p) {
-		
+
 		if (p.getType().equalsIgnoreCase("Throughput")) {
-			
+
 		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
-			
+
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
-			
+
 		}
-		
 	}
-	
-	
-	public void newTest(int testType, long delay)
+
+	public LinkedList<Long> newTest(int testType, long delay)
 	{
-		switch(testType){
-		case SHORT_FLIGHT_TXN:
+		LinkedList<Long> timeResults = new LinkedList<Long>();
+		for(int i = 0; i < NUMBER_OF_TRANSACTIONS; i++){
 			obj.readCommand("start");
-			
-			try {
-				Thread.sleep(delay);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			Date start = new Date();
+			switch(testType){
+			case SHORT_FLIGHT_TXN:			
+				for(int j = 0; j < 3; j++){
+					obj.readCommand(commandGenerator(1));
+				}
+				break;
+			case SHORT_GLOBAL_TXN:
+				for(int j = 0; j < 3; j++){
+					obj.readCommand(commandGenerator(2));
+				}
+				break;
+			case AVERAGE_FLIGHT_TXN:
+				for(int j = 0; j < 8; j++){
+					obj.readCommand(commandGenerator(1));
+				}
+				break;
+			case AVERAGE_GLOBAL_TXN:
+				for(int j = 0; j < 8; j++){
+					obj.readCommand(commandGenerator(2));
+				}
+				break;
+			case LONG_FLIGHT_TXN:
+				for(int j = 0; j < 15; j++){
+					obj.readCommand(commandGenerator(1));
+				}
+				break;
+			case LONG_GLOBAL_TXN:
+				for(int j = 0; j < 15; j++){
+					obj.readCommand(commandGenerator(2));
+				}
+				break;
+			default:
 			}
-		case SHORT_GLOBAL_TXN:
-		case AVERAGE_FLIGHT_TXN:
-		case AVERAGE_GLOBAL_TXN:
-		case LONG_FLIGHT_TXN:
-		case LONG_GLOBAL_TXN:
-		default:
+			obj.readCommand("commit");
+			Date end = new Date();
+			timeResults.add(end.getTime()-start.getTime());
+			if(delay - (end.getTime()-start.getTime()) > 0){
+				try {
+					Thread.sleep(delay - (end.getTime()-start.getTime()) );
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
+		return timeResults;
 	}
-	
-	private static String commandGenerator(int commandType){		
+
+	public static String commandGenerator(int commandType){		
 		int rng = 0;
-		Random r = new Random();
 		String command = "";
 		String completeCommand = "";
 		boolean dynamic = false;
-		
+
 		switch(commandType){
 		case FLIGHT:
 			rng = r.nextInt(flightCommands.size());
 			command = flightCommands.get(rng);
+			break;
 		case GLOBAL:
 			rng = r.nextInt(globalCommands.size());
 			command = globalCommands.get(rng);
+			break;
 		default:
+
 		}
-		
 		switch(findChoice(command)){
 		case 2: //new flight
-			flightNum = r.nextInt(100);
-			completeCommand = command + "," + flightNum+ "," + r.nextInt(100) + "," + r.nextInt(100);
+			flightNum = r.nextInt(1000);
+			completeCommand = command + "," + flightNum + "," + r.nextInt(100) + "," + r.nextInt(100);
 			dynamicFlightNumbers.add(flightNum);
+			break;
 		case 3: //new car
 			location = "miami"+r.nextInt(100);
 			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
-			dynamicLocations.add(location);
+			dynamicCarLocations.add(location);
+			break;
 		case 4: //new room
 			location = "miami"+r.nextInt(100);
 			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
-			dynamicLocations.add(location);
-		/*case 5: //new customer*/
+			dynamicRoomLocations.add(location);
+			break;
+			/*case 5: //new customer*/
 		case 6: //delete flight
-			flightNum = dynamicFlightNumbers.get(r.nextInt(dynamicFlightNumbers.size()));
-			completeCommand = command + "," + flightNum;
-			dynamicFlightNumbers.remove(flightNum);
+			if (!dynamicFlightNumbers.isEmpty()) {
+				flightNum = dynamicFlightNumbers.get(r.nextInt(dynamicFlightNumbers.size()));
+				completeCommand = command + "," + flightNum;
+				dynamicFlightNumbers.remove((Integer)flightNum);
+			} else {
+				flightNum = r.nextInt(100);
+				completeCommand = "newflight," + flightNum+ "," + r.nextInt(100) + "," + r.nextInt(100);
+				dynamicFlightNumbers.add(flightNum);
+			}
+			break;
 		case 7: //delete car
-			location = dynamicLocations.get(r.nextInt(dynamicLocations.size()));
-			numCars = r.nextInt(100);
-			completeCommand = command + "," + location + "," + numCars;
-			dynamicLocations.remove(location);
+			if (!dynamicCarLocations.isEmpty()) {
+				location = dynamicCarLocations.get(r.nextInt(dynamicCarLocations.size()));
+				numCars = r.nextInt(100);
+				completeCommand = command + "," + location + "," + numCars;
+				dynamicCarLocations.remove(location);
+			} else {
+				location = "miami"+r.nextInt(100);
+				completeCommand = "newcar," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+				dynamicCarLocations.add(location);
+			}
+			break;
 		case 8: //delete room
-			location = dynamicLocations.get(r.nextInt(dynamicLocations.size()));
-			numRooms = r.nextInt(100);
-			completeCommand = command + "," + location + "," + numRooms;
-			dynamicLocations.remove(location);
+			if(!dynamicRoomLocations.isEmpty()){
+				location = dynamicRoomLocations.get(r.nextInt(dynamicRoomLocations.size()));
+				numRooms = r.nextInt(100);
+				completeCommand = command + "," + location + "," + numRooms;
+				dynamicRoomLocations.remove(location);
+			}
+			else{
+				location = "miami"+r.nextInt(100);
+				completeCommand = "newroom," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+				dynamicRoomLocations.add(location);
+			}
+			break;
 		case 9: //delete customer
-			customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
-			completeCommand = command + "," + customerID;
-			dynamicFlightNumbers.remove(customerID);
+			if(!dynamicCustomersID.isEmpty()){
+				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
+				completeCommand = command + "," + customerID;
+				dynamicFlightNumbers.remove((Integer)customerID);
+			}
+			else{
+				customerID = r.nextInt(10000);
+				completeCommand = "newcustomerid," + customerID;
+				dynamicCustomersID.add(customerID);
+			}
+			break;
 		case 10: //query flight
 			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));
 			completeCommand = command + "," + flightNum;
+			break;
 		case 11: //query car
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
+			break;
 		case 12: //query room
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
+			break;
 		case 13: //query customer
-			customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+			customerID = customersID.get(r.nextInt(customersID.size()));
 			completeCommand = command + "," + customerID;
+			break;
 		case 14: //query flight price
 			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));
 			completeCommand = command + "," + flightNum;
+			break;
 		case 15: //query car price
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
 		case 16: //query room price
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
+			break;
 		case 17: //reserve flight
 			dynamic = r.nextBoolean();
-			if(dynamic){
+			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
-				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			flightNum = flightNumbers.get(r.nextInt(flightNumbers.size()));			
 			completeCommand = command + "," + customerID + "," + flightNum;
+			break;
 		case 18: //reserve car
 			dynamic = r.nextBoolean();
-			if(dynamic){
+			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
-				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));
 			numCars = r.nextInt(5);
 			completeCommand = command + "," + customerID + "," + location + "," + numCars;
+			break;
 		case 19: //reserve room
 			dynamic = r.nextBoolean();
-			if(dynamic){
+			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
-				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			location = locations.get(r.nextInt(locations.size()));
 			numRooms = r.nextInt(5);
 			completeCommand = command + "," + customerID + "," + location + "," + numRooms;
+			break;
 		case 20: //itinerary
 			int n = 0;
 			boolean Car = false;
 			boolean Room = false;		
-			n = flightNumbers.get(r.nextInt(flightNumbers.size()));			
+			n = r.nextInt(flightNumbers.size());			
 			dynamic = r.nextBoolean();
-			if(dynamic){
+			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
 			}else{
-				customerID = CustomersID.get(r.nextInt(CustomersID.size()));
+				customerID = customersID.get(r.nextInt(customersID.size()));
 			}
 			completeCommand = command + "," + customerID;
 			for (int i = 0; i < n; i++){
@@ -278,18 +360,21 @@ public class ClientCaller extends Thread
 			location = locations.get(r.nextInt(locations.size()));
 			Car = r.nextBoolean();
 			Room = r.nextBoolean();
-			completeCommand += location + "," + Car + "," + Room;
+			completeCommand += "," + location + "," + Car + "," + Room;
+			break;
 		case 21: //new customer id
 			customerID = r.nextInt(10000);
 			completeCommand = command + "," + customerID;
 			dynamicCustomersID.add(customerID);
+			break;
 		default:
+			completeCommand = "Unknown command : " + command;
 		}
-		
+
 		return completeCommand;
-		
+
 	}
-	
+
 	public static int findChoice(String argument)
 	{
 		/*if (argument.compareToIgnoreCase("help")==0)
@@ -346,7 +431,7 @@ public class ClientCaller extends Thread
 			return 666;
 
 	}
-	
+
 	public void closeConnection() {
 		try {
 			out.close();
@@ -366,5 +451,5 @@ public class ClientCaller extends Thread
 		packetToSend(new NetPacket(myID, packetID, type, content));
 		packetID++;
 	}
-	
+
 }

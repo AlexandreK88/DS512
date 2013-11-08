@@ -61,7 +61,7 @@ public class ClientCaller extends Thread
 	static final int LONG_FLIGHT_TXN = 5;
 	static final int LONG_GLOBAL_TXN = 6;
 
-	public static final int NUMBER_OF_TRANSACTIONS = 50;
+	public static final int NUMBER_OF_TRANSACTIONS = 200;
 
 	public static void initCaller() {
 		globalCommands = new LinkedList<String>(Arrays.asList
@@ -73,12 +73,12 @@ public class ClientCaller extends Thread
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 
 		customersID = new LinkedList<Integer>();
-		for (int i = 19376; i < 101210; i+=1637) {
+		for (int i = 19376; i < 101210; i+=163) {
 			customersID.add(i);
 		}
 		
 		flightNumbers = new LinkedList<Integer>();
-		for (int i = 101; i < 200; i++) {
+		for (int i = 101; i < 400; i++) {
 			flightNumbers.add(i);
 		}
 
@@ -86,7 +86,11 @@ public class ClientCaller extends Thread
 				("miami","paris","sydney","beijing","moscow","sanfrancisco","montreal","london","tokyo",
 				"melbourne","madrid","stpetersburg","toronto","chicago","losangeles","berlin","stockholm",
 				"helsinki","lisbonne","rome","athenes","marseilles","toulouse","lyon","versaille","capetown",
-				"marakesh","caire","alger","kiev", "vancouver","seattle","lasvegas","boston","newyork"));
+				"marakesh","caire","alger","kiev", "vancouver","seattle","lasvegas","boston","newyork",
+				"miamia","parisa","sydneya","beijinga","moscowa","sanfranciscoa","montreala","londona","tokyoa",
+				"melbournea","madrida","stpetersburga","torontoa","chicagoa","losangelesa","berlina","stockholma",
+				"helsinkia","lisbonnea","romea","athenesa","marseillesa","toulousea","lyona","versaillea","capetowna",
+				"marakesha","cairea","algera","kieva", "vancouvera","seattlea","lasvegasa","bostona","newyorka"));
 
 		dynamicCustomersID = new LinkedList<Integer>() ;
 		dynamicFlightNumbers = new  LinkedList<Integer>();

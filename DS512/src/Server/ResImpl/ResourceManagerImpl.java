@@ -588,10 +588,12 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {
-		for (int i = 0; i < ongoingTransactions.size(); i++) {
-			if (ongoingTransactions.get(i).getID() == transactionId) {
-				ongoingTransactions.remove(ongoingTransactions.get(i));
-				return true;
+		synchronized(ongoingTransactions) {
+			for (int i = 0; i < ongoingTransactions.size(); i++) {
+				if (ongoingTransactions.get(i).getID() == transactionId) {
+					ongoingTransactions.remove(ongoingTransactions.get(i));
+					return true;
+				}
 			}
 		}
 		return false;
@@ -601,10 +603,12 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	public void abort(int transactionId) throws RemoteException,
 			InvalidTransactionException {
 		// TODO Auto-generated method stub
-		for (int i = 0; i < ongoingTransactions.size(); i++) {
-			if (ongoingTransactions.get(i).getID() == transactionId) {
-				ongoingTransactions.get(i).undo();
-				ongoingTransactions.remove(ongoingTransactions.get(i));
+		synchronized(ongoingTransactions) {
+			for (int i = 0; i < ongoingTransactions.size(); i++) {
+				if (ongoingTransactions.get(i).getID() == transactionId) {
+					ongoingTransactions.get(i).undo();
+					ongoingTransactions.remove(ongoingTransactions.get(i));
+				}	
 			}
 		}
 	}
@@ -766,15 +770,19 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	
 	
 	private void addOperation(int id, Operation op) {
-		for (Transaction t: ongoingTransactions) {
-			if (t.getID() == id) {
-				t.addOp(op);
-				return;
+		synchronized(ongoingTransactions) {
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == id) {
+					t.addOp(op);
+					return;
+				}
 			}
 		}
 		Transaction t = new Transaction(id);
 		t.addOp(op);
-		ongoingTransactions.add(t);
+		synchronized(ongoingTransactions) {
+			ongoingTransactions.add(t);
+		}
 	}
 
 }

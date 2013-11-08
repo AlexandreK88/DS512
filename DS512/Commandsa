@@ -1,0 +1,7 @@
+ResponseTime single 0 short 1
+ResponseTime global 0 short 1
+ResponseTime single 0 average 1
+ResponseTime global 0 average 1
+ResponseTime single 0 long 1
+ResponseTime global 0 long 1
+done

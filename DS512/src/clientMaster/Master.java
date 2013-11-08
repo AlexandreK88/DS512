@@ -1,6 +1,8 @@
 package clientMaster;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
@@ -30,8 +32,14 @@ public class Master {
 			commMC = new LinkedList<MCPipe>();
 			int port = 10221;
 			
-			if (args.length == 1) {
+			/*if (args.length == 1) {
 				port = Integer.parseInt(args[0]);
+			}*/
+			if (args.length == 0) {
+				stdin = new BufferedReader(new InputStreamReader(System.in));
+			} else {
+				File file = new File(args[0]);
+				stdin = new BufferedReader(new FileReader(file));
 			}
 			try {
 				serverSocket = new ServerSocket(port);
@@ -168,13 +176,30 @@ public class Master {
 			}
 		}
 		for (LinkedList<TestResult> completeResults: resultsPerTest) {
+			if (completeResults.size() <= 0) {
+				continue;
+			}
 			TestResult first = completeResults.getFirst();
 			System.out.println("Test number " + first.getPosition() + "\nTest name " + first.getType());
 			for (String metric: first.getMetric()) {
 				System.out.println("Parameter: " + metric);
 			}
+			long totalDuration = 0;
+			int count = 0;
 			for (TestResult r: completeResults) {
-				
+				String[] times = r.getResults().split(",");
+				for (String t: times) {
+					t = t.trim();
+					if (t.length() > 0) {
+						count++;
+						totalDuration += Long.parseLong(t);
+					}
+				}
+			}
+			if (first.getType().equalsIgnoreCase("Throughput")) {
+				System.out.println("On average, " + (count*1000/totalDuration) + " requests/second were treated.");
+			} else if (first.getType().equalsIgnoreCase("ResponseTime")) {
+				System.out.println("On average, " + (totalDuration/count) + " milliseconds/request was the response time.");
 			}
 		}
 	}

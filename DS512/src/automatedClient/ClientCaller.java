@@ -111,22 +111,30 @@ public class ClientCaller extends Thread
 	}
 
 	public void run() {
-
-		synchronized (toSendToServer) {
+		while (true) {
 			boolean readFromServer = true;
+			synchronized (toSendToServer) {
 
-			while (!toSendToServer.isEmpty()) {
-				NetPacket toSend = toSendToServer.removeFirst();
-				out.println(toSend.fromPacketToString());
-				readFromServer = true;
+
+				while (!toSendToServer.isEmpty()) {
+					NetPacket toSend = toSendToServer.removeFirst();
+					System.out.println("Sending to server that " + toSend.getType());
+					out.println(toSend.fromPacketToString());
+					readFromServer = true;
+				}
 			}
 			if (readFromServer) {
 				try {
-					String line = in.readLine();
+					String line;
+					if (in.ready()) {
+						line = in.readLine();
+					} else { 
+						continue;
+					}
 					NetPacket answer = NetPacket.fromStringToPacket(line);
-					
+
 					if (answer == null) {closeConnection();}
-					
+
 					decode(answer);
 					readFromServer = false;
 				} catch (IOException e) {
@@ -136,6 +144,7 @@ public class ClientCaller extends Thread
 			}
 		}
 	}
+
 
 	public void decode(NetPacket p) {
 
@@ -172,13 +181,13 @@ public class ClientCaller extends Thread
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
 			startup();
 		}
-		
+
 	}
-	
-	
+
+
 	public void startup() {
 		obj.readCommand("start");
-		
+
 		for (int cID: customersID) {
 			obj.readCommand("newcustomerid, " + cID);
 		}
@@ -193,8 +202,10 @@ public class ClientCaller extends Thread
 		}
 		obj.readCommand("commit");
 		String[] args = {"Done"};
+		System.out.println("Sending a response that the startup is done.");
 		packetToSend("Startup", args);
-		
+		System.out.println("Response sent.");
+
 	}
 
 	public LinkedList<Long> newTest(int testType, long delay)

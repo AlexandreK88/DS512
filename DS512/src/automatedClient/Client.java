@@ -95,10 +95,9 @@ public class Client
 	}
 	
 
-	public Vector readCommand(String command) {
+	public boolean readCommand(String command) {
 
 		//remove heading and trailing white space
-		Vector returnValue = new Vector();
 		command = command.trim();
 		arguments = parse(command);
 
@@ -863,18 +862,20 @@ public class Client
 			try{
 				if (rm.commit(transactionID)) {
 					System.out.println("Transaction with id " + transactionID + " committed successfully.");
+					transactionID = -1;
+					return true;
 				} else {
 					System.out.println("Transaction with id " + transactionID + " commit failed.");
+					transactionID = -1;
+					return false;
 				}
-				transactionID = -1;
-				
 			}
 			catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
 				e.printStackTrace();
+				return false;
 			}
-			break;
 		case 25: //abort
 			if(arguments.size()!=1){
 				wrongNumber(command);
@@ -894,7 +895,7 @@ public class Client
 			System.out.println("The interface does not support this command.");
 			break;
 		}//end of switch
-		return returnValue;
+		return true;
 	}
 
 	public Vector parse(String command)

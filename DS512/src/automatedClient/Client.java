@@ -517,7 +517,12 @@ public class Client
 				//Id = getInt(arguments.elementAt(1));
 				int customer = getInt(arguments.elementAt(1));
 				String bill=rm.queryCustomerInfo(transactionID,customer);
-				System.out.println("Customer info: " + bill);
+				if(bill.equals("")){
+					System.out.println("This customer has no reservations.");
+				}else{
+					System.out.println("Customer info: " + bill);
+				}
+				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -714,7 +719,7 @@ public class Client
 			break;
 
 		case 19:  //reserve a room
-			if(arguments.size()!=4){
+			if(arguments.size()!=3){
 				wrongNumber(command);
 				break;
 			}

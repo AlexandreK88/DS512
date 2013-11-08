@@ -98,7 +98,6 @@ public class Client
 	public boolean readCommand(String command) {
 
 		//remove heading and trailing white space
-		Vector returnValue = new Vector();
 		command = command.trim();
 		arguments = parse(command);
 
@@ -870,7 +869,6 @@ public class Client
 					transactionID = -1;
 					return false;
 				}
-				
 			}
 			catch(Exception e){
 				System.out.println("EXCEPTION:");

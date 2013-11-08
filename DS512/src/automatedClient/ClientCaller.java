@@ -61,7 +61,9 @@ public class ClientCaller extends Thread
 	static final int LONG_FLIGHT_TXN = 5;
 	static final int LONG_GLOBAL_TXN = 6;
 
+
 	public static final int NUMBER_OF_TRANSACTIONS = 200;
+
 
 	public static void initCaller() {
 		globalCommands = new LinkedList<String>(Arrays.asList
@@ -239,7 +241,9 @@ public class ClientCaller extends Thread
 	public LinkedList<Long> newTest(int testType, long delay)
 	{
 		LinkedList<Long> timeResults = new LinkedList<Long>();
+		
 		for(int i = 0; i < NUMBER_OF_TRANSACTIONS; i++){
+			boolean commit = false;
 			obj.readCommand("start");
 			Date start = new Date();
 			switch(testType){
@@ -275,9 +279,11 @@ public class ClientCaller extends Thread
 				break;
 			default:
 			}
-			obj.readCommand("commit");
+			commit = obj.readCommand("commit");
 			Date end = new Date();
-			timeResults.add(end.getTime()-start.getTime());
+			if(commit){
+				timeResults.add(end.getTime()-start.getTime());
+			}		
 			if(delay - (end.getTime()-start.getTime()) > 0){
 				try {
 					Thread.sleep(delay - (end.getTime()-start.getTime()) );

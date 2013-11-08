@@ -117,13 +117,15 @@ public class ClientCaller extends Thread
 
 			while (!toSendToServer.isEmpty()) {
 				NetPacket toSend = toSendToServer.removeFirst();
-				out.println(toSend.fromPacketToString());				
+				out.println(toSend.fromPacketToString());
+				readFromServer = true;
 			}
 			if (readFromServer) {
 				try {
 					String line = in.readLine();
 					NetPacket answer = NetPacket.fromStringToPacket(line);
 					decode(answer);
+					readFromServer = false;
 				} catch (IOException e) {
 					// 	TODO Auto-generated catch block
 					e.printStackTrace();

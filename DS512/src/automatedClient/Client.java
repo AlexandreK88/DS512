@@ -856,7 +856,9 @@ public class Client
 			}
 			try{
 				rm.commit(transactionID);
+				System.out.println("Transaction with id " + transactionID + " committed successfully.");
 				transactionID = -1;
+				
 			}
 			catch(Exception e){
 				System.out.println("EXCEPTION:");

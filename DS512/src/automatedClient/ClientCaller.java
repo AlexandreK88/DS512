@@ -70,12 +70,21 @@ public class ClientCaller extends Thread
 		flightCommands = new LinkedList<String>(Arrays.asList
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 
-		customersID = new LinkedList<Integer>(Arrays.asList(11221, 11332, 33221, 14421, 11551, 88221, 12345, 78985, 78945));
-
-		flightNumbers = new LinkedList<Integer>(Arrays.asList(101, 102, 103, 104, 105, 106, 107, 108, 109));
+		customersID = new LinkedList<Integer>();
+		for (int i = 19376; i < 101210; i+=163) {
+			customersID.add(i);
+		}
+		
+		flightNumbers = new LinkedList<Integer>();
+		for (int i = 101; i < 200; i++) {
+			flightNumbers.add(i);
+		}
 
 		locations = new LinkedList<String>(Arrays.asList
-				("miami","paris","sydney","beijing","moscou"));
+				("miami","paris","sydney","beijing","moscow","sanfrancisco","montreal","london","tokyo",
+				"melbourne","madrid","stpetersburg","toronto","chicago","losangeles","berlin","stockholm",
+				"helsinki","lisbonne","rome","athenes","marseilles","toulouse","lyon","versaille","capetown",
+				"marakesh","caire","alger","kiev", "vancouver","seattle","lasvegas","boston","newyork"));
 
 		dynamicCustomersID = new LinkedList<Integer>() ;
 		dynamicFlightNumbers = new  LinkedList<Integer>();

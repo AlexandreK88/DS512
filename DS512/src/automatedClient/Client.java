@@ -509,7 +509,7 @@ public class Client
 		case 13: //querying Customer Information
 			if(arguments.size()!=2){
 				wrongNumber(command);
-				break;
+		   		break;
 			}
 			//System.out.println("Querying Customer information using id: "+arguments.elementAt(1));
 			System.out.println("Customer id: "+arguments.elementAt(1));

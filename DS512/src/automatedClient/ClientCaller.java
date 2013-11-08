@@ -175,7 +175,7 @@ public class ClientCaller extends Thread
 			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
 				latencies = newTest(baseValue, 0);
 			}
-			String results = "All the latencies compiled: \n";
+			String results = "All the latencies compiled: ";
 			for (Long latency: latencies) {
 				results += latency.toString() + ", ";
 			}
@@ -196,7 +196,7 @@ public class ClientCaller extends Thread
 			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
 				latencies = newTest(baseValue, Long.parseLong(p.getContent()[1]));
 			}
-			String results = "All the latencies compiled: \n";
+			String results = "All the latencies compiled: ";
 			for (Long latency: latencies) {
 				results += latency.toString() + ", ";
 			}

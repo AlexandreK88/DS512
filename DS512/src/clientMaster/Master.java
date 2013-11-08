@@ -75,7 +75,8 @@ public class Master {
 						if (commandDetails.length != 5) {
 							System.out.println("Wrong number of arguments.");
 						} else {
-							int awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
+							awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
+							System.out.println("Number of responses awaited is " + awaitedResponses);
 							for (int i = 0; (i < awaitedResponses && i < MAX_NUMBER_OF_CLIENTS); i++) {
 								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
 								&& Integer.parseInt(commandDetails[2]) >= 0 
@@ -92,6 +93,7 @@ public class Master {
 							System.out.println("Wrong number of arguments.");
 						} else {
 							awaitedResponses = Integer.parseInt(commandDetails[commandDetails.length-1]);
+							System.out.println("Number of responses awaited is " + awaitedResponses);
 							for (int i = 0; (i < awaitedResponses && i < MAX_NUMBER_OF_CLIENTS); i++) {
 								if (commandDetails[1].equalsIgnoreCase("Global") || commandDetails[1].equalsIgnoreCase("Single")
 								&& (commandDetails[2].equalsIgnoreCase("SHORT") || commandDetails[2].equalsIgnoreCase("AVERAGE") || commandDetails[2].equalsIgnoreCase("LONG"))) {
@@ -133,7 +135,7 @@ public class Master {
 				}
 				catch (Exception e) {
 					System.out.println(e.getClass().toString());
-					System.out.println("Something wrong the command");
+					System.out.println("Sumting wong da koh-mand");
 					awaitedResponses = 0;
 				}
 			}

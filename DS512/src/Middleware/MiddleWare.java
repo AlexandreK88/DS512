@@ -594,8 +594,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					opParameters[0] = ((Integer)customerID).toString();
 					opParameters[1] = "";
 					opParameters[2] = "";
-					String rawData = queryCustomerInfo(id, customerID);
-					String[] lines = rawData.split("\n");
 					Operation op = new Operation("deletecustomer", opParameters, this);
 					addOperation(id, op);			
 					

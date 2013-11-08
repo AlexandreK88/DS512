@@ -27,9 +27,11 @@ public class TransactionManager {
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == tid) {
-				for (ResourceManager rm: rmL) {
-					t.addrm(rm);
-					t.setCurrentTime();
+				synchronized(rmL) {
+					for (ResourceManager rm: rmL) {
+						t.addrm(rm);
+						t.setCurrentTime();
+					}
 				}
 				return true;
 			}

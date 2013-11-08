@@ -799,7 +799,10 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	@Override
 	public int start() throws RemoteException {
-		int newTr = transactionManager.start();
+		int newTr;
+		synchronized(transactionManager) {
+			newTr = transactionManager.start();
+		}
 		System.out.println("New transaction " + newTr + " started.");
 		return newTr;
 	}

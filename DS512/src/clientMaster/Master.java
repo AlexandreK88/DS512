@@ -14,13 +14,14 @@ public class Master {
 	static LinkedList<MCPipe> commMC;
 	static BufferedReader stdin;
 	static Integer awaitedResponses = 0;
+	static int testCounter;
 	
 	public static void main (String[] args) throws IOException  {
 		
 		stdin = new BufferedReader(new InputStreamReader(System.in));
 		boolean performanceTestsCompleted = false;
 		String command;
-		int testCounter = 1;
+		testCounter = 1;
 		int pipeCounter = 1;
 		
 		
@@ -135,7 +136,7 @@ public class Master {
 				}
 				catch (Exception e) {
 					System.out.println(e.getClass().toString());
-					System.out.println("Sumting wong da koh-mand");
+					System.out.println("Something is wrong with the command.");
 					awaitedResponses = 0;
 				}
 			}
@@ -157,6 +158,24 @@ public class Master {
 	}
 	
 	static void takeCareOfTestResults() {
-		
+		LinkedList<LinkedList<TestResult>> resultsPerTest = new LinkedList<LinkedList<TestResult>>();
+		for (int i = 0; i < testCounter; i++ ){
+			resultsPerTest.addLast(new LinkedList<TestResult>());
+		}
+		for (MCPipe client: commMC) {
+			for (TestResult tr: client.getTestResults()) {
+				resultsPerTest.get(tr.getPosition()).add(tr);
+			}
+		}
+		for (LinkedList<TestResult> completeResults: resultsPerTest) {
+			TestResult first = completeResults.getFirst();
+			System.out.println("Test number " + first.getPosition() + "\nTest name " + first.getType());
+			for (String metric: first.getMetric()) {
+				System.out.println("Parameter: " + metric);
+			}
+			for (TestResult r: completeResults) {
+				
+			}
+		}
 	}
 }

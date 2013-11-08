@@ -120,4 +120,8 @@ public class MCPipe  extends Thread {
 			e.printStackTrace();
 		}
 	}
+	
+	public LinkedList<TestResult> getTestResults() {
+		return testResults;
+	}
 }

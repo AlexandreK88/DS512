@@ -76,6 +76,7 @@ public class MCPipe  extends Thread {
 	
 	public void decode(NetPacket p) {
 		try {
+			System.out.println("Just received a response " + p.getType());
 			if (p.getType().equalsIgnoreCase("Throughput")) {
 				String[] parameters = {p.getContent()[0]};
 				testResults.add(new TestResult(Integer.parseInt(p.getContent()[p.getContent().length-2]), p.getType(), parameters, p.getContent()[p.getContent().length-1]));
@@ -83,7 +84,9 @@ public class MCPipe  extends Thread {
 				String[] parameters = {p.getContent()[0], p.getContent()[1]};
 				testResults.add(new TestResult(Integer.parseInt(p.getContent()[p.getContent().length-2]), p.getType(), parameters, p.getContent()[p.getContent().length-1]));
 			}
-			Master.awaitedResponses--;
+			synchronized(Master.awaitedResponses) {
+				Master.awaitedResponses--;
+			}
 		} catch (Exception e) {
 			System.out.println(e.getClass().toString());
 			System.out.println("Something went wrong with receiving test results.");

@@ -124,6 +124,9 @@ public class ClientCaller extends Thread
 				try {
 					String line = in.readLine();
 					NetPacket answer = NetPacket.fromStringToPacket(line);
+					
+					if (answer == null) {closeConnection();}
+					
 					decode(answer);
 					readFromServer = false;
 				} catch (IOException e) {
@@ -175,6 +178,7 @@ public class ClientCaller extends Thread
 	
 	public void startup() {
 		obj.readCommand("start");
+		
 		for (int cID: customersID) {
 			obj.readCommand("newcustomerid, " + cID);
 		}

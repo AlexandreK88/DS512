@@ -209,7 +209,6 @@ public class Client
 			System.out.println("Set Price: "+arguments.elementAt(3));
 			try{
 				//Id = getInt(arguments.elementAt(1));
-				Id = rm.start();
 				location = getString(arguments.elementAt(1));
 				numRooms = getInt(arguments.elementAt(2));
 				price = getInt(arguments.elementAt(3));

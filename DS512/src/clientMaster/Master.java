@@ -13,7 +13,7 @@ public class Master {
 	static ServerSocket serverSocket = null;
 	static LinkedList<MCPipe> commMC;
 	static BufferedReader stdin;
-	static int awaitedResponses = 0;
+	static Integer awaitedResponses = 0;
 	
 	public static void main (String[] args) throws IOException  {
 		
@@ -110,7 +110,12 @@ public class Master {
 					if (awaitedResponses > MAX_NUMBER_OF_CLIENTS) {
 						awaitedResponses = MAX_NUMBER_OF_CLIENTS;
 					}
-					while(awaitedResponses > 0) {
+					while(true) {
+						synchronized(awaitedResponses) {
+							if (awaitedResponses <= 0) {
+								break;
+							}
+						}
 						try {
 							System.out.println("Waiting for " + awaitedResponses + " responses.");
 							Thread.sleep(1000);

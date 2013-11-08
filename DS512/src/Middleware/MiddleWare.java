@@ -30,7 +30,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
-	private static int TIME_TO_LIVE = 5000;
+	private static int TIME_TO_LIVE = 20000;
 
 
 	public static void main(String args[]) {
@@ -818,6 +818,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	TransactionAbortedException, InvalidTransactionException {		
 		boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);
+		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
 				return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));

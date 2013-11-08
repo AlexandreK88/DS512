@@ -34,6 +34,8 @@ public class NetPacket {
 	
 	// Takes a string and unmarshalls it.
 	public static NetPacket fromStringToPacket(String s) {
+		if (s == null) {return null;}
+		
 		String[] allContent = s.split(PACKET_SEPARATOR);
 		String[] c = new String[allContent.length - 3];
 		for (int i = 0; i < allContent.length - 3; i++) {

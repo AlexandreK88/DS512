@@ -758,7 +758,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			else{
 				return "Impossible to query customer";
 			}
-
 			/*Querying Customer information using id: 5
 	                Customer id: 589576
 	                Customer info:Bill for customer 589576
@@ -768,17 +767,21 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	                1 flight-177 $103
 	                1 flight-153 $64
 	                1 flight-137 $101*/
-			String bill = bill1[0] + "\n";
+			
+			String bill = "";
+			if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){
+				bill = bill1[0] + "\n";
 
-			for(int i=1; i < bill1.length; i++){
-				bill=bill+bill1[i]+"\n";
-			}
-			for(int i=1; i < bill2.length; i++){
-				bill=bill+bill2[i]+"\n";
-			}
-			for(int i=1; i < bill3.length; i++){
-				bill=bill+bill3[i]+"\n";
-			}
+				for(int i=1; i < bill1.length; i++){
+					bill=bill+bill1[i]+"\n";
+				}
+				for(int i=1; i < bill2.length; i++){
+					bill=bill+bill2[i]+"\n";
+				}
+				for(int i=1; i < bill3.length; i++){
+					bill=bill+bill3[i]+"\n";
+				}
+			}			
 			return bill;
 		}	
 		catch(Exception e){

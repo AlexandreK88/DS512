@@ -14,21 +14,21 @@ import Server.ResInterface.*;
 
 public class Client
 {
-	static String message = "blank";
-	static ResourceManager rm = null;
-	static int Id, Cid;
-	static int flightNum;
-	static int flightPrice;
-	static int flightSeats;
-	static boolean Room;
-	static boolean Car;
-	static int price;
-	static int numRooms;
-	static int numCars;
-	static String location;
-	static Vector arguments;
-	static BufferedReader stdin;
-	static int transactionID = -1; 
+	String message = "blank";
+	ResourceManager rm = null;
+	int Id, Cid;
+	int flightNum;
+	int flightPrice;
+	int flightSeats;
+	boolean Room;
+	boolean Car;
+	int price;
+	int numRooms;
+	int numCars;
+	String location;
+	Vector arguments;
+	BufferedReader stdin;
+	int transactionID = -1; 
 
 	public Client(String args[])
 	{
@@ -768,7 +768,7 @@ public class Client
 				//Id = getInt(arguments.elementAt(1));
 				int customer = getInt(arguments.elementAt(2));
 				Vector<Integer> flightNumbers = new Vector<Integer>();
-				for(int i=0;i<arguments.size()-5;i++)
+				for(int i=0;i<arguments.size()-3;i++)
 					flightNumbers.addElement(Integer.parseInt(arguments.elementAt(2+i).toString()));
 				location = getString(arguments.elementAt(arguments.size()-3));
 				Car = getBoolean(arguments.elementAt(arguments.size()-2));

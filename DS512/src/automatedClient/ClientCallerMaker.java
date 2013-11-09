@@ -1,12 +1,9 @@
 package automatedClient;
 
-import java.io.BufferedReader;
-
-
 public class ClientCallerMaker {
 
 	public static void main(String[] args) {
-		int numberOfThreads = 1;
+		int numberOfThreads = 8;
         int port = 10121;
         String host = "localhost";
         
@@ -29,7 +26,7 @@ public class ClientCallerMaker {
         }
         ClientCaller.initCaller();
         for (int i = 0; i < numberOfThreads; i++) {
-        	ClientCaller cc = new ClientCaller(host, port);
+        	ClientCaller cc = new ClientCaller(host, port, i);
         	cc.start();
         }
 	}

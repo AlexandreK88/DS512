@@ -224,7 +224,6 @@ public class client
 			System.out.println("Set Price: "+arguments.elementAt(3));
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
-				Id = rm.start();
 				location = obj.getString(arguments.elementAt(1));
 				numRooms = obj.getInt(arguments.elementAt(2));
 				price = obj.getInt(arguments.elementAt(3));
@@ -531,7 +530,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				int customer = obj.getInt(arguments.elementAt(1));
 				String bill=rm.queryCustomerInfo(transactionID,customer);
-				System.out.println("Customer info: " + bill);
+				//if(bill.equals("")){
+					//System.out.println("This customer has no reservations.");
+				//}else{
+					System.out.println("Customer info: " + bill);
+				//}
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -893,6 +896,7 @@ public class client
 			}
 			try{
 				rm.abort(transactionID);
+				System.out.println("Transaction with id " + transactionID + " was aborted.");
 				transactionID = -1;
 			}
 			catch(Exception e){
@@ -1138,7 +1142,7 @@ public class client
 			System.out.println("Purpose:");
 			System.out.println("\tReserve a given number of cars for a customer at a particular location.");
 			System.out.println("\nUsage:");
-			System.out.println("\treservecar,<customerid>,<location>,<nummberofCars>");
+			System.out.println("\treservecar,<customerid>,<location>");
 			break;
 
 		case 19:  //reserve a room
@@ -1146,7 +1150,7 @@ public class client
 			System.out.println("Purpose:");
 			System.out.println("\tReserve a given number of rooms for a customer at a particular location.");
 			System.out.println("\nUsage:");
-			System.out.println("\treserveroom,<customerid>,<location>,<nummberofRooms>");
+			System.out.println("\treserveroom,<customerid>,<location>");
 			break;
 
 		case 20:  //reserve an Itinerary

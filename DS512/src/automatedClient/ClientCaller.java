@@ -2,37 +2,23 @@ package automatedClient;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
-//import java.rmi.RMISecurityManager;
 
 import java.util.*;
 import java.io.*;
-
-import clientMaster.TestResult;
 
 import NetPacket.NetPacket;
 
 
 public class ClientCaller extends Thread 
 {
-	//static String message = "blank";
-	//static ResourceManager rm = null;
-	//static int Id, Cid;
-	static int flightNum;
-	//static int flightPrice;
-	//static int flightSeats;
-	//static boolean Room;
-	//static boolean Car;
-	//static int price;
-	static int customerID;
-	static int numRooms;
-	static int numCars;
-	static String location;
+	int flightNum;
+	int customerID;
+	int numRooms;
+	int numCars;
+	String location;
 	static Random r = new Random();
-	//static Vector arguments;
-	//static BufferedReader stdin;
-	//static int transactionID = -1; 
 
-	static Client obj;
+	Client obj;
 	Socket socket;
 
 	private int packetID;
@@ -46,10 +32,10 @@ public class ClientCaller extends Thread
 	static LinkedList<Integer> flightNumbers;
 	static LinkedList<String> locations;
 
-	static LinkedList<Integer> dynamicCustomersID;
-	static LinkedList<Integer> dynamicFlightNumbers;
-	static LinkedList<String> dynamicCarLocations;
-	static LinkedList<String> dynamicRoomLocations;
+	LinkedList<Integer> dynamicCustomersID;
+	LinkedList<Integer> dynamicFlightNumbers;
+	LinkedList<String> dynamicCarLocations;
+	LinkedList<String> dynamicRoomLocations;
 
 	static final int FLIGHT = 1;
 	static final int GLOBAL = 2;
@@ -62,7 +48,7 @@ public class ClientCaller extends Thread
 	static final int LONG_GLOBAL_TXN = 6;
 
 
-	public static final int NUMBER_OF_TRANSACTIONS = 200;
+	public static final int NUMBER_OF_TRANSACTIONS = 100;
 
 
 	public static void initCaller() {
@@ -75,12 +61,14 @@ public class ClientCaller extends Thread
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 
 		customersID = new LinkedList<Integer>();
-		for (int i = 19376; i < 101210; i+=163) {
+		int randomInt = 300 + r.nextInt(100);
+		for (int i = 19376; i < 201210; i+=randomInt) {
 			customersID.add(i);
+			randomInt = 300 + r.nextInt(100);
 		}
 		
 		flightNumbers = new LinkedList<Integer>();
-		for (int i = 101; i < 400; i++) {
+		for (int i = 101; i < 800; i++) {
 			flightNumbers.add(i);
 		}
 
@@ -93,20 +81,28 @@ public class ClientCaller extends Thread
 				"melbournea","madrida","stpetersburga","torontoa","chicagoa","losangelesa","berlina","stockholma",
 				"helsinkia","lisbonnea","romea","athenesa","marseillesa","toulousea","lyona","versaillea","capetowna",
 				"marakesha","cairea","algera","kieva", "vancouvera","seattlea","lasvegasa","bostona","newyorka"));
+		LinkedList<String> secondLocations = new LinkedList<String>();
+		for (String s: locations){
+			secondLocations.add(s + "b");
+			secondLocations.add(s + "c");
+			secondLocations.add(s + "d");
+			secondLocations.add(s + "e");
+			secondLocations.add(s + "f");
+			secondLocations.add(s + "g");
+			secondLocations.add(s + "h");
+		}
+		locations.addAll(secondLocations);
+	}
 
+	public ClientCaller(String host, int port, int i) {
+		super("Sup!" + i);
+		String[] args = {"teaching", "10121"};
+		obj = new Client(args);		
+		
 		dynamicCustomersID = new LinkedList<Integer>() ;
 		dynamicFlightNumbers = new  LinkedList<Integer>();
 		dynamicCarLocations = new LinkedList<String>();
 		dynamicRoomLocations = new LinkedList<String>();
-	}
-
-	public ClientCaller(String host, int port) {
-		super("Sup!");
-
-		String[] args = {"teaching", "10121"};
-		obj = new Client(args);
-
-
 
 		try {
 			socket = new Socket(host, port);
@@ -131,8 +127,12 @@ public class ClientCaller extends Thread
 		while (true) {
 			boolean readFromServer = true;
 			synchronized (toSendToServer) {
-
-
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				while (!toSendToServer.isEmpty()) {
 					NetPacket toSend = toSendToServer.removeFirst();
 					System.out.println("Sending to server that " + toSend.getType());
@@ -161,7 +161,6 @@ public class ClientCaller extends Thread
 			}
 		}
 	}
-
 
 	public void decode(NetPacket p) {
 		LinkedList<Long> latencies = new LinkedList<Long>(); 
@@ -211,9 +210,7 @@ public class ClientCaller extends Thread
 		} else if (p.getType().equalsIgnoreCase("Startup")) {
 			startup();
 		}
-
 	}
-
 
 	public void startup() {
 		obj.readCommand("start");
@@ -235,7 +232,6 @@ public class ClientCaller extends Thread
 		System.out.println("Sending a response that the startup is done.");
 		packetToSend("Startup", args);
 		System.out.println("Response sent.");
-
 	}
 
 	public LinkedList<Long> newTest(int testType, long delay)
@@ -296,7 +292,7 @@ public class ClientCaller extends Thread
 		return timeResults;
 	}
 
-	public static String commandGenerator(int commandType){		
+	public String commandGenerator(int commandType){		
 		int rng = 0;
 		String command = "";
 		String completeCommand = "";
@@ -318,7 +314,9 @@ public class ClientCaller extends Thread
 		case 2: //new flight
 			flightNum = r.nextInt(1000);
 			completeCommand = command + "," + flightNum + "," + r.nextInt(100) + "," + r.nextInt(100);
-			dynamicFlightNumbers.add(flightNum);
+			synchronized(dynamicFlightNumbers) {
+				dynamicFlightNumbers.add(flightNum);
+			}
 			break;
 		case 3: //new car
 			location = "miami"+r.nextInt(100);
@@ -335,10 +333,12 @@ public class ClientCaller extends Thread
 			if (!dynamicFlightNumbers.isEmpty()) {
 				flightNum = dynamicFlightNumbers.get(r.nextInt(dynamicFlightNumbers.size()));
 				completeCommand = command + "," + flightNum;
-				dynamicFlightNumbers.remove((Integer)flightNum);
+				synchronized(dynamicFlightNumbers) {
+					dynamicFlightNumbers.remove((Integer)flightNum);
+				}
 			} else {
 				flightNum = r.nextInt(100);
-				completeCommand = "newflight," + flightNum+ "," + r.nextInt(100) + "," + r.nextInt(100);
+				completeCommand = "newflight," + flightNum + "," + r.nextInt(100) + "," + r.nextInt(100);
 				dynamicFlightNumbers.add(flightNum);
 			}
 			break;
@@ -402,6 +402,7 @@ public class ClientCaller extends Thread
 		case 15: //query car price
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
+			break;
 		case 16: //query room price
 			location = locations.get(r.nextInt(locations.size()));
 			completeCommand = command + "," + location;
@@ -464,7 +465,8 @@ public class ClientCaller extends Thread
 		default:
 			completeCommand = "Unknown command : " + command;
 		}
-
+		
+		//System.out.print("Hi! My name is " + name + " and my ChickeChick is " + completeCommand + " (Slim Shady).");
 		return completeCommand;
 
 	}

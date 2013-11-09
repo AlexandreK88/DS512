@@ -114,6 +114,9 @@ public class client
 		//remove heading and trailing white space
 		command = command.trim();
 		arguments = obj.parse(command);
+		if(arguments.isEmpty()){
+			return;
+		}
 
 		if(transactionID < 0 && (obj.findChoice(arguments.elementAt(0).toString()) != 23 
 				&& (obj.findChoice(arguments.elementAt(0).toString()) != 1))
@@ -530,11 +533,11 @@ public class client
 				//Id = obj.getInt(arguments.elementAt(1));
 				int customer = obj.getInt(arguments.elementAt(1));
 				String bill=rm.queryCustomerInfo(transactionID,customer);
-				//if(bill.equals("")){
-					//System.out.println("This customer has no reservations.");
-				//}else{
+				if(bill.equals("")){
+					System.out.println("This customer does not exist.");
+				}else{
 					System.out.println("Customer info: " + bill);
-				//}
+				}
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
@@ -779,7 +782,7 @@ public class client
 			System.out.println("Room to book?: "+arguments.elementAt(arguments.size()-1));
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(2));
+				int customer = obj.getInt(arguments.elementAt(1));
 				Vector<Integer> flightNumbers = new Vector<Integer>();
 				for(int i=0;i<arguments.size()-5;i++)
 					flightNumbers.addElement(Integer.parseInt(arguments.elementAt(2+i).toString()));

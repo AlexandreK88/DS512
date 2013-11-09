@@ -730,7 +730,6 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 						return false;
 				}				
 			}
-
 			rmList.add(rmFlight);
 			
 			lockManager.Lock(id, "Customer"+customer, LockManager.WRITE);
@@ -799,7 +798,10 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	                1 flight-137 $101*/
 			
 			String bill = "";
-			//if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){
+			if(bill1.length == 1 || bill2.length == 1 || bill3.length == 1){
+				bill = "This customer has no reservations.";
+			}
+			if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){
 				bill = bill1[0] + "\n";
 
 				for(int i=1; i < bill1.length; i++){
@@ -811,7 +813,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				for(int i=1; i < bill3.length; i++){
 					bill=bill+bill3[i]+"\n";
 				}
-			//}			
+			}			
 			return bill;
 		}	
 		catch(Exception e){

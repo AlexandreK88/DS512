@@ -1,9 +1,7 @@
 package automatedClient;
 
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-//import java.rmi.RMISecurityManager;
 
 import java.util.*;
 import java.io.*;
@@ -517,11 +515,10 @@ public class Client
 				int customer = getInt(arguments.elementAt(1));
 				String bill=rm.queryCustomerInfo(transactionID,customer);
 				if(bill.equals("")){
-					System.out.println("This customer has no reservations.");
+					System.out.println("This customer does not exist.");
 				}else{
 					System.out.println("Customer info: " + bill);
 				}
-				
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());

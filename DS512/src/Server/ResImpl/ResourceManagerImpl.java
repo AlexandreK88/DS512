@@ -551,6 +551,8 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 		
 			}
+	
+	
 	// Adds flight reservation to this customer.  
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 			throws RemoteException
@@ -723,49 +725,69 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	public void cancelFlightReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
-
+		boolean canceled = false;
+		ReservedItem ri = null; 
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
 			if (reservedkey.equals(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
-				return;
+				break;
 			}
+		}
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
 		}
 	}
 
 	public void cancelCarReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
-
+		boolean canceled = false;
+		ReservedItem ri = null;
+		
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
 			if (reservedkey.equals(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
 				return;
 			}
 		}
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
+		}
 	}
 
 	public void cancelRoomReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
-
+		boolean canceled = false;
+		ReservedItem ri = null;
+		
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
 			if (reservedkey.equals(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
 				return;
 			}
 		}	
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
+		}
 	}
 	
 	

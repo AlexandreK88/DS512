@@ -297,13 +297,12 @@ public class Client
 			break;
 
 		case 7: //delete Car
-			if(arguments.size()!=3){
+			if(arguments.size()!=2){
 				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting the cars from a particular location  using id: "+arguments.elementAt(1));
 			System.out.println("Car Location: "+arguments.elementAt(1));
-			System.out.println("Number of cars to delete: "+arguments.elementAt(2));
 			try{
 				//Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(1));
@@ -332,13 +331,12 @@ public class Client
 			break;
 
 		case 8: //delete Room
-			if(arguments.size()!=3){
+			if(arguments.size()!=2){
 				wrongNumber(command);
 				break;
 			}
 			//System.out.println("Deleting all rooms from a particular location  using id: "+arguments.elementAt(1));
 			System.out.println("Room Location: "+arguments.elementAt(1));
-			System.out.println("Number of rooms to delete: "+arguments.elementAt(2));
 			try{
 				//Id = getInt(arguments.elementAt(1));
 				location = getString(arguments.elementAt(1));

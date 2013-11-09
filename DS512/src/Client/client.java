@@ -744,7 +744,7 @@ public class client
 			try{
 				//Id = obj.getInt(arguments.elementAt(1));
 				int customer = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
+				location = obj.getString(arguments.elementAt(2));
 				if(rm.reserveRoom(transactionID,customer,location))
 					System.out.println("Room Reserved");
 				else

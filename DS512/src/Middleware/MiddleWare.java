@@ -799,6 +799,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			
 			String bill = "";
 			if(bill1.length == 1 || bill2.length == 1 || bill3.length == 1){
+				if(bill1[0].equals("")){
+					return bill;
+				}
 				bill = "This customer has no reservations.";
 			}
 			if(bill1.length > 1 || bill2.length > 1 || bill3.length > 1){

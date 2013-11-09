@@ -142,7 +142,12 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			date = new Date();
 			if((date.getTime() - ongoingTxns.get(i).getTime()) >= TIME_TO_LIVE){
 				int tID = ongoingTxns.get(i).getID();
-				transactionManager.abort(ongoingTxns.get(i).getID(), this);
+				try {
+					abort(ongoingTxns.get(i).getID());
+				} catch (RemoteException | InvalidTransactionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				throw new TransactionAbortedException(tID, "Transaction expired");
 			} else {
 				System.out.println(date.getTime() - ongoingTxns.get(i).getTime());
@@ -634,14 +639,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
-				rmList.add(rmCar);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
-				return rmCar.reserveCar(id,customerID,location);
+				if (lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)) {
+					rmList.add(rmCar);
+					transactionManager.enlist(id, rmList);
+					rmList.clear();
+					return rmCar.reserveCar(id,customerID,location);
+				}
 			}
-			else{
-				return false;
-			}
+			return false;
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -657,14 +662,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
-				rmList.add(rmRoom);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
-				return rmRoom.reserveRoom(id,customerID,location);
+				if (lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)) {
+					rmList.add(rmRoom);
+					transactionManager.enlist(id, rmList);
+					rmList.clear();
+					return rmRoom.reserveRoom(id,customerID,location);
+				}
 			}
-			else{
-				return false;
-			}		
+			return false;
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -680,14 +685,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
-				rmList.add(rmFlight);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
-				return rmFlight.reserveFlight(id,customerID,flightNum);
+				if (lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)) {
+					rmList.add(rmFlight);
+					transactionManager.enlist(id, rmList);
+					rmList.clear();
+					return rmFlight.reserveFlight(id,customerID,flightNum);
+				}
 			}
-			else{
-				return false;
-			}
+			return false;
 		}
 		catch(Exception e){
 			System.out.println("EXCEPTION:");
@@ -702,6 +707,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
+			
 			//Check if flights available
 			for(int i = 0; i<flightNumbers.size(); i++){
 				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.READ)){
@@ -726,25 +732,33 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 
 			rmList.add(rmFlight);
-
+			
+			lockManager.Lock(id, "Customer"+customer, LockManager.WRITE);
+			
 			//Reserve flight
 			for(int i = 0; i<flightNumbers.size(); i++){
 				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.WRITE)){
-					rmFlight.reserveFlight(id, customer, Integer.parseInt(flightNumbers.get(i).toString()));
+					if (!rmFlight.reserveFlight(id, customer, Integer.parseInt(flightNumbers.get(i).toString()))){
+						return false;
+					}
 				}				
 			}
 			//Reserve car, if wanted
 			if(Car){
 				rmList.add(rmCar);
 				if(lockManager.Lock(id, "Car"+location, LockManager.WRITE)){
-					rmCar.reserveCar(id, customer, location);
+					if (!rmCar.reserveCar(id, customer, location)) {
+						return false;
+					}
 				}				
 			}
 			//Reserve room, if wanted
 			if(Room){
 				rmList.add(rmRoom);
 				if(lockManager.Lock(id, "Room"+location, LockManager.WRITE)){
-					rmRoom.reserveRoom(id, customer, location);
+					if (!rmRoom.reserveRoom(id, customer, location)) {
+						return false;
+					}
 				}				
 			}
 			transactionManager.enlist(id, rmList);

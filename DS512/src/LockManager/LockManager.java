@@ -9,7 +9,7 @@ public class LockManager
 	public static final int WRITE = 1;
 
 	private static int TABLE_SIZE = 2039;
-	private static int DEADLOCK_TIMEOUT = 1000;
+	private static int DEADLOCK_TIMEOUT = 30000;
 
 	private TPHashTable lockTable;
 	private TPHashTable stampTable;
@@ -130,19 +130,10 @@ public class LockManager
 			for (int i = (size - 1); i >= 0; i--) {
 
 				trxnObj = (TrxnObj) vect.elementAt(i);
-				if (this.lockTable.remove(trxnObj)) {
-					System.out.println("Happy removal" + trxnObj.toString());
-				} else {
-					System.out.println("I HATE YOU, YOU DIDNT REMOVE " + trxnObj.toString());
-				}
+				this.lockTable.remove(trxnObj);
 
 				DataObj dataObj = new DataObj(trxnObj.getXId(), trxnObj.getDataName(), trxnObj.getLockType());
-				if(this.lockTable.remove(dataObj)) {
-					System.out.println("Happy removal" + dataObj.toString());
-				} else {
-					System.out.println("I HATE YOU, YOU DIDNT REMOVE " + dataObj.toString());
-				}
-
+				this.lockTable.remove(dataObj);
 				// check if there are any waiting transactions. 
 				synchronized (this.waitTable) {
 					// get all the transactions waiting on this dataObj
@@ -155,7 +146,13 @@ public class LockManager
 								// get all other transactions which have locks on the
 								// data item just unlocked. 
 								Vector vect1 = this.lockTable.elements(dataObj);
-
+								for (Object o:vect1) {
+									if (((XObj)o).getXId() == waitObj.getXId()) {
+										this.lockTable.remove((XObj)o);
+										System.out.println("Happens");
+									}
+								}
+								vect1 = this.lockTable.elements(dataObj);
 								// remove interrupted thread from waitTable only if no
 								// other transaction has locked this data item
 								if (vect1.size () == 0) {

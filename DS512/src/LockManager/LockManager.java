@@ -152,6 +152,7 @@ public class LockManager
 										System.out.println("Happens");
 									}
 								}
+								vect1 = this.lockTable.elements(dataObj);
 								// remove interrupted thread from waitTable only if no
 								// other transaction has locked this data item
 								if (vect1.size () == 0) {

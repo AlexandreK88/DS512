@@ -29,7 +29,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	LinkedList<Transaction> ongoingTransactions;
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
-	private static int TIME_TO_LIVE = 10000;
+	private static int TIME_TO_LIVE = 20000;
 
 
 	public static void main(String args[]) {
@@ -145,7 +145,10 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				int tID = ongoingTxns.get(i).getID();
 				try {
 					abort(ongoingTxns.get(i).getID());
-				} catch (RemoteException | InvalidTransactionException e) {
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidTransactionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
@@ -196,27 +199,21 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	// Reads a data item
 	private RMItem readData( int id, String key )
 	{
-		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
-			System.out.println("Successful");
 			return (RMItem) m_itemHT.get(key);
 		}
 	}
 
 	// Writes a data item
 	private void writeData( int id, String key, RMItem value ) {
-		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
-			System.out.println("Successful");
 			m_itemHT.put(key, value);
 		}
 	}
 
 	// Remove the item out of storage
 	protected RMItem removeData(int id, String key) {
-		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
-			System.out.println("Successful");
 			return (RMItem)m_itemHT.remove(key);
 		}
 	}
@@ -857,7 +854,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
-				return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+				synchronized(ongoingTransactions) {
+					return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+				}
 			}
 		}
 		return returnValue;
@@ -869,7 +868,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
 				ongoingTransactions.get(i).undo();
-				ongoingTransactions.remove(ongoingTransactions.get(i));
+				synchronized(ongoingTransactions) {
+					ongoingTransactions.remove(ongoingTransactions.get(i));
+				}
 			}
 		}
 		lockManager.UnlockAll(transactionId);
@@ -935,7 +936,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		}
 		Transaction t = new Transaction(id);
 		t.addOp(op);
-		ongoingTransactions.add(t);
+		synchronized(ongoingTransactions) {
+			ongoingTransactions.add(t);
+		}
 	}
 
 }

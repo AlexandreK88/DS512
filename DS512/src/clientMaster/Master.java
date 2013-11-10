@@ -12,7 +12,7 @@ import java.util.Random;
 
 public class Master {
 	
-	public static final int MAX_NUMBER_OF_CLIENTS = 48;
+	public static final int MAX_NUMBER_OF_CLIENTS = 40;
 	static ServerSocket serverSocket = null;
 	static LinkedList<MCPipe> commMC;
 	static BufferedReader stdin;

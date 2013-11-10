@@ -20,12 +20,18 @@ public class TransactionManager {
 	public int start() {
 		latestTransaction++;
 		Transaction t = new Transaction(latestTransaction);
-		ongoingTransactions.add(t);
+		System.out.println("Attempting to lock transactions");
+		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
+			ongoingTransactions.add(t);
+		}
 		return latestTransaction;
 	}
 
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == tid) {
 					for (ResourceManager rm: rmL) {
@@ -36,11 +42,13 @@ public class TransactionManager {
 				}
 			}
 		}
-		throw new InvalidTransactionException(tid, "The transaction was idle for too long.");
+		throw new InvalidTransactionException(tid, "The transaction was idle for too long, and was removed from transaction list (hence shows as -1).");
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
@@ -63,7 +71,9 @@ public class TransactionManager {
 	}
 
 	public void abort(int tid, ResourceManager middleware) {
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);

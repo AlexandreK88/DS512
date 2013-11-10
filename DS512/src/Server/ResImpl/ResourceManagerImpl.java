@@ -79,7 +79,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	// Reads a data item
 	private RMItem readData( int id, String key )
 	{
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			return (RMItem) m_itemHT.get(key);
 		}
 	}
@@ -87,14 +89,18 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	// Writes a data item
 	private void writeData( int id, String key, RMItem value )
 	{
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			m_itemHT.put(key, value);
 		}
 	}
 
 	// Remove the item out of storage
 	protected RMItem removeData(int id, String key) {
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			return (RMItem)m_itemHT.remove(key);
 		}
 	}
@@ -110,7 +116,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Trace.warn("RM::deleteItem(" + id + ", " + key + ") failed--item doesn't exist" );
 			return false;
 		} else {
+			System.out.println("Attempting to lock curObj");
 			synchronized(curObj) {
+				System.out.println("Successful");
 				if (curObj.getReserved()==0) {
 					removeData(id, curObj.getKey());
 					Trace.info("RM::deleteItem(" + id + ", " + key + ") item deleted" );
@@ -169,7 +177,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 			Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " +location+") failed--item doesn't exist" );
 			return false;
 		} else {
+			System.out.println("Attempting to lock item");
 			synchronized(item) {
+				System.out.println("Successful");
 				if (item.getCount()==0) {
 					Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed--No more items" );
 					return false;
@@ -590,7 +600,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
 					ongoingTransactions.remove(ongoingTransactions.get(i));
@@ -604,8 +616,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	@Override
 	public void abort(int transactionId) throws RemoteException,
 			InvalidTransactionException {
-		// TODO Auto-generated method stub
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
 					ongoingTransactions.get(i).undo();
@@ -759,7 +772,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
-				return;
+				break;
 			}
 		}
 		if (canceled) {
@@ -782,7 +795,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
-				return;
+				break;
 			}
 		}	
 		if (canceled) {
@@ -792,7 +805,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	
 	
 	private void addOperation(int id, Operation op) {
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == id) {
 					t.addOp(op);
@@ -802,7 +817,9 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 		}
 		Transaction t = new Transaction(id);
 		t.addOp(op);
+		System.out.println("Attempting to lock transactions");
 		synchronized(ongoingTransactions) {
+			System.out.println("Successful");
 			ongoingTransactions.add(t);
 		}
 	}

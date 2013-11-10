@@ -29,7 +29,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	LinkedList<Transaction> ongoingTransactions;
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
-	private static int TIME_TO_LIVE = 120000;
+	private static int TIME_TO_LIVE = 10000;
 
 
 	public static void main(String args[]) {
@@ -119,6 +119,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		while(true){
 			try{
 				if(obj != null){
+					System.out.println("Looping");
 					obj.verifyIfShutdown();
 					obj.timeToLive();
 				}
@@ -195,21 +196,27 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	// Reads a data item
 	private RMItem readData( int id, String key )
 	{
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			return (RMItem) m_itemHT.get(key);
 		}
 	}
 
 	// Writes a data item
 	private void writeData( int id, String key, RMItem value ) {
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			m_itemHT.put(key, value);
 		}
 	}
 
 	// Remove the item out of storage
 	protected RMItem removeData(int id, String key) {
+		System.out.println("Attempting to lock m_itemHT");
 		synchronized(m_itemHT) {
+			System.out.println("Successful");
 			return (RMItem)m_itemHT.remove(key);
 		}
 	}
@@ -837,9 +844,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public int start() throws RemoteException {
 		int newTr;
-		synchronized(transactionManager) {
-			newTr = transactionManager.start();
-		}
+		newTr = transactionManager.start();
 		System.out.println("New transaction " + newTr + " started.");
 		return newTr;
 	}

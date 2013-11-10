@@ -27,10 +27,10 @@ public class Client
 	Vector arguments;
 	BufferedReader stdin;
 	int transactionID = -1; 
+	int transactionIDbackup = -1; 
 
 	public Client(String args[])
 	{
-
 		String server = "teaching";
 		int port = 10121;
 		if (args.length == 1)
@@ -86,7 +86,6 @@ public class Client
 			//System.setSecurityManager(new RMISecurityManager());
 		}
 
-
 		System.out.println("\n\n\tClient Interface");
 		System.out.println("Type \"help\" for list of supported commands");
 
@@ -100,9 +99,11 @@ public class Client
 		arguments = parse(command);
 
 		if(transactionID < 0 && (findChoice(arguments.elementAt(0).toString()) != 23 
-				&& (findChoice(arguments.elementAt(0).toString()) != 1))){
+				&& (findChoice(arguments.elementAt(0).toString()) != 1))
+				&& (findChoice(arguments.elementAt(0).toString()) != 21)){
 			System.out.println("There is no ongoing transaction.");
 			System.out.println("Type start for a new one");
+			return false;
 		}
 
 		//decide which of the commands this was
@@ -155,7 +156,6 @@ public class Client
 				e.printStackTrace();
 			}
 			break;
-
 		case 3:  //new Car
 			if(arguments.size()!=4){
 				wrongNumber(command);
@@ -754,7 +754,7 @@ public class Client
 			}
 			//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
 			System.out.println("Customer id: "+arguments.elementAt(1));
-			for(int i=0;i<arguments.size()-3;i++)
+			for(int i=0;i<arguments.size()-5;i++)
 				System.out.println("Flight number: "+arguments.elementAt(2+i));
 			System.out.println("Location for Car/Room booking: "+arguments.elementAt(arguments.size()-3));
 			System.out.println("Car to book?: "+arguments.elementAt(arguments.size()-2));
@@ -763,7 +763,7 @@ public class Client
 				//Id = getInt(arguments.elementAt(1));
 				int customer = getInt(arguments.elementAt(2));
 				Vector<Integer> flightNumbers = new Vector<Integer>();
-				for(int i=0;i<arguments.size()-3;i++)
+				for(int i=0;i<arguments.size()-5;i++)
 					flightNumbers.addElement(Integer.parseInt(arguments.elementAt(2+i).toString()));
 				location = getString(arguments.elementAt(arguments.size()-3));
 				Car = getBoolean(arguments.elementAt(arguments.size()-2));
@@ -798,7 +798,6 @@ public class Client
 			}
 			System.out.println("Quitting client.");
 			System.exit(1);
-
 
 		case 22:  //new Customer given id
 			if(arguments.size()!=2){
@@ -841,6 +840,7 @@ public class Client
 					break;
 				}
 				transactionID = rm.start();
+				transactionIDbackup = transactionID;
 				System.out.println("A transaction with id " + transactionID + " is now started.");
 			}
 			catch(Exception e){

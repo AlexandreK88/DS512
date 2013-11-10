@@ -2,6 +2,8 @@ package automatedClient;
 
 public class ClientCallerMaker {
 
+	static int killedCounter = 0;
+	
 	public static void main(String[] args) {
 		int numberOfThreads = 8;
         int port = 10121;
@@ -29,6 +31,17 @@ public class ClientCallerMaker {
         	ClientCaller cc = new ClientCaller(host, port, i);
         	cc.start();
         }
+        
+        while(killedCounter < numberOfThreads) {
+        	try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        
+        System.exit(0);
 	}
 	
 }

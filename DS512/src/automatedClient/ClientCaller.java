@@ -61,14 +61,14 @@ public class ClientCaller extends Thread
 				("newflight","deleteflight","queryflight","queryflightprice","reserveflight"));
 
 		customersID = new LinkedList<Integer>();
-		int randomInt = 300 + r.nextInt(100);
+		int randomInt = 150 + r.nextInt(100);
 		for (int i = 19376; i < 201210; i+=randomInt) {
 			customersID.add(i);
 			randomInt = 300 + r.nextInt(100);
 		}
 		
 		flightNumbers = new LinkedList<Integer>();
-		for (int i = 101; i < 800; i++) {
+		for (int i = 101; i < 1000; i++) {
 			flightNumbers.add(i);
 		}
 
@@ -90,6 +90,14 @@ public class ClientCaller extends Thread
 			secondLocations.add(s + "f");
 			secondLocations.add(s + "g");
 			secondLocations.add(s + "h");
+			secondLocations.add(s + "aa");
+			secondLocations.add(s + "bb");
+			secondLocations.add(s + "cc");
+			secondLocations.add(s + "dd");
+			secondLocations.add(s + "ee");
+			secondLocations.add(s + "ff");
+			secondLocations.add(s + "gg");
+			secondLocations.add(s + "hh");
 		}
 		locations.addAll(secondLocations);
 	}
@@ -312,7 +320,7 @@ public class ClientCaller extends Thread
 		}
 		switch(findChoice(command)){
 		case 2: //new flight
-			flightNum = r.nextInt(1000);
+			flightNum = r.nextInt(1000)+1000;
 			completeCommand = command + "," + flightNum + "," + r.nextInt(100) + "," + r.nextInt(100);
 			synchronized(dynamicFlightNumbers) {
 				dynamicFlightNumbers.add(flightNum);
@@ -320,12 +328,12 @@ public class ClientCaller extends Thread
 			break;
 		case 3: //new car
 			location = "miami"+r.nextInt(100);
-			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+			completeCommand = command + "," + location + "," + r.nextInt(1000) + "," + r.nextInt(100);
 			dynamicCarLocations.add(location);
 			break;
 		case 4: //new room
 			location = "miami"+r.nextInt(100);
-			completeCommand = command + "," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+			completeCommand = command + "," + location + "," + r.nextInt(1000) + "," + r.nextInt(100);
 			dynamicRoomLocations.add(location);
 			break;
 			/*case 5: //new customer*/
@@ -337,7 +345,7 @@ public class ClientCaller extends Thread
 					dynamicFlightNumbers.remove((Integer)flightNum);
 				}
 			} else {
-				flightNum = r.nextInt(100);
+				flightNum = r.nextInt(1000)+1000;
 				completeCommand = "newflight," + flightNum + "," + r.nextInt(100) + "," + r.nextInt(100);
 				dynamicFlightNumbers.add(flightNum);
 			}
@@ -346,11 +354,11 @@ public class ClientCaller extends Thread
 			if (!dynamicCarLocations.isEmpty()) {
 				location = dynamicCarLocations.get(r.nextInt(dynamicCarLocations.size()));
 				numCars = r.nextInt(100);
-				completeCommand = command + "," + location + "," + numCars;
+				completeCommand = command + "," + location;
 				dynamicCarLocations.remove(location);
 			} else {
 				location = "miami"+r.nextInt(100);
-				completeCommand = "newcar," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+				completeCommand = "newcar," + location + "," + r.nextInt(100);
 				dynamicCarLocations.add(location);
 			}
 			break;
@@ -358,12 +366,12 @@ public class ClientCaller extends Thread
 			if(!dynamicRoomLocations.isEmpty()){
 				location = dynamicRoomLocations.get(r.nextInt(dynamicRoomLocations.size()));
 				numRooms = r.nextInt(100);
-				completeCommand = command + "," + location + "," + numRooms;
+				completeCommand = command + "," + location;
 				dynamicRoomLocations.remove(location);
 			}
 			else{
 				location = "miami"+r.nextInt(100);
-				completeCommand = "newroom," + location + "," + r.nextInt(100) + "," + r.nextInt(100);
+				completeCommand = "newroom," + location + "," + r.nextInt(100);
 				dynamicRoomLocations.add(location);
 			}
 			break;
@@ -441,7 +449,7 @@ public class ClientCaller extends Thread
 			int n = 0;
 			boolean Car = false;
 			boolean Room = false;		
-			n = r.nextInt(10);			
+			n = r.nextInt(3);			
 			//dynamic = r.nextBoolean();
 			if(dynamic && !dynamicCustomersID.isEmpty()){
 				customerID = dynamicCustomersID.get(r.nextInt(dynamicCustomersID.size()));
@@ -458,7 +466,7 @@ public class ClientCaller extends Thread
 			completeCommand += "," + location + "," + Car + "," + Room;
 			break;
 		case 21: //new customer id
-			customerID = r.nextInt(10000);
+			customerID = r.nextInt(1000000);
 			completeCommand = command + "," + customerID;
 			dynamicCustomersID.add(customerID);
 			break;
@@ -533,6 +541,7 @@ public class ClientCaller extends Thread
 			out.close();
 			in.close();
 			socket.close();
+			ClientCallerMaker.killedCounter++;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

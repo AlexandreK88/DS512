@@ -20,7 +20,9 @@ public class TransactionManager {
 	public int start() {
 		latestTransaction++;
 		Transaction t = new Transaction(latestTransaction);
-		ongoingTransactions.add(t);
+		synchronized(ongoingTransactions) {
+			ongoingTransactions.add(t);
+		}
 		return latestTransaction;
 	}
 
@@ -36,7 +38,7 @@ public class TransactionManager {
 				}
 			}
 		}
-		throw new InvalidTransactionException(tid, "The transaction was idle for too long.");
+		throw new InvalidTransactionException(tid, "The transaction was idle for too long, and was removed from transaction list (hence shows as -1).");
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {

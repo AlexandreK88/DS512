@@ -11,7 +11,7 @@ public class LockManager
 	public static final int WRITE = 1;
 
 	private static int TABLE_SIZE = 2039;
-	private static int DEADLOCK_TIMEOUT = 30000;
+	private static int DEADLOCK_TIMEOUT = 2000;
 
 	private TPHashTable lockTable;
 	private TPHashTable stampTable;
@@ -287,7 +287,6 @@ public class LockManager
 		long timeBlocked = 0;
 		Thread thisThread = Thread.currentThread();
 		WaitObj waitObj = new WaitObj(dataObj.getXId(), dataObj.getDataName(), dataObj.getLockType(), thisThread);
-
 		synchronized (this.stampTable) {
 			Vector vect = this.stampTable.elements(timeObj);
 			if (vect.size() == 0) {
@@ -320,7 +319,6 @@ public class LockManager
 				// else lock manager already knows the transaction is waiting.
 			}
 		}
-
 		synchronized (thisThread) {
 			try {
 				thisThread.wait(LockManager.DEADLOCK_TIMEOUT - timeBlocked);

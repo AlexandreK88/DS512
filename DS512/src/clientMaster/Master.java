@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedList;
+import java.util.Random;
 
 public class Master {
 	
@@ -17,6 +18,7 @@ public class Master {
 	static BufferedReader stdin;
 	static Integer awaitedResponses = 0;
 	static int testCounter;
+	static Random r;
 	
 	public static void main (String[] args) throws IOException  {
 		
@@ -25,7 +27,7 @@ public class Master {
 		String command;
 		testCounter = 1;
 		int pipeCounter = 1;
-		
+		r = new Random();
 		
 		try {
 
@@ -56,7 +58,7 @@ public class Master {
 				commMC.add(client);
 				pipeCounter++;
 			}
-			
+			shufflePipes();
 			String[] filler = {"AllFlightsRoomsAndCars"};
 			commMC.get(0).packetToSend("Startup", filler);
 			awaitedResponses++;
@@ -136,6 +138,7 @@ public class Master {
 							e.printStackTrace();
 						}
 					}
+					shufflePipes();
 					testCounter++;
 				}
 				catch (IOException io){
@@ -201,6 +204,17 @@ public class Master {
 			} else if (first.getType().equalsIgnoreCase("ResponseTime")) {
 				System.out.println("On average, " + (totalDuration/count) + " milliseconds/request was the response time.");
 			}
+		}
+	}
+	
+	static void shufflePipes() {
+		if (commMC != null && r != null) {
+			System.out.println("I am shufflin', shufflin'..");
+			LinkedList<MCPipe> pipes = new LinkedList<MCPipe>();
+			while (!commMC.isEmpty()) {
+				pipes.add(commMC.remove(r.nextInt(commMC.size())));
+			}
+			commMC.addAll(pipes);
 		}
 	}
 }

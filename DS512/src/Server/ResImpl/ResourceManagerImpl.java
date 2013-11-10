@@ -604,7 +604,6 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 	@Override
 	public void abort(int transactionId) throws RemoteException,
 			InvalidTransactionException {
-		// TODO Auto-generated method stub
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -759,7 +758,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
-				return;
+				break;
 			}
 		}
 		if (canceled) {
@@ -782,7 +781,7 @@ public class ResourceManagerImpl implements Server.ResInterface.ResourceManager
 				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
 				item.setReserved(item.getReserved()-1);
 				item.setCount(item.getCount()+1);
-				return;
+				break;
 			}
 		}	
 		if (canceled) {

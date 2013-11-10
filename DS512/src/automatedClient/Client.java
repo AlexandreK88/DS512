@@ -97,7 +97,7 @@ public class Client
 		//remove heading and trailing white space
 		command = command.trim();
 		arguments = parse(command);
-
+		
 		if(transactionID < 0 && (findChoice(arguments.elementAt(0).toString()) != 23 
 				&& (findChoice(arguments.elementAt(0).toString()) != 1))
 				&& (findChoice(arguments.elementAt(0).toString()) != 21)){

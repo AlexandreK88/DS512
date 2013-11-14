@@ -189,19 +189,26 @@ public class Master {
 			}
 			long totalDuration = 0;
 			int count = 0;
-			for (TestResult r: completeResults) {
-				String[] times = r.getResults().split(",");
-				for (String t: times) {
-					t = t.trim();
-					if (t.length() > 0) {
-						count++;
-						totalDuration += Long.parseLong(t);
+			if (first.getType().equalsIgnoreCase("Throughput")) {
+				for (TestResult r: completeResults) {
+					String[] throughputResults = r.getResults().split(",");
+					if (totalDuration < Integer.parseInt(throughputResults[0])) {
+						totalDuration = Integer.parseInt(throughputResults[0]);
+					}
+					count += Integer.parseInt(throughputResults[1].trim());
+				}	
+				System.out.println("In total, " + (count*1000/totalDuration) + " requests/second were successfully treated.");
+			} else if (first.getType().equalsIgnoreCase("ResponseTime")) {
+				for (TestResult r: completeResults) {
+					String[] times = r.getResults().split(",");
+					for (String t: times) {
+						t = t.trim();
+						if (t.length() > 0) {
+							count++;
+							totalDuration += Long.parseLong(t);
+						}
 					}
 				}
-			}
-			if (first.getType().equalsIgnoreCase("Throughput")) {
-				System.out.println("On average, " + (count*1000/totalDuration) + " requests/second were treated.");
-			} else if (first.getType().equalsIgnoreCase("ResponseTime")) {
 				System.out.println("On average, " + (totalDuration/count) + " milliseconds/request was the response time.");
 			}
 		}

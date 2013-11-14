@@ -104,7 +104,7 @@ public class ClientCaller extends Thread
 
 	public ClientCaller(String host, int port, int i) {
 		super("Sup!" + i);
-		String[] args = {"teaching", "10121"};
+		String[] args = {"lab2-1", "10121"};
 		obj = new Client(args);		
 		
 		dynamicCustomersID = new LinkedList<Integer>() ;

@@ -11,7 +11,7 @@ public class LockManager
 	public static final int WRITE = 1;
 
 	private static int TABLE_SIZE = 2039;
-	private static int DEADLOCK_TIMEOUT = 2000;
+	private static int DEADLOCK_TIMEOUT = 1000;
 
 	private TPHashTable lockTable;
 	private TPHashTable stampTable;
@@ -138,10 +138,16 @@ public class LockManager
 						orderedWaitVector.add(waitVector.get(0));
 						while(!waitVector.isEmpty()) {
 							WaitObj curWaitObj = (WaitObj)waitVector.remove(0);
-							Vector v = stampTable.elements(new TimeObj(curWaitObj.getXId()));
+							Vector v = null;
+							synchronized(stampTable) {
+								v = stampTable.elements(new TimeObj(curWaitObj.getXId()));
+							}
 							// v must have a timeStamp for a waitObject.
 							for (int j = 0; j < orderedWaitVector.size(); j++) {
-								Vector v2 = stampTable.elements(new TimeObj(((XObj)orderedWaitVector.get(j)).getXId()));
+								Vector v2 = null;
+								synchronized(stampTable) {
+									v2 = stampTable.elements(new TimeObj(((XObj)orderedWaitVector.get(j)).getXId()));
+								}
 								System.out.println("size of v2 " + v2.size() + " and v1 " + v.size());
 								if (((TimeObj)v.get(0)).getTime() < ((TimeObj)v2.get(0)).getTime()) {
 									orderedWaitVector.add(j, curWaitObj);
@@ -343,8 +349,8 @@ public class LockManager
 	private void cleanupDeadlock(TimeObj tmObj, WaitObj waitObj)
 			throws DeadlockException
 			{
-		synchronized (this.stampTable) {
-			synchronized (this.waitTable) {
+		synchronized (this.waitTable) {
+			synchronized (this.stampTable) {
 				this.stampTable.remove(tmObj);
 				this.waitTable.remove(waitObj);
 			}

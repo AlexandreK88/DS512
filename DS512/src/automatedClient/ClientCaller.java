@@ -189,7 +189,7 @@ public class ClientCaller extends Thread
 				latencies = newTest(baseValue, 0);
 			}
 			String results = "";
-			
+			results += latencies.removeLast().toString() + ", " + latencies.size() + ", " + NUMBER_OF_TRANSACTIONS;			
 			String[] args = {p.getContent()[0], p.getContent()[p.getContent().length-1], results};
 			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
@@ -207,9 +207,11 @@ public class ClientCaller extends Thread
 			} else if (p.getContent()[0].equalsIgnoreCase("Single")) {
 				latencies = newTest(baseValue, Long.parseLong(p.getContent()[1]));
 			}
-			latencies.removeLast();
+			latencies.removeLast();			
 			String results = "";
-			results += latencies.removeLast().toString() + ", " + latencies.size();			
+			for(Long latency: latencies){
+				results += latency.toString() + ", "; 
+			}
 			String[] args = {p.getContent()[0], p.getContent()[1], p.getContent()[p.getContent().length-1], results};
 			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("Startup")) {

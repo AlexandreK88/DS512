@@ -141,7 +141,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -179,7 +179,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -218,7 +218,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -247,7 +247,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -280,7 +280,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -314,7 +314,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -347,7 +347,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -380,7 +380,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -415,7 +415,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -450,7 +450,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -485,7 +485,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -520,7 +520,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -555,7 +555,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -590,7 +590,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -625,7 +625,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -660,7 +660,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -696,7 +696,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -731,7 +731,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -775,7 +775,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {
@@ -813,7 +813,7 @@ public class Client
 			}catch(DeadlockException e){
 				try {
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
+					//rm.abort(transactionID);
 					transactionID = -1;
 					System.out.println("Transaction aborted.");
 				} catch (Exception e1) {

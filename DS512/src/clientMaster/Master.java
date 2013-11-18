@@ -187,17 +187,25 @@ public class Master {
 			for (String metric: first.getMetric()) {
 				System.out.println("Parameter: " + metric);
 			}
-			long totalDuration = 0;
+			long averageDuration = 0;
+			long maxDuration = 0;
 			int count = 0;
+			int realCount = 0;
 			if (first.getType().equalsIgnoreCase("Throughput")) {
 				for (TestResult r: completeResults) {
 					String[] throughputResults = r.getResults().split(",");
-					if (totalDuration < Integer.parseInt(throughputResults[0])) {
-						totalDuration = Integer.parseInt(throughputResults[0]);
+					averageDuration += Integer.parseInt(throughputResults[0]);
+					if (maxDuration < Integer.parseInt(throughputResults[0])) {
+						maxDuration = Integer.parseInt(throughputResults[0]);
 					}
 					count += Integer.parseInt(throughputResults[1].trim());
-				}	
-				System.out.println("In total, " + (count*1000/totalDuration) + " requests/second were successfully treated.");
+					realCount += Integer.parseInt(throughputResults[2].trim());
+				}
+				averageDuration /= completeResults.size();
+				System.out.println("In total, " + (count*1000/averageDuration) + " requests/second were requested, and " + realCount*1000/averageDuration + " requests/second were successfully treated" +
+						" when measuring average time for each client.");
+				System.out.println("In total, " + (count*1000/maxDuration) + " requests/second were requested, and " + realCount*1000/maxDuration + " requests/second were successfully treated" +
+						" when measuring over the maximum time it took to treat all requests.");
 			} else if (first.getType().equalsIgnoreCase("ResponseTime")) {
 				for (TestResult r: completeResults) {
 					String[] times = r.getResults().split(",");
@@ -205,11 +213,11 @@ public class Master {
 						t = t.trim();
 						if (t.length() > 0) {
 							count++;
-							totalDuration += Long.parseLong(t);
+							averageDuration += Long.parseLong(t);
 						}
 					}
 				}
-				System.out.println("On average, " + (totalDuration/count) + " milliseconds/request was the response time.");
+				System.out.println("On average, " + (averageDuration/count) + " milliseconds/request was the response time.");
 			}
 		}
 	}

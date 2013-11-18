@@ -30,7 +30,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
 	private static int TIME_TO_LIVE = 20000;
-
+	public static Random r = new Random();
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
@@ -93,7 +93,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}//if
 		} catch (Exception e) {    
 			System.err.println("Client exception: " + e.toString());
-			e.printStackTrace();
+			//e.printStackTrace();
 		}//try
 
 		//Getting server ready
@@ -109,7 +109,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			System.err.println("Server ready");
 		} catch (Exception e) {
 			System.err.println("Server exception: " + e.toString());
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 
 		// Create and install a security manager
@@ -127,7 +127,7 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 			}catch(Exception e){
 				System.out.println(e.getMessage());
@@ -144,17 +144,17 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			if((date.getTime() - ongoingTxns.get(i).getTime()) >= TIME_TO_LIVE){
 				int tID = ongoingTxns.get(i).getID();
 				try {
-					abort(ongoingTxns.get(i).getID());
+					abort(tID);
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					//e.printStackTrace();
 				} catch (InvalidTransactionException e) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 				throw new TransactionAbortedException(tID, "Transaction expired");
 			} else {
-				System.out.println(date.getTime() - ongoingTxns.get(i).getTime());
+				//System.out.println("ID " + ongoingTxns.get(i).getID() + "'s idle time is " + (date.getTime() - ongoingTxns.get(i).getTime()));
 			}
 		}
 
@@ -182,13 +182,13 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			timer += date.getTime() - time;
 			time = date.getTime();
 			if(timer >= SHUTDOWN_TIMEOUT){
+				System.out.println("Shutting down");
 				if(rmFlight.shutdown() && rmCar.shutdown() && rmRoom.shutdown()){
 					shutdown();
 				}	
 			}
-			else{
-				timer = 0;
-			}
+		} else {
+			timer = 0;
 		}
 	}
 
@@ -232,10 +232,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -252,10 +256,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -276,10 +284,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -297,10 +309,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -319,10 +335,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -340,10 +360,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -361,10 +385,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return 0;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		} 
 	}
@@ -382,10 +410,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return -1;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 
@@ -404,10 +436,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return 0;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -425,10 +461,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return -1;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -447,10 +487,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			return 0;
 
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -468,12 +512,16 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return -1;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
-		} 
+		}
 	}
 
 	public int newCustomer(int id)
@@ -504,10 +552,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return cid;
 		} 
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 			}
@@ -541,10 +593,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 				}
 				return true;
 			}
-			catch(Exception e){
+			catch(DeadlockException e) {
+				abort(id);
+				System.out.println(e.getMessage());
+				throw e;
+			} catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
-				e.printStackTrace();
+				//e.printStackTrace();
 				throw e;
 			}
 		} else {
@@ -627,10 +683,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 					
 					return true;
 				}
+			} catch(DeadlockException e) {
+				abort(id);
+				System.out.println(e.getMessage());
+				throw e;
 			} catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
-				e.printStackTrace();
+				//e.printStackTrace();
 				throw e;
 			}
 			return false;
@@ -652,10 +712,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -675,10 +739,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -698,10 +766,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}
 			return false;
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 	}
@@ -767,10 +839,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			transactionManager.enlist(id, rmList);
 			rmList.clear();
 		}
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 		return true;
@@ -823,10 +899,14 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 			}			
 			return bill;
 		}	
-		catch(Exception e){
+		catch(DeadlockException e) {
+			abort(id);
+			System.out.println(e.getMessage());
+			throw e;
+		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 			throw e;
 		}
 
@@ -841,7 +921,11 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public int start() throws RemoteException {
 		int newTr;
-		newTr = transactionManager.start();
+		System.out.println("Lock of TM attempted"); 
+		synchronized(transactionManager) {
+			System.out.println("Lock of TM successful!");
+			newTr = transactionManager.start();
+		}
 		System.out.println("New transaction " + newTr + " started.");
 		return newTr;
 	}
@@ -854,7 +938,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
-				synchronized(ongoingTransactions) {
+				System.out.println("Lock of ongoingtransactions attempted"); 
+				synchronized(ongoingTransactions) { 
+					System.out.println("Lock of ongoingtransactions successful!");
 					return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
 				}
 			}
@@ -865,10 +951,13 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 	@Override
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		transactionManager.abort(transactionId, this);
+		System.out.println("Transaction " + transactionId + " has ABORTED.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
 				ongoingTransactions.get(i).undo();
-				synchronized(ongoingTransactions) {
+				System.out.println("Lock of ongoingtransactions attempted"); 
+				synchronized(ongoingTransactions) { 
+					System.out.println("Lock of ongoingtransactions successful!");
 					ongoingTransactions.remove(ongoingTransactions.get(i));
 				}
 			}
@@ -936,7 +1025,9 @@ public class MiddleWare implements Server.ResInterface.ResourceManager {
 		}
 		Transaction t = new Transaction(id);
 		t.addOp(op);
-		synchronized(ongoingTransactions) {
+		System.out.println("Lock of ongoingtransactions attempted"); 
+		synchronized(ongoingTransactions) { 
+			System.out.println("Lock of ongoingtransactions successful!");
 			ongoingTransactions.add(t);
 		}
 	}

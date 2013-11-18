@@ -189,7 +189,7 @@ public class ClientCaller extends Thread
 				latencies = newTest(baseValue, 0);
 			}
 			String results = "";
-			
+			results += latencies.removeLast().toString() + ", " + latencies.size();
 			String[] args = {p.getContent()[0], p.getContent()[p.getContent().length-1], results};
 			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("ResponseTime")) {
@@ -209,7 +209,7 @@ public class ClientCaller extends Thread
 			}
 			latencies.removeLast();
 			String results = "";
-			results += latencies.removeLast().toString() + ", " + latencies.size();			
+			
 			String[] args = {p.getContent()[0], p.getContent()[1], p.getContent()[p.getContent().length-1], results};
 			packetToSend(p.getType(), args);
 		} else if (p.getType().equalsIgnoreCase("Startup")) {

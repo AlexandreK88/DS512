@@ -11,7 +11,7 @@ public class LockManager
 	public static final int WRITE = 1;
 
 	private static int TABLE_SIZE = 2039;
-	private static int DEADLOCK_TIMEOUT = 1000;
+	private static int DEADLOCK_TIMEOUT = 500;
 
 	private TPHashTable lockTable;
 	private TPHashTable stampTable;

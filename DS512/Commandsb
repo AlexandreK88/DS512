@@ -1,5 +1,5 @@
-Throughput Global Short 5
-Throughput Global Short 10
-Throughput Global Short 15
-Throughput Global Short 20
+ResponseTime Global 0 Short 10
+ResponseTime Global 0 Short 20
+ResponseTime Global 0 Short 30
+ResponseTime Global 0 Short 40
 done

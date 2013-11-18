@@ -2,6 +2,10 @@ package transaction;
 
 import java.rmi.RemoteException;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import Middleware.MiddleWare;
 import Server.ResInterface.*;
 
 public class TransactionManager {
@@ -9,25 +13,30 @@ public class TransactionManager {
 	public static final int READ_REQUEST = 0;
 	public static final int WRITE_REQUEST = 1;
 
-	int latestTransaction;
+	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;
 
 	public TransactionManager() {
-		latestTransaction = 0;
+		latestTransaction = new AtomicInteger();
 		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 	public int start() {
-		latestTransaction++;
-		Transaction t = new Transaction(latestTransaction);
-		synchronized(ongoingTransactions) {
-			ongoingTransactions.add(t);
+		Transaction t;
+		synchronized(latestTransaction) {
+			t = new Transaction(latestTransaction.incrementAndGet());
+			System.out.println("Lock of TM's ongoingtransactions attempted"); 
+			synchronized(ongoingTransactions) { 
+				ongoingTransactions.add(t);
+			}
+			System.out.println("Lock of TM's ongoingtransactions successful!");
 		}
-		return latestTransaction;
+		return t.getID();
 	}
 
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
-		synchronized(ongoingTransactions) {
+		//System.out.println("Lock of TM's ongoingtransactions attempted"); 
+		synchronized(ongoingTransactions) { 
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == tid) {
 					for (ResourceManager rm: rmL) {
@@ -38,11 +47,17 @@ public class TransactionManager {
 				}
 			}
 		}
-		throw new InvalidTransactionException(tid, "The transaction was idle for too long, and was removed from transaction list (hence shows as -1).");
+		//System.out.println("Lock of TM's ongoingtransactions successful!");
+		if (tid == -1) {
+			throw new InvalidTransactionException(tid, "The transaction was removed from transaction list (hence shows as -1).");
+		} else {
+			throw new InvalidTransactionException(tid, "The transaction ID was NOT FOUND.");
+		}
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {
-		synchronized(ongoingTransactions) {
+		System.out.println("Lock of TM's ongoingtransactions attempted"); 
+		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
@@ -61,11 +76,13 @@ public class TransactionManager {
 				}
 			}
 		}
+		System.out.println("Lock of TM's ongoingtransactions successful!");
 		return false;	
 	}
 
 	public void abort(int tid, ResourceManager middleware) {
-		synchronized(ongoingTransactions) {
+		System.out.println("Lock of TM's ongoingtransactions attempted"); 
+		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
@@ -82,6 +99,7 @@ public class TransactionManager {
 				}
 			}
 		}
+		System.out.println("Lock of TM's ongoingtransactions successful!");
 	}
 	public LinkedList<Transaction> getOngoingTransactions(){
 		return ongoingTransactions;

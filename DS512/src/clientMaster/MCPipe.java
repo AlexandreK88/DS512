@@ -49,7 +49,7 @@ public class MCPipe  extends Thread {
 					new InputStreamReader(
 							socket.getInputStream()));
 			String inputLine;
-			String[] content = {Integer.toString(serverID)};
+			//String[] content = {Integer.toString(serverID)};
 			System.out.println("Pipe ready");
 			packetID++;
 			while (!socket.isClosed()) {

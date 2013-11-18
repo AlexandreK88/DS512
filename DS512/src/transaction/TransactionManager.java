@@ -5,8 +5,10 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import Middleware.MiddleWare;
-import Server.ResInterface.*;
+import server.resInterface.*;
+
+import middleware.MiddleWare;
+
 
 public class TransactionManager {
 

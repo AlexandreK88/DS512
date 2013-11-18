@@ -5,7 +5,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.Stack;
 
-import Server.ResInterface.*;
+import server.resInterface.*;
+
 
 
 public class Transaction {

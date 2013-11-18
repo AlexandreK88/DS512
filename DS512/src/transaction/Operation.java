@@ -2,7 +2,8 @@ package transaction;
 
 import java.rmi.RemoteException;
 
-import Server.ResInterface.ResourceManager;
+import server.resInterface.ResourceManager;
+
 
 public class Operation {
  

@@ -6,8 +6,10 @@ import java.rmi.registry.Registry;
 import java.util.*;
 import java.io.*;
 
-import LockManager.DeadlockException;
-import Server.ResInterface.*;
+import server.resInterface.*;
+
+import lockManager.DeadlockException;
+
 
 
 public class Client

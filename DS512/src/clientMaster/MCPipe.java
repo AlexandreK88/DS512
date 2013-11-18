@@ -7,7 +7,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.LinkedList;
 
-import NetPacket.NetPacket;
+import netPacket.NetPacket;
+
 
 public class MCPipe  extends Thread {
 

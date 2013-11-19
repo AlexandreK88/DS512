@@ -26,10 +26,13 @@ import java.rmi.RMISecurityManager;
 import server.resInterface.*;
 import transaction.Operation;
 import transaction.Transaction;
+import transaction.TransactionManager;
 
 
 public class ResourceManagerImpl implements server.resInterface.ResourceManager 
 {
+	
+	public static final String SEPARATOR = ",";
 
 	public class RAFList {
 		RandomAccessFile cur;
@@ -64,14 +67,39 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		
 		// To do: returns line in database where data is held for 'dataname' object is held.
 		public int getLine(String dataName) {
-			return 0;
+			int i;
+			String line = "";
+			try {
+				line = cur.readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			for (i = 0; !line.equals("") && line != null; i++) {
+				if (line.split(SEPARATOR)[0].equals(dataName)) {
+					return i;
+				}
+				try {
+					line = cur.readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			return i;
 		}
 
 		// Rewrite line in database with information from RMItem
-		public void rewriteLine(int line, RMItem itemToRewrite) {
+		public void rewriteLine(int line, String itemToRewrite) {
 			// TODO Auto-generated method stub
 			// set itemToRewrite in readableItemCSVForm
-			// Will go and cur.write(readableItemCSVForm, line * TransactionManager.LINE_SIZE);
+			try {
+				cur.seek(new Long(line*TransactionManager.LINE_SIZE));
+				cur.writeBytes(itemToRewrite);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -703,7 +731,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
 							int line = workingRec.getLine(dataName);
-							workingRec.rewriteLine(line, readData(0, dataName));
+							workingRec.rewriteLine(line, convertItemLine(dataName));
 						}
 						
 						
@@ -725,6 +753,11 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 		}
 		return false;
+	}
+
+	private String convertItemLine(String dataName) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override

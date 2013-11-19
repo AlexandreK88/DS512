@@ -762,8 +762,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	private String convertItemLine(String dataName) {
 		String line = "";
+		System.out.println("Name is " + dataName);
 		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
 			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
+			if ( flight == null ) {
+				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
+			}
 			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
 		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
 			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
@@ -985,6 +989,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == id) {
 					t.addOp(op);
+					logOperation(id, op);
 					return;
 				}
 			}
@@ -994,7 +999,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		synchronized(ongoingTransactions) {
 			ongoingTransactions.add(t);
 		}
-
+		logOperation(id, op);
+	}
+	
+	private void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
 		String operation = id + "," + op.getOpName() + ",";
 		for (String param: op.getParameters()){
@@ -1003,11 +1011,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		operation += "\n";
 		try{
 			stateLog.writeBytes(operation);
+			System.out.println("Writing op");
 			//write_stateLog.newLine();
 		}catch(Exception e){
+			System.out.println("Some god damn exception");
 		}
 	}
-	
 
 	private RAFList getMasterRecord() {
 		// TODO Auto-generated method stub

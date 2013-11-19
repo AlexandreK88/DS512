@@ -51,4 +51,16 @@ public class Operation {
 		}
 	}
 	
+	//TO DO
+	public String getOperationData() {
+		return null;
+	}
+
+	
+	//TO DO
+	// Will return all the different data structures modified by the operation.
+	public String[] getDataNames() {
+		return null;
+	}
+	
 }

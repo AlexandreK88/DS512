@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -30,24 +31,74 @@ import transaction.Transaction;
 public class ResourceManagerImpl implements server.resInterface.ResourceManager 
 {
 
+	public class RAFList {
+		RandomAccessFile cur;
+		RAFList next;
+		String name;
+		
+		RAFList(String n, String location, String mode) {
+			name = n;
+			try {
+				cur = new RandomAccessFile(location, mode);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+			next = null;
+		}
+		
+		public void setNext(RAFList n) {
+			next = n;
+		}
+		
+		public RAFList getNext() {
+			return next;
+		}
+		
+		public RandomAccessFile getFileAccess() {
+			return cur;
+		}
+		
+		public String getName() {
+			return name;
+		}
+		
+		
+		// To do: returns line in database where data is held for 'dataname' object is held.
+		public int getLine(String dataName) {
+			return 0;
+		}
+
+		// Rewrite line in database with information from RMItem
+		public void rewriteLine(int line, RMItem itemToRewrite) {
+			// TODO Auto-generated method stub
+			// set itemToRewrite in readableItemCSVForm
+			// Will go and cur.write(readableItemCSVForm, line * TransactionManager.LINE_SIZE);
+		}
+	}
+	
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
 	// Add transaction log
 	private static String responsibility;
-
-	private BufferedReader read_recordA;
+	private RAFList recordA;
+	private RAFList recordB;
+	private RAFList masterRec;
+	private RAFList workingRec;
+	
+	
+/*	private BufferedReader read_recordA;
 	private BufferedReader read_recordB;
 
 	private BufferedWriter write_recordA;
-	private BufferedWriter write_recordB;
+	private BufferedWriter write_recordB; */
 
 	private BufferedReader read_stateLog;
 	private BufferedWriter write_stateLog;
 
-	private BufferedReader master;
-	private BufferedWriter working;
-	private String currentMaster;
+	/*private BufferedReader master;
+	private BufferedWriter working; */
+	//private String currentMaster;
 	private int txnMaster;
 
 	public static void main(String args[]) {
@@ -103,24 +154,39 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		Path pathRMRecordA = Paths.get(responsibility + "/" + responsibility + "_Record_A");
 		Path pathRMRecordB = Paths.get(responsibility + "/" + responsibility + "_Record_B");
 		Path pathStateLog = Paths.get(responsibility + "/" + responsibility + "_StateLog");
+		String locationA = responsibility + "/RecordA";
+		String locationB = responsibility + "/RecordB";
 		try{
+			
+			recordA = new RAFList("A", locationA, "rwd");
+			recordB = new RAFList("B", locationB, "rwd");
+			
+			masterRec = getMasterRecord();
+			workingRec = masterRec.getNext();
+			
+			
 			Files.createFile(pathRMRecordA);
 			Files.createFile(pathRMRecordB);
-			read_recordA = Files.newBufferedReader(pathRMRecordA, charset);
+/*			read_recordA = Files.newBufferedReader(pathRMRecordA, charset);
 			read_recordB = Files.newBufferedReader(pathRMRecordB, charset);			
 			write_recordA = Files.newBufferedWriter(pathRMRecordA, charset, StandardOpenOption.APPEND);
-			write_recordB = Files.newBufferedWriter(pathRMRecordB, charset, StandardOpenOption.APPEND);
+			write_recordB = Files.newBufferedWriter(pathRMRecordB, charset, StandardOpenOption.APPEND); */
 			read_stateLog = Files.newBufferedReader(pathStateLog, charset);			
 			write_stateLog = Files.newBufferedWriter(pathStateLog, charset, StandardOpenOption.APPEND);
-			master = read_recordA;
-			working = write_recordB;
-			currentMaster = "A"; 
+			//master = read_recordA;
+			//working = write_recordB;
+			//currentMaster = "A"; 
 			write_stateLog.write("A");
 		}catch(FileAlreadyExistsException e){
 			System.out.println("Files already exist: " + e.getFile());
 		}catch(Exception e){
 			System.out.println(e);
 		}
+	}
+
+	private RAFList getMasterRecord() {
+		// TODO Auto-generated method stub
+		return recordA;
 	}
 
 	// Reads a data item
@@ -650,15 +716,20 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	public boolean commit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
 		try{	
-			String databaseInfo = "";
-			Object key = null;
-			for (Enumeration e = m_itemHT.elements(); e.hasMoreElements(); ) {
-				key = e.nextElement();
-				String value = (String)m_itemHT.get(key);
-				//database = database + "[KEY='"+key+"']" + value + "\n";
-				databaseInfo = "[KEY='"+key+"']" + value + "\n";
-				working.write(databaseInfo, 0, databaseInfo.length());					
-			}	
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							workingRec.rewriteLine(line, readData(0, dataName));
+						}
+						
+						
+					}
+					break;
+				}
+			}
 			masterSwitch(transactionId);
 		}catch(Exception e){
 		}
@@ -889,8 +960,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	//Master points to the one which is currently the latest committed version, linked to transactionID
 	private void masterSwitch(int transactionID){
-		String operation = transactionID + ", commit ,";		
-			if(currentMaster.equals("A")){
+		String operation = transactionID + ", commit ," + workingRec.getName();
+		workingRec = workingRec.getNext();
+		masterRec = masterRec.getNext();
+			/*if(currentMaster.equals("A")){
 				currentMaster = "B";
 				master = read_recordB;
 				working = write_recordA;
@@ -900,7 +973,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				master = read_recordA;
 				working = write_recordB;
 				operation += "A";
-			}		
+			}*/
+		
 		txnMaster = transactionID;
 		try{
 			write_stateLog.write(operation);
@@ -911,6 +985,13 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 	
 	/*private void clear(int transactionID){
+	 * 
+	 *Generate a new file called temp.
+	 *In temp, write all transactions down.
+	 *Close and delete current log.
+	 *change name of temp to log.
+	 *If crashes and no log file to be found, search for temp file.
+	 *
 		String line = "";
 		try{
 			while ((line = read_stateLog.readLine()) != null) {

@@ -3,6 +3,7 @@ package transaction;
 import java.rmi.RemoteException;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
 import server.resInterface.*;
@@ -46,6 +47,10 @@ public class Transaction {
 
 	public LinkedList<ResourceManager> getRMList() {
 		return rmList;
+	}
+	
+	public List<Operation> getOperations() {
+		return writeRequests;
 	}
 
 	public long getTime() {

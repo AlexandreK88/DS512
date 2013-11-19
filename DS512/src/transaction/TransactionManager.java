@@ -17,6 +17,7 @@ public class TransactionManager {
 
 	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;
+	// Add transaction log.
 
 	public TransactionManager() {
 		latestTransaction = new AtomicInteger();
@@ -58,11 +59,17 @@ public class TransactionManager {
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {
+		
 		System.out.println("Lock of TM's ongoingtransactions attempted"); 
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
+					// if canCommit for all RMs.
+						// if can't, abort t.
+					
+					// All voted YES, so commit t.
+					// commit all RM.
 					for (ResourceManager rm: t.getRMList()) {
 						if (rm != middleware) {
 							try {

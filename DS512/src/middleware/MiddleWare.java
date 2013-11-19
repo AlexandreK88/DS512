@@ -28,6 +28,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	static LockManager lockManager;
 	static TransactionManager transactionManager;
 	LinkedList<Transaction> ongoingTransactions;
+	// Add transaction log.
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
 	private static int TIME_TO_LIVE = 20000;
@@ -160,7 +161,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 
 	}
-	
+
 	private void verifyIfShutdown() throws RemoteException {
 		// time = current time;
 		Date date = new Date();
@@ -669,19 +670,19 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					rmFlight.deleteCustomer(id,customerID);
 					rmCar.deleteCustomer(id,customerID);
 					rmRoom.deleteCustomer(id,customerID);
-					
+
 					String[] opParameters = new String[3];
 					opParameters[0] = ((Integer)customerID).toString();
 					opParameters[1] = "";
 					opParameters[2] = "";
 					Operation op = new Operation("deletecustomer", opParameters, this);
 					addOperation(id, op);			
-					
+
 					// remove the customer from the storage
 					removeData(id, cust.getKey());
-					
-					
-					
+
+
+
 					return true;
 				}
 			} catch(DeadlockException e) {
@@ -784,7 +785,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
-			
+
 			//Check if flights available
 			for(int i = 0; i<flightNumbers.size(); i++){
 				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.READ)){
@@ -808,9 +809,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				}				
 			}
 			rmList.add(rmFlight);
-			
+
 			lockManager.Lock(id, "Customer"+customer, LockManager.WRITE);
-			
+
 			//Reserve flight
 			for(int i = 0; i<flightNumbers.size(); i++){
 				if(lockManager.Lock(id, "Flight"+flightNumbers.get(i), LockManager.WRITE)){
@@ -877,7 +878,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	                1 flight-177 $103
 	                1 flight-153 $64
 	                1 flight-137 $101*/
-			
+
 			String bill = "";
 			if(bill1.length == 1 || bill2.length == 1 || bill3.length == 1){
 				if(bill1[0].equals("")){
@@ -931,6 +932,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return newTr;
 	}
 
+	public boolean canCommit(int transactionId) throws RemoteException, 
+	TransactionAbortedException, InvalidTransactionException {
+		synchronized(ongoingTransactions) {
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					// if t's status is still ongoing.
+					// Add vote yes to log for trxn t.
+					// set transaction to have a ready to commit value.
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {		
@@ -981,7 +997,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
 	}
 
-	
+
 	public void cancelFlightDeletion(String[] parameters) {
 
 	}
@@ -1016,7 +1032,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		// TODO Auto-generated method stub
 
 	}
-	
+
 	private void addOperation(int id, Operation op) {
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == id) {

@@ -25,7 +25,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
-
+	// Add transaction log
+	
+	
 	public static void main(String args[]) {
 		// Figure out where server is running
 		String server = "localhost";
@@ -587,12 +589,29 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return trCount;
 	}
 
+	public boolean canCommit(int transactionId) throws RemoteException, 
+							TransactionAbortedException, InvalidTransactionException {
+		synchronized(ongoingTransactions) {
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					// if t's status is still ongoing.
+					// Add vote yes to log for trxn t.
+					// set transaction to have a ready to commit value.
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 			TransactionAbortedException, InvalidTransactionException {
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
+					// write commit to disk.
+					// add information to log of successful commit transaction.
 					ongoingTransactions.remove(ongoingTransactions.get(i));
 					return true;
 				}

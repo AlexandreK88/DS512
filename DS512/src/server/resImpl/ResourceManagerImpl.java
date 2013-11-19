@@ -788,6 +788,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 
 		}
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+			line += " ";
+		}
+		line+= "\n";
 		return line;
 	}
 

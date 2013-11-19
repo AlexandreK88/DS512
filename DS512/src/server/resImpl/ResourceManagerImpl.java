@@ -60,8 +60,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		
 		public String getName() {
 			return name;
-		}
-		
+		}	
 		
 		// To do: returns line in database where data is held for 'dataname' object is held.
 		public int getLine(String dataName) {
@@ -85,20 +84,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private RAFList recordB;
 	private RAFList masterRec;
 	private RAFList workingRec;
+	private RAFList stateLog;
 	
-	
-/*	private BufferedReader read_recordA;
-	private BufferedReader read_recordB;
-
-	private BufferedWriter write_recordA;
-	private BufferedWriter write_recordB; */
-
-	private BufferedReader read_stateLog;
-	private BufferedWriter write_stateLog;
-
-	/*private BufferedReader master;
-	private BufferedWriter working; */
-	//private String currentMaster;
 	private int txnMaster;
 
 	public static void main(String args[]) {
@@ -156,10 +143,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		Path pathStateLog = Paths.get(responsibility + "/" + responsibility + "_StateLog");
 		String locationA = responsibility + "/RecordA";
 		String locationB = responsibility + "/RecordB";
+		String locationLoh = responsibility + "/StateLog";
 		try{
 			
 			recordA = new RAFList("A", locationA, "rwd");
 			recordB = new RAFList("B", locationB, "rwd");
+			stateLog = new RAFList("Log", locationB, "rwd");
 			
 			masterRec = getMasterRecord();
 			workingRec = masterRec.getNext();
@@ -167,15 +156,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			
 			Files.createFile(pathRMRecordA);
 			Files.createFile(pathRMRecordB);
-/*			read_recordA = Files.newBufferedReader(pathRMRecordA, charset);
-			read_recordB = Files.newBufferedReader(pathRMRecordB, charset);			
-			write_recordA = Files.newBufferedWriter(pathRMRecordA, charset, StandardOpenOption.APPEND);
-			write_recordB = Files.newBufferedWriter(pathRMRecordB, charset, StandardOpenOption.APPEND); */
-			read_stateLog = Files.newBufferedReader(pathStateLog, charset);			
-			write_stateLog = Files.newBufferedWriter(pathStateLog, charset, StandardOpenOption.APPEND);
-			//master = read_recordA;
-			//working = write_recordB;
-			//currentMaster = "A"; 
+
 			write_stateLog.write("A");
 		}catch(FileAlreadyExistsException e){
 			System.out.println("Files already exist: " + e.getFile());
@@ -977,7 +958,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		
 		txnMaster = transactionID;
 		try{
-			write_stateLog.write(operation);
+			stateLog.rewriteLine(line, itemToRewrite).write(operation);
 		}catch(Exception e){
 			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
 			System.out.println(e);

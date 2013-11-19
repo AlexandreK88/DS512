@@ -72,7 +72,7 @@ public class client
 			// get a reference to the rmiregistry
 			Registry registry = LocateRegistry.getRegistry(server, port);
 			// get the proxy and the remote reference by rmiregistry lookup
-			rm = (ResourceManager) registry.lookup("Resort21ResourceManager");
+			rm = (ResourceManager) registry.lookup("Flight21ResourceManager");
 			if(rm!=null)
 			{
 				System.out.println("Successful");

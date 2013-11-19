@@ -25,15 +25,15 @@ import transaction.TransactionManager;
 
 public class ResourceManagerImpl implements server.resInterface.ResourceManager 
 {
-	
+
 	public static final String SEPARATOR = ",";
 
 	public class RAFList {
 		RandomAccessFile cur;
 		RAFList next;
 		String name;
-		
-		
+
+
 		RAFList(String n, String location, String mode) {
 			name = n;
 			try {
@@ -43,23 +43,23 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 			next = null;
 		}
-		
+
 		public void setNext(RAFList n) {
 			next = n;
 		}
-		
+
 		public RAFList getNext() {
 			return next;
 		}
-		
+
 		public RandomAccessFile getFileAccess() {
 			return cur;
 		}
-		
+
 		public String getName() {
 			return name;
 		}	
-		
+
 		// To do: returns line in database where data is held for 'dataname' object is held.
 		public int getLine(String dataName) {
 			int i;
@@ -105,7 +105,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 		}
 	}
-	
+
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
@@ -115,8 +115,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private RAFList recordB;
 	private RAFList masterRec;
 	private RAFList workingRec;
-	private RAFList stateLog;
-	
+	private RandomAccessFile stateLog;
+
 	private int txnMaster;
 
 	public static void main(String args[]) {
@@ -172,24 +172,18 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		String locationB = responsibility + "/RecordB";
 		String locationLog = responsibility + "/StateLog";
 		try{
-			
+
 			recordA = new RAFList("A", locationA, "rwd");
 			recordB = new RAFList("B", locationB, "rwd");
-			stateLog = new RAFList("Log", locationLog, "rwd");
-			
+			stateLog = new RandomAccessFile(locationLog, "rwd");
+
 			masterRec = getMasterRecord();
 			workingRec = masterRec.getNext();
-			
+
 		}catch(Exception e){
 			System.out.println(e);
 		}
 	}
-
-	private RAFList getMasterRecord() {
-		// TODO Auto-generated method stub
-		return recordA;
-	}
-
 	// Reads a data item
 	private RMItem readData( int id, String key )
 	{
@@ -699,7 +693,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
-							TransactionAbortedException, InvalidTransactionException {
+	TransactionAbortedException, InvalidTransactionException {
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
@@ -712,7 +706,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		return false;
 	}
-	
+
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
@@ -725,8 +719,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 							int line = workingRec.getLine(dataName);
 							workingRec.rewriteLine(line, convertItemLine(dataName));
 						}
-						
-						
+
+
 					}
 					break;
 				}
@@ -977,7 +971,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		synchronized(ongoingTransactions) {
 			ongoingTransactions.add(t);
 		}
-		
+
 		//Add operation on stateLog file
 		String operation = id + "," + op.getOpName() + ",";
 		for (String param: op.getParameters()){
@@ -985,39 +979,84 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		operation += "\n";
 		try{
-			stateLog.write(operation);
+			stateLog.writeBytes(operation);
 			//write_stateLog.newLine();
 		}catch(Exception e){
 		}
 	}
+	
+
+	private RAFList getMasterRecord() {
+		// TODO Auto-generated method stub
+		try {
+			String op = "";
+			String[] opElements;
+			String[] lastCommit = null;
+			op = stateLog.readLine();
+			if(op.equals(null)){
+				System.out.println("Log file is empty, master record is A");
+				return recordA;
+			}
+			do{
+				opElements = op.split(",");
+				if(opElements[1].equals("commit")){
+					lastCommit = opElements;
+				}	
+				op = stateLog.readLine();
+			}while(!op.equals(null));
+
+			if(lastCommit.equals(null)){
+				System.out.println("Log file is not empty but has no commit, master record is A");
+				return recordA;
+			}else{
+				if(opElements[2].equals("A")){
+					System.out.println("Commit found, master record is A");
+					return recordA;
+				}else{
+					System.out.println("Commit found, master record is B");
+					return recordB;
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	//Master points to the one which is currently the latest committed version, linked to transactionID
 	private void masterSwitch(int transactionID){
-		String operation = transactionID + ", commit ," + workingRec.getName();
+		String operation = transactionID + ", commit ," + workingRec.getName() + "\n";
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
 		txnMaster = transactionID;
 		try{
-			stateLog.write(operation);
+			stateLog.writeBytes(operation);
 		}catch(Exception e){
 			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
 			System.out.println(e);
 		}		
 	}
-	
+
 	private void clear(){
-	 /* 
-	 *Generate a new file called temp.
-	 *In temp, write all transactions down.
-	 *Close and delete current log.
-	 *change name of temp to log.
-	 *If crashes and no log file to be found, search for temp file.
-	 */
-		
-		String locationLog = responsibility + "/stateLog";
-		String locationTemp = responsibility + "/temp";
-		RAFList temp = new RAFList("temp", locationLog, "rwd");
-		
+		/* 
+		 *Generate a new file called temp.
+		 *In temp, write all transactions down.
+		 *Close and delete current log.
+		 *change name of temp to log.
+		 *If crashes and no log file to be found, search for temp file.
+		 */
+
+		String locationLog = responsibility + "/stateLog.db";
+		String locationTemp = responsibility + "/temp.db";
+		RandomAccessFile temp = null;
+		try {
+			temp = new RandomAccessFile(locationTemp, "rwd");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		String operation = "";
 		synchronized(ongoingTransactions){
 			for (Transaction t: ongoingTransactions){				
@@ -1026,19 +1065,24 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					for(String p: op.getParameters()){
 						operation += p + ",";
 					}
-					temp.write(operation);					
+					try {
+						temp.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}					
 				}
 			}
 		}
 
 		try {
-			stateLog.getFileAccess().close();
-			temp.getFileAccess().close();
+			stateLog.close();
+			temp.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		File theLog = new File(locationLog);
 		File theTemp = new File(locationTemp);
 		theTemp.renameTo(theLog);

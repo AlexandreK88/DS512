@@ -66,6 +66,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			int i;
 			String line = "";
 			try {
+				cur.seek(new Long(0));
 				line = cur.readLine();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -722,21 +723,27 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							System.out.println(ops.get(i) + " is the " + i + "th op");
-							System.out.println(dataName + " is the dataname");
-							if ( workingRec == null) {
-								System.out.println("Well, workingRec is null. There ya go, motherf XD");
-							}
 							int line = workingRec.getLine(dataName);
 							workingRec.rewriteLine(line, convertItemLine(dataName));
 						}
-
-
 					}
 					break;
 				}
 			}
 			masterSwitch(transactionId);
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							System.out.println("Line is: " + line);
+							workingRec.rewriteLine(line, convertItemLine(dataName));
+						}
+					}
+					break;
+				}
+			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -1009,19 +1016,19 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			String[] opElements;
 			String[] lastCommit = null;
 			op = stateLog.readLine();
-			if(op.equals(null)){
+			if(op == null){
 				System.out.println("Log file is empty, master record is A");
 				return recordA;
 			}
 			do{
 				opElements = op.split(",");
-				if(opElements[1].equals("commit")){
+				if(opElements[1].trim().equals("commit")){
 					lastCommit = opElements;
 				}	
 				op = stateLog.readLine();
-			}while(!op.equals(null));
+			}while(op != null);
 
-			if(lastCommit.equals(null)){
+			if(lastCommit == null){
 				System.out.println("Log file is not empty but has no commit, master record is A");
 				return recordA;
 			}else{
@@ -1042,7 +1049,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	//Master points to the one which is currently the latest committed version, linked to transactionID
 	private void masterSwitch(int transactionID){
-		String operation = transactionID + ", commit ," + workingRec.getName() + "\n";
+		String operation = transactionID + ",commit," + workingRec.getName() + "\n";
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
 		txnMaster = transactionID;

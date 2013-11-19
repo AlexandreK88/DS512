@@ -14,7 +14,7 @@ public class TransactionManager {
 
 	public static final int READ_REQUEST = 0;
 	public static final int WRITE_REQUEST = 1;
-	public static final int LINE_SIZE = 200;
+	public static final int LINE_SIZE = 1000;
 
 	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;

@@ -1004,9 +1004,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	
 	private void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
-		String operation = id + "," + op.getOpName() + ",";
+		String operation = id + "," + op.getOpName();
 		for (String param: op.getParameters()){
-			operation += param + ",";
+			operation +=  "," + param;
 		}
 		operation += "\n";
 		try{

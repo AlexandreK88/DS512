@@ -6,8 +6,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.io.*;
 
-import netPacket.NetPacket;
-
+import NetPacket.NetPacket;
 
 
 public class ClientCaller extends Thread 

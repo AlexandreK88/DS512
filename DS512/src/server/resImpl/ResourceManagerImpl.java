@@ -6,6 +6,16 @@
 package server.resImpl;
 
 import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -17,21 +27,34 @@ import transaction.Operation;
 import transaction.Transaction;
 
 
-
-
 public class ResourceManagerImpl implements server.resInterface.ResourceManager 
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
+	private static String responsibility;
+
+	private BufferedReader read_recordA;
+	private BufferedReader read_recordB;
+
+	private BufferedWriter write_recordA;
+	private BufferedWriter write_recordB;
+
+	private BufferedReader read_stateLog;
+	private BufferedWriter write_stateLog;
+
+	private BufferedReader master;
+	private BufferedWriter working;
+	private String currentMaster;
+	private int txnMaster;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
 		String server = "localhost";
 		int port = 1099;
-		String responsibility = "";
-		
+		responsibility = "";
+
 		if (args.length > 0) {
 			responsibility = args[0];           
 		}
@@ -67,14 +90,37 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-		
-	}
-	
-	public ResourceManagerImpl() throws RemoteException {
-		ongoingTransactions = new LinkedList<Transaction>();
-		trCount = 0;
+
 	}
 
+	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
+		ongoingTransactions = new LinkedList<Transaction>();
+		trCount = 0;
+		txnMaster = -1;
+
+		Charset charset = Charset.forName("US-ASCII");
+		Path pathRMRecordA = Paths.get(responsibility + "/" + responsibility + "_Record_A");
+		Path pathRMRecordB = Paths.get(responsibility + "/" + responsibility + "_Record_B");
+		Path pathStateLog = Paths.get(responsibility + "/" + responsibility + "_StateLog");
+		try{
+			Files.createFile(pathRMRecordA);
+			Files.createFile(pathRMRecordB);
+			read_recordA = Files.newBufferedReader(pathRMRecordA, charset);
+			read_recordB = Files.newBufferedReader(pathRMRecordB, charset);			
+			write_recordA = Files.newBufferedWriter(pathRMRecordA, charset, StandardOpenOption.APPEND);
+			write_recordB = Files.newBufferedWriter(pathRMRecordB, charset, StandardOpenOption.APPEND);
+			read_stateLog = Files.newBufferedReader(pathStateLog, charset);			
+			write_stateLog = Files.newBufferedWriter(pathStateLog, charset, StandardOpenOption.APPEND);
+			master = read_recordA;
+			working = write_recordB;
+			currentMaster = "A"; 
+			write_stateLog.write("A");
+		}catch(FileAlreadyExistsException e){
+			System.out.println("Files already exist: " + e.getFile());
+		}catch(Exception e){
+			System.out.println(e);
+		}
+	}
 
 	// Reads a data item
 	private RMItem readData( int id, String key )
@@ -194,7 +240,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
 			throws RemoteException
 			{
-		
+
 		Trace.info("RM::addFlight(" + id + ", " + flightNum + ", $" + flightPrice + ", " + flightSeats + ") called" );
 		Flight curObj = (Flight) readData( id, Flight.getKey(flightNum) );
 		if ( curObj == null ) {
@@ -224,7 +270,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public boolean deleteFlight(int id, int flightNum)
 			throws RemoteException
-	{
+			{
 		Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
 		if (deleteItem(id, Flight.getKey(flightNum))) {
 			String[] parameters = {((Integer)flightNum).toString(),((Integer)curObj.getCount()).toString(), ((Integer)curObj.getPrice()).toString()}; 
@@ -234,9 +280,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-	}
-
-
+			}
 
 	// Create a new room location or add rooms to an existing location
 	//  NOTE: if price <= 0 and the room location already exists, it maintains its current price
@@ -271,7 +315,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	// Delete rooms from a location
 	public boolean deleteRooms(int id, String location)
 			throws RemoteException
-	{
+			{
 		Hotel curObj = (Hotel) readData( id, Hotel.getKey(location) );
 		if (deleteItem(id, Hotel.getKey(location))) {
 			String[] parameters = {location,((Integer)curObj.getCount()).toString(), ((Integer)curObj.getPrice()).toString()}; 
@@ -281,7 +325,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-	}
+			}
 
 	// Create a new car location or add cars to an existing location
 	//  NOTE: if price <= 0 and the location already exists, it maintains its current price
@@ -311,7 +355,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			Trace.info("RM::addCars(" + id + ") modified existing location " + location + ", count=" + curObj.getCount() + ", price=$" + price );
 		} // else
 		return(true);
-	}
+			}
 
 
 	// Delete cars from a location
@@ -327,7 +371,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-	}
+			}
 
 
 
@@ -510,7 +554,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				item.setReserved(item.getReserved()-reserveditem.getCount());
 				item.setCount(item.getCount()+reserveditem.getCount());
 			}
-			 
+
 
 			// remove the customer from the storage
 			removeData(id, cust.getKey());
@@ -518,14 +562,14 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
 			return true;
 		} // if
-	}
+			}
 
 
 
 	// Adds car reservation to this customer. 
 	public boolean reserveCar(int id, int customerID, String location)
 			throws RemoteException
-	{
+			{
 		if (reserveItem(id, customerID, Car.getKey(location), location)) {
 			String[] parameters = {String.valueOf(customerID), Car.getKey(location)};		 
 			Operation op = new Operation("reservecar", parameters, this);
@@ -534,7 +578,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-	}
+			}
 
 
 	// Adds room reservation to this customer. 
@@ -549,10 +593,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-		
+
 			}
-	
-	
+
+
 	// Adds flight reservation to this customer.  
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 			throws RemoteException
@@ -565,7 +609,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		} else {
 			return false;
 		}
-		
+
 			}
 
 	// Reserve an itinerary 
@@ -589,7 +633,20 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	@Override
 	public boolean commit(int transactionId) throws RemoteException,
-			TransactionAbortedException, InvalidTransactionException {
+	TransactionAbortedException, InvalidTransactionException {
+		try{	
+			String databaseInfo = "";
+			Object key = null;
+			for (Enumeration e = m_itemHT.elements(); e.hasMoreElements(); ) {
+				key = e.nextElement();
+				String value = (String)m_itemHT.get(key);
+				//database = database + "[KEY='"+key+"']" + value + "\n";
+				databaseInfo = "[KEY='"+key+"']" + value + "\n";
+				working.write(databaseInfo, 0, databaseInfo.length());					
+			}	
+			masterSwitch(transactionId);
+		}catch(Exception e){
+		}
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -603,7 +660,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	@Override
 	public void abort(int transactionId) throws RemoteException,
-			InvalidTransactionException {
+	InvalidTransactionException {
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -629,12 +686,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				deleteItem(0, Flight.getKey(flightNum));
 			}
 		} // else
-		
+
 	}
 
 	// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
 	public void cancelNewCar(String[] parameters) {
-		
+
 		Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
 		if (curObj != null) {
 			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
@@ -668,7 +725,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
 	}
 
-	
+
 	public void cancelFlightDeletion(String[] parameters) {
 		// TODO Auto-generated method stub
 		try {
@@ -708,7 +765,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		writeData( 0, cust.getKey(), cust );
 		String[] reservationType = parameters[1].split("::");
 		String[] reservationIdentifier = parameters[2].split("::");
-		
+
 		for (int i = 0; i < reservationType.length; i++) {
 			if (reservationType[i].equals("flight")) {
 				reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
@@ -720,7 +777,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 	}
 
-	
+
 	public void cancelFlightReservation(String[] parameters) {
 		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
 		RMHashtable reservationHT = cust.getReservations();
@@ -748,7 +805,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		RMHashtable reservationHT = cust.getReservations();
 		boolean canceled = false;
 		ReservedItem ri = null;
-		
+
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
 			if (reservedkey.equals(parameters[1])) {
@@ -771,7 +828,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		RMHashtable reservationHT = cust.getReservations();
 		boolean canceled = false;
 		ReservedItem ri = null;
-		
+
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
 			if (reservedkey.equals(parameters[1])) {
@@ -788,8 +845,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			cust.getReservations().remove(ri.getKey());
 		}
 	}
-	
-	
+
+
 	private void addOperation(int id, Operation op) {
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
@@ -804,6 +861,56 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		synchronized(ongoingTransactions) {
 			ongoingTransactions.add(t);
 		}
+		
+		//Add operation on stateLog file
+		String operation = id + "," + op.getOpName() + ",";
+		for (String param: op.getParameters()){
+			operation += param + ",";
+		}
+		operation += "\n";
+		try{
+			write_stateLog.write(operation, 0, operation.length());
+			//write_stateLog.newLine();
+		}catch(Exception e){
+		}
 	}
 
+	//Master points to the one which is currently the latest committed version, linked to transactionID
+	private void masterSwitch(int transactionID){
+		String operation = transactionID + ", commit ,";		
+			if(currentMaster.equals("A")){
+				currentMaster = "B";
+				master = read_recordB;
+				working = write_recordA;
+				operation += "A";
+			}else{
+				currentMaster = "A";
+				master = read_recordA;
+				working = write_recordB;
+				operation += "A";
+			}		
+		txnMaster = transactionID;
+		try{
+			write_stateLog.write(operation);
+		}catch(Exception e){
+			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
+			System.out.println(e);
+		}		
+	}
+	
+	/*private void clear(int transactionID){
+		String line = "";
+		try{
+			while ((line = read_stateLog.readLine()) != null) {
+				if(transactionID == Integer.parseInt(line.substring(0, line.indexOf(",")))){
+					//write_stateLog
+					//clear line
+				}
+				System.out.println(line);
+			}
+		}catch(Exception e){
+			System.out.println("Problem trying to clear stateLog of commited transaction with ID: " + transactionID);
+			System.out.println(e);
+		}
+	}*/
 }

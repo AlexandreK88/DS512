@@ -17,6 +17,14 @@ public class Operation {
 		rm = rMan;
 	}
 	
+	public String getOpName(){
+		return opName;
+	}
+	
+	public String[] getParameters(){
+		return parameters;
+	}
+	
 	public void undoOp() throws RemoteException {
 		if (opName.equals("newflight")) {
 			rm.cancelNewFlight(parameters);

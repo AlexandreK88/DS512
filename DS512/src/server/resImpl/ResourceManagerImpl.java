@@ -6,17 +6,11 @@
 package server.resImpl;
 
 import java.util.*;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.charset.Charset;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -38,6 +32,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		RandomAccessFile cur;
 		RAFList next;
 		String name;
+		
 		
 		RAFList(String n, String location, String mode) {
 			name = n;
@@ -87,6 +82,14 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				}
 			}
 			return i;
+		}
+		public void write(String itemToWrite){
+			try {
+				cur.writeBytes(itemToWrite);
+			} catch(IOException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 
 		// Rewrite line in database with information from RMItem
@@ -165,29 +168,18 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		trCount = 0;
 		txnMaster = -1;
 
-		Charset charset = Charset.forName("US-ASCII");
-		Path pathRMRecordA = Paths.get(responsibility + "/" + responsibility + "_Record_A");
-		Path pathRMRecordB = Paths.get(responsibility + "/" + responsibility + "_Record_B");
-		Path pathStateLog = Paths.get(responsibility + "/" + responsibility + "_StateLog");
 		String locationA = responsibility + "/RecordA";
 		String locationB = responsibility + "/RecordB";
-		String locationLoh = responsibility + "/StateLog";
+		String locationLog = responsibility + "/StateLog";
 		try{
 			
 			recordA = new RAFList("A", locationA, "rwd");
 			recordB = new RAFList("B", locationB, "rwd");
-			stateLog = new RAFList("Log", locationB, "rwd");
+			stateLog = new RAFList("Log", locationLog, "rwd");
 			
 			masterRec = getMasterRecord();
 			workingRec = masterRec.getNext();
 			
-			
-			Files.createFile(pathRMRecordA);
-			Files.createFile(pathRMRecordB);
-
-			write_stateLog.write("A");
-		}catch(FileAlreadyExistsException e){
-			System.out.println("Files already exist: " + e.getFile());
 		}catch(Exception e){
 			System.out.println(e);
 		}
@@ -966,7 +958,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		operation += "\n";
 		try{
-			write_stateLog.write(operation, 0, operation.length());
+			stateLog.write(operation);
 			//write_stateLog.newLine();
 		}catch(Exception e){
 		}
@@ -977,47 +969,52 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		String operation = transactionID + ", commit ," + workingRec.getName();
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
-			/*if(currentMaster.equals("A")){
-				currentMaster = "B";
-				master = read_recordB;
-				working = write_recordA;
-				operation += "A";
-			}else{
-				currentMaster = "A";
-				master = read_recordA;
-				working = write_recordB;
-				operation += "A";
-			}*/
-		
 		txnMaster = transactionID;
 		try{
-			stateLog.rewriteLine(line, itemToRewrite).write(operation);
+			stateLog.write(operation);
 		}catch(Exception e){
 			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
 			System.out.println(e);
 		}		
 	}
 	
-	/*private void clear(int transactionID){
-	 * 
+	private void clear(){
+	 /* 
 	 *Generate a new file called temp.
 	 *In temp, write all transactions down.
 	 *Close and delete current log.
 	 *change name of temp to log.
 	 *If crashes and no log file to be found, search for temp file.
-	 *
-		String line = "";
-		try{
-			while ((line = read_stateLog.readLine()) != null) {
-				if(transactionID == Integer.parseInt(line.substring(0, line.indexOf(",")))){
-					//write_stateLog
-					//clear line
+	 */
+		
+		String locationLog = responsibility + "/stateLog";
+		String locationTemp = responsibility + "/temp";
+		RAFList temp = new RAFList("temp", locationLog, "rwd");
+		
+		String operation = "";
+		synchronized(ongoingTransactions){
+			for (Transaction t: ongoingTransactions){				
+				for(Operation op: t.getOperations()){
+					operation = t.getID() + "," + op.getOpName() + ",";
+					for(String p: op.getParameters()){
+						operation += p + ",";
+					}
+					temp.write(operation);					
 				}
-				System.out.println(line);
 			}
-		}catch(Exception e){
-			System.out.println("Problem trying to clear stateLog of commited transaction with ID: " + transactionID);
-			System.out.println(e);
 		}
-	}*/
+
+		try {
+			stateLog.getFileAccess().close();
+			temp.getFileAccess().close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		File theLog = new File(locationLog);
+		File theTemp = new File(locationTemp);
+		theTemp.renameTo(theLog);
+		theLog.delete();
+	}
 }

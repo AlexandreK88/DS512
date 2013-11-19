@@ -775,8 +775,35 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	private String convertItemLine(String dataName) {
-		// TODO Auto-generated method stub
-		return null;
+		String line = "";
+		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+			ReservableItem flight = (ReservableItem)readData(0,dataName.substring(6));
+			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
+		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
+			ReservableItem car = (ReservableItem)readData(0,dataName.substring(3));
+			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
+		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
+			ReservableItem room = (ReservableItem)readData(0,dataName.substring(4));
+			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
+		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+			line += dataName;
+			String rawData;
+			try {
+				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+				String[] lines = rawData.split("\n");
+				for (int i = 1; i < lines.length; i++) {
+					line += SEPARATOR + lines[i]; 
+				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		return line;
 	}
 
 	@Override

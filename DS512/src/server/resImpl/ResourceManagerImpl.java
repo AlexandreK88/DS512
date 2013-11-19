@@ -27,6 +27,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 {
 
 	public static final String SEPARATOR = ",";
+	public static final String PATHING = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").length() - 3);
 
 	public class RAFList {
 		RandomAccessFile cur;
@@ -70,7 +71,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			for (i = 0; !line.equals("") && line != null; i++) {
+			for (i = 0; line != null && !line.equals(""); i++) {
 				if (line.split(SEPARATOR)[0].equals(dataName)) {
 					return i;
 				}
@@ -164,25 +165,30 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
+		
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 		txnMaster = -1;
 
-		String locationA = responsibility + "/RecordA";
-		String locationB = responsibility + "/RecordB";
-		String locationLog = responsibility + "/StateLog";
-		try{
+		String locationA = PATHING + responsibility + "/RecordA.db";
+		String locationB = PATHING + responsibility + "/RecordB.db";
+		String locationLog = PATHING + responsibility + "/StateLog.db";
 
-			recordA = new RAFList("A", locationA, "rwd");
-			recordB = new RAFList("B", locationB, "rwd");
-			stateLog = new RandomAccessFile(locationLog, "rwd");
-
-			masterRec = getMasterRecord();
-			workingRec = masterRec.getNext();
-
-		}catch(Exception e){
-			System.out.println(e);
-		}
+		System.out.println(locationA + " is location.");
+		System.out.println(PATHING);
+		File file = new File(locationA);
+		file.createNewFile();
+		recordA = new RAFList("A", locationA, "rwd");
+		file = new File(locationB);
+		file.createNewFile();
+		recordB = new RAFList("B", locationB, "rwd");
+		file = new File(locationLog);
+		file.createNewFile();
+		stateLog = new RandomAccessFile(locationLog, "rwd");
+		recordA.setNext(recordB);
+		recordB.setNext(recordA);
+		masterRec = getMasterRecord();
+		workingRec = masterRec.getNext();
 	}
 	// Reads a data item
 	private RMItem readData( int id, String key )
@@ -716,6 +722,11 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
+							System.out.println(ops.get(i) + " is the " + i + "th op");
+							System.out.println(dataName + " is the dataname");
+							if ( workingRec == null) {
+								System.out.println("Well, workingRec is null. There ya go, motherf XD");
+							}
 							int line = workingRec.getLine(dataName);
 							workingRec.rewriteLine(line, convertItemLine(dataName));
 						}
@@ -727,6 +738,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 			masterSwitch(transactionId);
 		}catch(Exception e){
+			e.printStackTrace();
 		}
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
@@ -744,13 +756,13 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private String convertItemLine(String dataName) {
 		String line = "";
 		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
-			ReservableItem flight = (ReservableItem)readData(0,dataName.substring(6));
+			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
 			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
 		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
-			ReservableItem car = (ReservableItem)readData(0,dataName.substring(3));
+			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
 			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
 		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
-			ReservableItem room = (ReservableItem)readData(0,dataName.substring(4));
+			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
 			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
 		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
 			line += dataName;
@@ -770,6 +782,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 
 		}
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+			line += " ";
+		}
+		line+= "\n";
 		return line;
 	}
 

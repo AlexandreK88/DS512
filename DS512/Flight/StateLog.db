@@ -1,4 +1,11 @@
-1,newcustomer,555
+1,newcustomer,123
 1,newflight,1,1,1
-1,newcar,bob,23,1
-1,newroom,bob,45,1
+1,commit,B
+2,newroom,bob,23,1
+2,reserveroom,123,room-bob
+2,commit,A
+1,newflight,1,1,1
+1,commit,B
+2,newroom,bob,23,1
+2,reserveroom,123,room-bob
+2,commit,A

@@ -73,7 +73,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				e.printStackTrace();
 			}
 			for (i = 0; line != null && !line.equals(""); i++) {
-				if (line.split(SEPARATOR)[0].equals(dataName)) {
+				if (line.split(SEPARATOR)[0].trim().equals(dataName)) {
 					return i;
 				}
 				try {
@@ -166,7 +166,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
-		
+
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 		txnMaster = -1;
@@ -178,10 +178,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		System.out.println(locationA + " is location.");
 		System.out.println(PATHING);
 		File file = new File(locationA);
-		file.createNewFile();
+		boolean readDataA = !file.createNewFile();
 		recordA = new RAFList("A", locationA, "rwd");
 		file = new File(locationB);
-		file.createNewFile();
+		boolean readDataB = file.createNewFile();
 		recordB = new RAFList("B", locationB, "rwd");
 		file = new File(locationLog);
 		file.createNewFile();
@@ -190,7 +190,91 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		recordB.setNext(recordA);
 		masterRec = getMasterRecord();
 		workingRec = masterRec.getNext();
+		if (masterRec == recordA && readDataA) {
+			initializeMemory(recordA);
+		} else {
+			initializeMemory(recordB);
+		}
 	}
+	private void initializeMemory(RAFList record) {
+		try {
+			String line = "";
+			try {
+				line = record.getFileAccess().readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			while (line != null && line != "") {
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(lineDetails[0].startsWith("Room")) {
+					this.addRooms(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+				} else if(lineDetails[0].startsWith("Car")) {
+					this.addCars(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));				
+				} else if(lineDetails[0].startsWith("Flight")) {
+					this.addFlight(0, Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+				}
+			}
+
+			try {
+				record.getFileAccess().seek(0);
+				line = record.getFileAccess().readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			while (line != null && line != "") {
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(lineDetails[0].startsWith("Cust")) {
+					for (String reservation: lineDetails) {
+						if (reservation == lineDetails[0]) {
+							continue;
+						}
+						String[] details = reservation.split(" ");
+						if (details[1].startsWith("flight")) {
+							this.addFlight(0, Integer.parseInt(details[1].substring(7)), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+								reserveFlight(0, Integer.parseInt(lineDetails[0].substring(8)), Integer.parseInt(details[1].substring(7)));
+							}
+						} else if (details[1].startsWith("car")) {
+							this.addCars(0, details[1].substring(4), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+								reserveCar(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(4));
+							}
+						} else if (details[1].startsWith("room")) {
+							this.addRooms(0, details[1].substring(5), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+								reserveRoom(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(5));
+							}
+						}
+					}
+				}
+			}
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
 	// Reads a data item
 	private RMItem readData( int id, String key )
 	{
@@ -793,10 +877,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 
 		}
-		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE; i++) {
 			line += " ";
 		}
-		line+= "\n";
 		return line;
 	}
 
@@ -1001,7 +1084,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		logOperation(id, op);
 	}
-	
+
 	private void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
 		String operation = id + "," + op.getOpName();

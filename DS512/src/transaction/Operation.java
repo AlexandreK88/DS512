@@ -84,15 +84,15 @@ public class Operation {
 		} else if (opName.equals("reserveflight")) {
 			dataNames = new String[2];
 			dataNames[0] = "Customer"+parameters[0];
-			dataNames[1] = "Flight"+parameters[1];
+			dataNames[1] = "Flight"+parameters[1].substring(7);
 		} else if (opName.equals("reservecar")) {
 			dataNames = new String[2];
 			dataNames[0] = "Customer"+parameters[0];
-			dataNames[1] = "Room"+parameters[1];			
+			dataNames[1] = "Room"+parameters[1].substring(4);			
 		} else if (opName.equals("reserveroom")) {
 			dataNames = new String[2];
 			dataNames[0] = "Customer"+parameters[0];
-			dataNames[1] = "Room"+parameters[1];
+			dataNames[1] = "Room"+parameters[1].substring(5);
 		}
 		return dataNames;
 	}

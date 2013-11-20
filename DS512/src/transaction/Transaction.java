@@ -14,6 +14,7 @@ public class Transaction {
 	int id;
 	Stack<Operation> writeRequests;
 	LinkedList<ResourceManager> rmList;
+	boolean readyToCommit;
 
 	private Date date = new Date();
 
@@ -22,10 +23,18 @@ public class Transaction {
 		id = i;
 		writeRequests = new Stack<Operation>();
 		rmList = new LinkedList<ResourceManager>();
+		readyToCommit = false;
 	}
 
 	public int getID() {
 		return id;
+	}
+	
+	public boolean isReadyToCommit(){
+		return readyToCommit;
+	}
+	public void setReadyToCommit(boolean ready){
+		readyToCommit = ready;
 	}
 
 	public void addrm(ResourceManager rm) {

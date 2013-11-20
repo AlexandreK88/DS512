@@ -137,7 +137,10 @@ public interface ResourceManager extends Remote
     public int start() 
     throws RemoteException;
     
-    public boolean commit(int transactionId) 
+    public boolean canCommit(int transactionId) 
+    throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    
+    public boolean doCommit(int transactionId) 
     throws RemoteException, TransactionAbortedException, InvalidTransactionException;
     
     public void abort(int transactionId) 

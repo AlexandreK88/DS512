@@ -706,8 +706,27 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				if (t.getID() == transactionId) {
 					// if t's status is still ongoing.
 					// Add vote yes to log for trxn t.
-					// set transaction to have a ready to commit value.
+					// set transaction to have a ready to commit value (DONE)
+					t.setReadyToCommit(true);
+					String operation = transactionId + ", canCommit, YES";
+					try {
+						stateLog.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return true;
+				}
+				else{
+					t.setReadyToCommit(true);
+					String operation = transactionId + ", canCommit, NO";
+					try {
+						stateLog.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					abort(transactionId);
 				}
 			}
 		}
@@ -715,7 +734,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	@Override
-	public boolean commit(int transactionId) throws RemoteException,
+	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
 		try{	
 			for (Transaction t: ongoingTransactions) {
@@ -812,7 +831,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 		}
 	}
-
 
 	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
 	public void cancelNewFlight(String[] parameters) {

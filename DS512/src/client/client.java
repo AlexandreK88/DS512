@@ -884,7 +884,7 @@ public class client
 				break;
 			}
 			try{
-				rm.commit(transactionID);
+				rm.doCommit(transactionID);
 				System.out.println("Transaction with id " + transactionID + " committed successfully.");
 				transactionID = -1;
 			}

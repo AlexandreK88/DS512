@@ -19,6 +19,7 @@ import java.rmi.RMISecurityManager;
 
 import server.resInterface.*;
 import transaction.Operation;
+import transaction.RAFList;
 import transaction.Transaction;
 import transaction.TransactionManager;
 
@@ -29,96 +30,15 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	public static final String SEPARATOR = ",";
 	public static final String PATHING = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").length() - 3);
 
-	public class RAFList {
-		RandomAccessFile cur;
-		RAFList next;
-		String name;
-
-
-		RAFList(String n, String location, String mode) {
-			name = n;
-			try {
-				cur = new RandomAccessFile(location, mode);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-			next = null;
-		}
-
-		public void setNext(RAFList n) {
-			next = n;
-		}
-
-		public RAFList getNext() {
-			return next;
-		}
-
-		public RandomAccessFile getFileAccess() {
-			return cur;
-		}
-
-		public String getName() {
-			return name;
-		}	
-
-		// To do: returns line in database where data is held for 'dataname' object is held.
-		public int getLine(String dataName) {
-			int i;
-			String line = "";
-			try {
-				cur.seek(new Long(0));
-				line = cur.readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			for (i = 0; line != null && !line.equals(""); i++) {
-				if (line.split(SEPARATOR)[0].trim().equals(dataName)) {
-					return i;
-				}
-				try {
-					line = cur.readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			return i;
-		}
-		public void write(String itemToWrite){
-			try {
-				cur.writeBytes(itemToWrite);
-			} catch(IOException e){
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
-		// Rewrite line in database with information from RMItem
-		public void rewriteLine(int line, String itemToRewrite) {
-			// TODO Auto-generated method stub
-			// set itemToRewrite in readableItemCSVForm
-			try {
-				cur.seek(new Long(line*TransactionManager.LINE_SIZE));
-				cur.writeBytes(itemToRewrite);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
-
 	protected RMHashtable m_itemHT = new RMHashtable();
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
-	// Add transaction log
 	private static String responsibility;
 	private RAFList recordA;
 	private RAFList recordB;
 	private RAFList masterRec;
 	private RAFList workingRec;
 	private RandomAccessFile stateLog;
-
 	private int txnMaster;
 
 	public static void main(String args[]) {

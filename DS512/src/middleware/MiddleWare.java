@@ -1,5 +1,9 @@
 package middleware;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
@@ -16,6 +20,7 @@ import server.resInterface.InvalidTransactionException;
 import server.resInterface.ResourceManager;
 import server.resInterface.TransactionAbortedException;
 import transaction.Operation;
+import transaction.RAFList;
 import transaction.Transaction;
 import transaction.TransactionManager;
 
@@ -28,11 +33,19 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	static LockManager lockManager;
 	static TransactionManager transactionManager;
 	LinkedList<Transaction> ongoingTransactions;
-	// Add transaction log.
+	int trCount;
+	private RAFList recordA;
+	private RAFList recordB;
+	private RAFList masterRec;
+	private RAFList workingRec;
+	private RandomAccessFile stateLog;
+	private int txnMaster;
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
 	private static int TIME_TO_LIVE = 20000;
 	public static Random r = new Random();
+	
+	public static final String PATHING = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").length() - 3);
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
@@ -138,6 +151,39 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 
+	public MiddleWare() throws RemoteException, IOException {
+		ongoingTransactions = new LinkedList<Transaction>();
+		trCount = 0;
+		txnMaster = -1;
+
+		String locationA = PATHING + "Customer/RecordA.db";
+		String locationB = PATHING + "Customer/RecordB.db";
+		String locationLog = PATHING + "Customer/StateLog.db";
+
+		System.out.println(locationA + " is location.");
+		System.out.println(PATHING);
+		File file = new File(locationA);
+		boolean readDataA = !file.createNewFile();
+		recordA = new RAFList("A", locationA, "rwd");
+		file = new File(locationB);
+		boolean readDataB = file.createNewFile();
+		recordB = new RAFList("B", locationB, "rwd");
+		file = new File(locationLog);
+		file.createNewFile();
+		stateLog = new RandomAccessFile(locationLog, "rwd");
+		recordA.setNext(recordB);
+		recordB.setNext(recordA);
+		masterRec = getMasterRecord();
+		workingRec = masterRec.getNext();
+		if (masterRec == recordA && readDataA) {
+			initializeMemory(recordA);
+		} else {
+			initializeMemory(recordB);
+		}	
+	}
+
+
+
 	private void timeToLive() throws TransactionAbortedException{
 		Date date;
 		LinkedList<Transaction> ongoingTxns = transactionManager.getOngoingTransactions();
@@ -192,10 +238,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		} else {
 			timer = 0;
 		}
-	}
-
-	public MiddleWare() throws RemoteException {
-		ongoingTransactions = new LinkedList<Transaction>();
 	}
 
 	// Reads a data item
@@ -939,18 +981,44 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				if (t.getID() == transactionId) {
 					// if t's status is still ongoing.
 					// Add vote yes to log for trxn t.
-					// set transaction to have a ready to commit value.
-					return true;
+					// set transaction to have a ready to commit value (DONE)
+					t.setReadyToCommit(true);
+					boolean didCommit = transactionManager.commit(transactionId, this);	
+					String operation = "";
+					if(didCommit){
+						operation = transactionId + ",canCommit,YES";
+					}else{
+						operation = transactionId + ",canCommit,NO";
+					}					
+					try {
+						stateLog.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return didCommit;
+				}else{
+					t.setReadyToCommit(false);
+					String operation = transactionId + ",canCommit,NO";
+					transactionManager.abort(transactionId, this);
+					abort(transactionId);
+					try {
+						stateLog.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					return false;
 				}
 			}
-		}
+		} 	
 		return false;
 	}
 
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {		
-		boolean returnValue = transactionManager.commit(transactionId, this);
+		//boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);
 		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
@@ -958,11 +1026,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				System.out.println("Lock of ongoingtransactions attempted"); 
 				synchronized(ongoingTransactions) { 
 					System.out.println("Lock of ongoingtransactions successful!");
-					return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+					//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+					return (ongoingTransactions.remove(ongoingTransactions.get(i)));
 				}
 			}
 		}
-		return returnValue;
+		//return returnValue;
+		return false;
 	}
 
 	@Override
@@ -1047,6 +1117,157 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println("Lock of ongoingtransactions successful!");
 			ongoingTransactions.add(t);
 		}
+	}
+	
+	private RAFList getMasterRecord() {
+		// TODO Auto-generated method stub
+		try {
+			String op = "";
+			String[] opElements;
+			String[] lastCommit = null;
+			op = stateLog.readLine();
+			if(op == null){
+				System.out.println("Log file is empty, master record is A");
+				return recordA;
+			}
+			do{
+				opElements = op.split(",");
+				if(opElements[1].trim().equals("commit")){
+					lastCommit = opElements;
+				}	
+				op = stateLog.readLine();
+			}while(op != null);
+
+			if(lastCommit == null){
+				System.out.println("Log file is not empty but has no commit, master record is A");
+				return recordA;
+			}else{
+				if(opElements[2].equals("A")){
+					System.out.println("Commit found, master record is A");
+					return recordA;
+				}else{
+					System.out.println("Commit found, master record is B");
+					return recordB;
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	private void initializeMemory(RAFList record) {
+		try {
+			String line = "";
+			try {
+				line = record.getFileAccess().readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			while (line != null && line != "") {
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(lineDetails[0].startsWith("Room")) {
+					try {
+						this.addRooms(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+					} catch (DeadlockException | InvalidTransactionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else if(lineDetails[0].startsWith("Car")) {
+					try {
+						this.addCars(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+					} catch (DeadlockException | InvalidTransactionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}				
+				} else if(lineDetails[0].startsWith("Flight")) {
+					try {
+						this.addFlight(0, Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+					} catch (DeadlockException | InvalidTransactionException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+
+			try {
+				record.getFileAccess().seek(0);
+				line = record.getFileAccess().readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			while (line != null && line != "") {
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(lineDetails[0].startsWith("Cust")) {
+					for (String reservation: lineDetails) {
+						if (reservation == lineDetails[0]) {
+							continue;
+						}
+						String[] details = reservation.split(" ");
+						if (details[1].startsWith("flight")) {
+							try {
+								this.addFlight(0, Integer.parseInt(details[1].substring(7)), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+									reserveFlight(0, Integer.parseInt(lineDetails[0].substring(8)), Integer.parseInt(details[1].substring(7)));
+								}
+							} catch (DeadlockException
+									| InvalidTransactionException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}						
+						} else if (details[1].startsWith("car")) {
+							try {
+								this.addCars(0, details[1].substring(4), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+									reserveCar(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(4));
+								}
+							} catch (DeadlockException
+									| InvalidTransactionException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}						
+						} else if (details[1].startsWith("room")) {
+							try {
+								this.addRooms(0, details[1].substring(5), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
+								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
+									reserveRoom(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(5));
+								}
+							} catch (DeadlockException
+									| InvalidTransactionException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+
+						}
+					}
+				}
+			}
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
 }

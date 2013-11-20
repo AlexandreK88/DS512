@@ -1319,10 +1319,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 
-	/*private String convertItemLine(String dataName) {
-	String line = "";
-	System.out.println("Name is " + dataName);
-	if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+	private String convertItemLine(String dataName) {
+		String line = "";
+		System.out.println("Name is " + dataName);
+		/*if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
 		ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
 		if ( flight == null ) {
 			System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
@@ -1354,10 +1354,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 	for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
 		line += " ";
-	}
-	line += "\n";
-	return line;
 	}*/
+		line += "\n";
+		return line;
+	}
 
 	private void clear(){
 		/* 

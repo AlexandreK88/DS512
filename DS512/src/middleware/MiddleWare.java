@@ -948,7 +948,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	@Override
-	public boolean commit(int transactionId) throws RemoteException,
+	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {		
 		boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);

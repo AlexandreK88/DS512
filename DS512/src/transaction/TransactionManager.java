@@ -68,21 +68,48 @@ public class TransactionManager {
 					Transaction t = ongoingTransactions.remove(i);
 					// if canCommit for all RMs.
 						// if can't, abort t.
-					
-					// All voted YES, so commit t.
-					// commit all RM.
+					boolean canCommit = true;
 					for (ResourceManager rm: t.getRMList()) {
 						if (rm != middleware) {
 							try {
-								rm.commit(tid);
-							} catch (RemoteException | TransactionAbortedException
+								canCommit = canCommit && rm.canCommit(tid);
+							} catch(RemoteException | TransactionAbortedException
 									| InvalidTransactionException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
 					}
-					return true;
+					// All voted YES, so commit t.
+					// commit all RM.
+					if(canCommit){
+						for (ResourceManager rm: t.getRMList()) {
+							if (rm != middleware) {
+								try {
+									rm.doCommit(tid);
+								} catch (RemoteException | TransactionAbortedException
+										| InvalidTransactionException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+						}
+						return true;
+					}
+					else{
+						for (ResourceManager rm: t.getRMList()) {
+							if (rm != middleware) {
+								try {
+									rm.abort(tid);
+								} catch (RemoteException | InvalidTransactionException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+						}
+						return false;
+					}
+					
 				}
 			}
 		}

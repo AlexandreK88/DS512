@@ -126,20 +126,20 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(lineDetails[0].startsWith("Room")) {
+					this.addRooms(0, lineDetails[0].substring(4), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
+				} else if(lineDetails[0].startsWith("Car")) {
+					this.addCars(0, lineDetails[0].substring(3), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));				
+				} else if(lineDetails[0].startsWith("Flight")) {
+					this.addFlight(0, Integer.parseInt(lineDetails[0].substring(6)), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
+				}
 				try {
 					line = record.getFileAccess().readLine();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[0].startsWith("Room")) {
-					this.addRooms(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
-				} else if(lineDetails[0].startsWith("Car")) {
-					this.addCars(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));				
-				} else if(lineDetails[0].startsWith("Flight")) {
-					this.addFlight(0, Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
 				}
 			}
 
@@ -152,17 +152,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 
 			while (line != null && line != "") {
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[0].startsWith("Cust")) {
 					for (String reservation: lineDetails) {
 						if (reservation == lineDetails[0]) {
+							newCustomer(0, Integer.parseInt(lineDetails[0].substring(8)));
 							continue;
 						}
 						String[] details = reservation.split(" ");
@@ -183,6 +178,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 							}
 						}
 					}
+				}
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		} catch (NumberFormatException e) {
@@ -816,9 +817,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 
 		}
-		for (int i = line.length(); i < TransactionManager.LINE_SIZE; i++) {
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
 			line += " ";
 		}
+		line += "\n";
 		return line;
 	}
 
@@ -1006,6 +1008,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 
 	private void addOperation(int id, Operation op) {
+		if (id == 0) {return;}
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == id) {

@@ -1,6 +1,7 @@
 package middleware;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.FileAlreadyExistsException;
@@ -44,8 +45,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private static int SHUTDOWN_TIMEOUT = 30000;
 	private static int TIME_TO_LIVE = 20000;
 	public static Random r = new Random();
-	
+
 	public static final String PATHING = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").length() - 3);
+	public static final String SEPARATOR = ",";
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
@@ -182,8 +184,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}	
 	}
 
-
-
 	private void timeToLive() throws TransactionAbortedException{
 		Date date;
 		LinkedList<Transaction> ongoingTxns = transactionManager.getOngoingTransactions();
@@ -209,22 +209,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	private void verifyIfShutdown() throws RemoteException {
-		// time = current time;
 		Date date = new Date();
 		long time = date.getTime();
-		// timer = 0;
-		long timer = 0;
-		/* if no transactions waiting
-		 *		timer += currenttime - time;
-		 *		time = current time
-		 *		if timer reaches threshold
-		 *		shutdown
-		 *		endif
-		 *	else
-		 *		timer = 0;
-		 *  endif 	
-		 *  sleep maybe to avoid consuming CPU resources. 
-		 */		
+		long timer = 0;	
 		if(!transactionManager.hasOngoingTransactions()){
 			date = new Date();
 			timer += date.getTime() - time;
@@ -311,8 +298,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			throw e;
 		}
 	}
-
-
 
 	// Create a new room location or add rooms to an existing location
 	//  NOTE: if price <= 0 and the room location already exists, it maintains its current price
@@ -985,11 +970,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					t.setReadyToCommit(true);
 					boolean didCommit = transactionManager.commit(transactionId, this);	
 					String operation = "";
-					if(didCommit){
+					/*if(didCommit){
 						operation = transactionId + ",canCommit,YES";
 					}else{
 						operation = transactionId + ",canCommit,NO";
-					}					
+					}	*/		
+					operation = transactionId + ",canCommit,YES";
+					System.out.println("Can commit, sent vote YES.");
 					try {
 						stateLog.writeBytes(operation);
 					} catch (IOException e) {
@@ -1000,7 +987,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				}else{
 					t.setReadyToCommit(false);
 					String operation = transactionId + ",canCommit,NO";
-					transactionManager.abort(transactionId, this);
+					System.out.println("Cannot commit, sent vote NO, aborting transaction "+ transactionId);
+					transactionManager.abort(transactionId, this);					
 					abort(transactionId);
 					try {
 						stateLog.writeBytes(operation);
@@ -1017,7 +1005,37 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
-	TransactionAbortedException, InvalidTransactionException {		
+	TransactionAbortedException, InvalidTransactionException {	
+		try{	
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							workingRec.rewriteLine(line, convertItemLine(dataName));
+						}
+					}
+					break;
+				}
+			}
+			masterSwitch(transactionId);
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							System.out.println("Line is: " + line);
+							workingRec.rewriteLine(line, convertItemLine(dataName));
+						}
+					}
+					break;
+				}
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		//boolean returnValue = transactionManager.commit(transactionId, this);
 		lockManager.UnlockAll(transactionId);
 		System.out.println("Transaction " + transactionId + " has committed.");
@@ -1117,8 +1135,26 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println("Lock of ongoingtransactions successful!");
 			ongoingTransactions.add(t);
 		}
+
+		logOperation(id, op);
 	}
-	
+
+	private void logOperation(int id, Operation op) {
+		//Add operation on stateLog file
+		String operation = id + "," + op.getOpName();
+		for (String param: op.getParameters()){
+			operation +=  "," + param;
+		}
+		operation += "\n";
+		try{
+			stateLog.writeBytes(operation);
+			System.out.println("Writing op");
+			//write_stateLog.newLine();
+		}catch(Exception e){
+			System.out.println("Some god damn exception");
+		}
+	}
+
 	private RAFList getMasterRecord() {
 		// TODO Auto-generated method stub
 		try {
@@ -1155,6 +1191,20 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	//Master points to the one which is currently the latest committed version, linked to transactionID
+	private void masterSwitch(int transactionID){
+		String operation = transactionID + ",commit," + workingRec.getName() + "\n";
+		workingRec = workingRec.getNext();
+		masterRec = masterRec.getNext();
+		txnMaster = transactionID;
+		try{
+			stateLog.writeBytes(operation);
+		}catch(Exception e){
+			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
+			System.out.println(e);
+		}		
 	}
 
 	private void initializeMemory(RAFList record) {
@@ -1267,7 +1317,96 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
+	/*private String convertItemLine(String dataName) {
+	String line = "";
+	System.out.println("Name is " + dataName);
+	if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+		ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
+		if ( flight == null ) {
+			System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
+		}
+		line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
+	} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
+		ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
+		line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
+	} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
+		ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
+		line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
+	} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+		line += dataName;
+		String rawData;
+		try {
+			rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+			String[] lines = rawData.split("\n");
+			for (int i = 1; i < lines.length; i++) {
+				line += SEPARATOR + lines[i]; 
+			}
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+	for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+		line += " ";
+	}
+	line += "\n";
+	return line;
+	}*/
+
+	private void clear(){
+		/* 
+		 *Generate a new file called temp.
+		 *In temp, write all transactions down.
+		 *Close and delete current log.
+		 *change name of temp to log.
+		 *If crashes and no log file to be found, search for temp file.
+		 */
+
+		String locationLog = PATHING + "Customer/stateLog.db";
+		String locationTemp = PATHING + "Customer/temp.db";
+		RandomAccessFile temp = null;
+		try {
+			temp = new RandomAccessFile(locationTemp, "rwd");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		String operation = "";
+		synchronized(ongoingTransactions){
+			for (Transaction t: ongoingTransactions){				
+				for(Operation op: t.getOperations()){
+					operation = t.getID() + "," + op.getOpName() + ",";
+					for(String p: op.getParameters()){
+						operation += p + ",";
+					}
+					try {
+						temp.writeBytes(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}					
+				}
+			}
+		}
+
+		try {
+			stateLog.close();
+			temp.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		File theLog = new File(locationLog);
+		File theTemp = new File(locationTemp);
+		theTemp.renameTo(theLog);
+		theLog.delete();
+	}
 }

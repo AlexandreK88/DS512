@@ -60,9 +60,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			System.exit(1);
 		}
 
+		ResourceManagerImpl obj = null;
 		try {
 			// create a new Server object
-			ResourceManagerImpl obj = new ResourceManagerImpl();
+			obj = new ResourceManagerImpl();
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -83,6 +84,14 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			System.setSecurityManager(new RMISecurityManager());
 		}
 
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		}
+		
+		obj.clear();
 	}
 
 	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
@@ -692,6 +701,175 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			{
 		return false;
 			}
+	
+	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
+		public void cancelNewFlight(String[] parameters) {
+			int flightNum = Integer.parseInt(parameters[0]);
+			Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
+			if ( curObj != null ) {
+
+				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+					curObj.setPrice( Integer.parseInt(parameters[2]));
+					writeData( 0, curObj.getKey(), curObj );
+				} else {
+					deleteItem(0, Flight.getKey(flightNum));
+				}
+			} // else
+
+		}
+
+		// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
+		public void cancelNewCar(String[] parameters) {
+
+			Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
+			if (curObj != null) {
+				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+					curObj.setPrice(Integer.parseInt(parameters[2]));
+					writeData( 0, curObj.getKey(), curObj);
+				} else {
+					deleteItem(0, Car.getKey(parameters[0]));
+				}
+			}
+
+		}
+
+		// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
+		public void cancelNewRoom(String[] parameters) {
+			Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
+			if ( curObj != null ) {
+				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+					curObj.setPrice(Integer.parseInt(parameters[2]));
+					writeData( 0, curObj.getKey(), curObj);
+				} else {
+					deleteItem(0, Hotel.getKey(parameters[0]));
+				}
+			} 
+		}
+
+		// Parameter 0: cid
+		public void cancelNewCustomer(String[] parameters) {
+			// Generate a globally unique ID for the new customer
+			removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
+		}
+
+
+		public void cancelFlightDeletion(String[] parameters) {
+			try {
+				Flight newObj = new Flight(Integer.parseInt(parameters[0]), Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+				writeData( 0, newObj.getKey(), newObj );
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+		}
+
+		public void cancelCarDeletion(String[] parameters) {
+			try {
+				Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+				writeData(0, newObj.getKey(), newObj );
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}		
+		}
+
+		public void cancelRoomDeletion(String[] parameters) {
+			try {
+				Hotel newObj = new Hotel( parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+				writeData( 0, newObj.getKey(), newObj );
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}		
+		}
+
+		// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
+		public void cancelCustomerDeletion(String[] parameters) {
+			int cID = Integer.parseInt(parameters[0]);
+			Customer cust = new Customer(cID);
+			writeData( 0, cust.getKey(), cust );
+			String[] reservationType = parameters[1].split("::");
+			String[] reservationIdentifier = parameters[2].split("::");
+
+			for (int i = 0; i < reservationType.length; i++) {
+				if (reservationType[i].equals("flight")) {
+					reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
+				} else if (reservationType[i].equals("car")) {
+					reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
+				} else if (reservationType[i].equals("room")) {
+					reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
+				}
+			}
+		}
+
+
+		public void cancelFlightReservation(String[] parameters) {
+			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+			RMHashtable reservationHT = cust.getReservations();
+			boolean canceled = false;
+			ReservedItem ri = null; 
+			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+				String reservedkey = (String) (e.nextElement());
+				if (reservedkey.equals(parameters[1])) {
+					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+					ri = reserveditem;
+					canceled = true;
+					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+					item.setReserved(item.getReserved()-1);
+					item.setCount(item.getCount()+1);
+					break;
+				}
+			}
+			if (canceled) {
+				cust.getReservations().remove(ri.getKey());
+			}
+		}
+
+		public void cancelCarReservation(String[] parameters) {
+			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+			RMHashtable reservationHT = cust.getReservations();
+			boolean canceled = false;
+			ReservedItem ri = null;
+
+			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+				String reservedkey = (String) (e.nextElement());
+				if (reservedkey.equals(parameters[1])) {
+					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+					ri = reserveditem;
+					canceled = true;
+					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+					item.setReserved(item.getReserved()-1);
+					item.setCount(item.getCount()+1);
+					break;
+				}
+			}
+			if (canceled) {
+				cust.getReservations().remove(ri.getKey());
+			}
+		}
+
+		public void cancelRoomReservation(String[] parameters) {
+			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+			RMHashtable reservationHT = cust.getReservations();
+			boolean canceled = false;
+			ReservedItem ri = null;
+
+			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+				String reservedkey = (String) (e.nextElement());
+				if (reservedkey.equals(parameters[1])) {
+					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+					ri = reserveditem;
+					canceled = true;
+					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+					item.setReserved(item.getReserved()-1);
+					item.setCount(item.getCount()+1);
+					break;
+				}
+			}	
+			if (canceled) {
+				cust.getReservations().remove(ri.getKey());
+			}
+		}
 
 	@Override
 	public boolean shutdown() throws RemoteException {
@@ -741,36 +919,38 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
-		try{	
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							int line = workingRec.getLine(dataName);
-							workingRec.rewriteLine(line, convertItemLine(dataName));
+		synchronized(workingRec){
+			try{	
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								int line = workingRec.getLine(dataName);
+								workingRec.rewriteLine(line, convertItemLine(dataName));
+							}
 						}
+						break;
 					}
-					break;
 				}
-			}
-			masterSwitch(transactionId);
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							int line = workingRec.getLine(dataName);
-							System.out.println("Line is: " + line);
-							workingRec.rewriteLine(line, convertItemLine(dataName));
+				masterSwitch(transactionId);
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								int line = workingRec.getLine(dataName);
+								System.out.println("Line is: " + line);
+								workingRec.rewriteLine(line, convertItemLine(dataName));
+							}
 						}
+						break;
 					}
-					break;
 				}
+			}catch(Exception e){
+				e.printStackTrace();
 			}
-		}catch(Exception e){
-			e.printStackTrace();
-		}
+		}	
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -783,50 +963,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		return false;
 	}
-
-	private String convertItemLine(String dataName) {
-		String line = "";
-		System.out.println("Name is " + dataName);
-		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
-			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
-			if ( flight == null ) {
-				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
-			}
-			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
-		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
-			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
-			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
-		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
-			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
-			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
-		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
-			line += dataName;
-			String rawData;
-			try {
-				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
-				String[] lines = rawData.split("\n");
-				for (int i = 1; i < lines.length; i++) {
-					line += SEPARATOR + lines[i]; 
-				}
-			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-		}
-		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
-			line += " ";
-		}
-		line += "\n";
-		return line;
-	}
-
+	
 	@Override
-	public void abort(int transactionId) throws RemoteException,
-	InvalidTransactionException {
+	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -835,177 +974,16 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				}	
 			}
 		}
-	}
-
-	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
-	public void cancelNewFlight(String[] parameters) {
-		int flightNum = Integer.parseInt(parameters[0]);
-		Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
-		if ( curObj != null ) {
-
-			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-				curObj.setPrice( Integer.parseInt(parameters[2]));
-				writeData( 0, curObj.getKey(), curObj );
-			} else {
-				deleteItem(0, Flight.getKey(flightNum));
+		String operation = transactionId + ", abort\n";
+		synchronized(stateLog){
+			try{
+				stateLog.writeBytes(operation);
+				System.out.println("Writing op");
+			}catch(Exception e){
+				System.out.println("Some god damn exception");
 			}
-		} // else
-
-	}
-
-	// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
-	public void cancelNewCar(String[] parameters) {
-
-		Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
-		if (curObj != null) {
-			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-				curObj.setPrice(Integer.parseInt(parameters[2]));
-				writeData( 0, curObj.getKey(), curObj);
-			} else {
-				deleteItem(0, Car.getKey(parameters[0]));
-			}
-		}
-
-	}
-
-	// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
-	public void cancelNewRoom(String[] parameters) {
-		Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
-		if ( curObj != null ) {
-			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-				curObj.setPrice(Integer.parseInt(parameters[2]));
-				writeData( 0, curObj.getKey(), curObj);
-			} else {
-				deleteItem(0, Hotel.getKey(parameters[0]));
-			}
-		} 
-	}
-
-	// Parameter 0: cid
-	public void cancelNewCustomer(String[] parameters) {
-		// Generate a globally unique ID for the new customer
-		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
-	}
-
-
-	public void cancelFlightDeletion(String[] parameters) {
-		try {
-			Flight newObj = new Flight(Integer.parseInt(parameters[0]), Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-			writeData( 0, newObj.getKey(), newObj );
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void cancelCarDeletion(String[] parameters) {
-		try {
-			Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-			writeData(0, newObj.getKey(), newObj );
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
 		}		
 	}
-
-	public void cancelRoomDeletion(String[] parameters) {
-		try {
-			Hotel newObj = new Hotel( parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-			writeData( 0, newObj.getKey(), newObj );
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		}		
-	}
-
-	// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
-	public void cancelCustomerDeletion(String[] parameters) {
-		int cID = Integer.parseInt(parameters[0]);
-		Customer cust = new Customer(cID);
-		writeData( 0, cust.getKey(), cust );
-		String[] reservationType = parameters[1].split("::");
-		String[] reservationIdentifier = parameters[2].split("::");
-
-		for (int i = 0; i < reservationType.length; i++) {
-			if (reservationType[i].equals("flight")) {
-				reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
-			} else if (reservationType[i].equals("car")) {
-				reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
-			} else if (reservationType[i].equals("room")) {
-				reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
-			}
-		}
-	}
-
-
-	public void cancelFlightReservation(String[] parameters) {
-		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-		RMHashtable reservationHT = cust.getReservations();
-		boolean canceled = false;
-		ReservedItem ri = null; 
-		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
-				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-				ri = reserveditem;
-				canceled = true;
-				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-				item.setReserved(item.getReserved()-1);
-				item.setCount(item.getCount()+1);
-				break;
-			}
-		}
-		if (canceled) {
-			cust.getReservations().remove(ri.getKey());
-		}
-	}
-
-	public void cancelCarReservation(String[] parameters) {
-		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-		RMHashtable reservationHT = cust.getReservations();
-		boolean canceled = false;
-		ReservedItem ri = null;
-
-		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
-				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-				ri = reserveditem;
-				canceled = true;
-				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-				item.setReserved(item.getReserved()-1);
-				item.setCount(item.getCount()+1);
-				break;
-			}
-		}
-		if (canceled) {
-			cust.getReservations().remove(ri.getKey());
-		}
-	}
-
-	public void cancelRoomReservation(String[] parameters) {
-		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-		RMHashtable reservationHT = cust.getReservations();
-		boolean canceled = false;
-		ReservedItem ri = null;
-
-		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
-				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-				ri = reserveditem;
-				canceled = true;
-				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-				item.setReserved(item.getReserved()-1);
-				item.setCount(item.getCount()+1);
-				break;
-			}
-		}	
-		if (canceled) {
-			cust.getReservations().remove(ri.getKey());
-		}
-	}
-
 
 	private void addOperation(int id, Operation op) {
 		if (id == 0) {return;}
@@ -1033,13 +1011,16 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			operation +=  "," + param;
 		}
 		operation += "\n";
-		try{
-			stateLog.writeBytes(operation);
-			System.out.println("Writing op");
-			//write_stateLog.newLine();
-		}catch(Exception e){
-			System.out.println("Some god damn exception");
+		synchronized(stateLog){
+			try{
+				stateLog.writeBytes(operation);
+				System.out.println("Writing op");
+				//write_stateLog.newLine();
+			}catch(Exception e){
+				System.out.println("Some god damn exception");
+			}
 		}
+		
 	}
 
 	private RAFList getMasterRecord() {
@@ -1086,12 +1067,55 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
 		txnMaster = transactionID;
-		try{
-			stateLog.writeBytes(operation);
-		}catch(Exception e){
-			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
-			System.out.println(e);
-		}		
+		synchronized(stateLog){
+			try{
+				stateLog.writeBytes(operation);
+			}catch(Exception e){
+				System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
+				System.out.println(e);
+			}
+		}
+				
+	}
+	
+	private String convertItemLine(String dataName) {
+		String line = "";
+		System.out.println("Name is " + dataName);
+		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
+			if ( flight == null ) {
+				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
+			}
+			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
+		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
+			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
+			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
+		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
+			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
+			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
+		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+			line += dataName;
+			String rawData;
+			try {
+				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+				String[] lines = rawData.split("\n");
+				for (int i = 1; i < lines.length; i++) {
+					line += SEPARATOR + lines[i]; 
+				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+			line += " ";
+		}
+		line += "\n";
+		return line;
 	}
 
 	private void clear(){

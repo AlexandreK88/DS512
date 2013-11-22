@@ -70,7 +70,7 @@ public class TransactionManager {
 					// if can't, abort t.
 					boolean canCommit = true;
 					for (ResourceManager rm: t.getRMList()) {
-						if (rm != middleware) {
+						//if (rm != middleware) {
 							try {
 								canCommit = rm.canCommit(tid);
 								if (!canCommit){
@@ -81,7 +81,7 @@ public class TransactionManager {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-						}
+						//}
 					}
 					// All voted YES, so commit t.
 					// commit all RM.
@@ -100,16 +100,12 @@ public class TransactionManager {
 						return true;
 					}
 					else{
-						for (ResourceManager rm: t.getRMList()) {
-							//if (rm != middleware) {
-							try {
-								rm.abort(tid);
-							} catch (RemoteException | InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							//}
-						}
+						/*try {
+							middleware.abort(tid);
+						} catch (RemoteException | InvalidTransactionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}*/
 						return false;
 					}
 				}

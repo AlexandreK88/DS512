@@ -964,42 +964,20 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
-					// if t's status is still ongoing.
-					// Add vote yes to log for trxn t.
-					// set transaction to have a ready to commit value (DONE)
-					//t.setReadyToCommit(true);
-					boolean didCommit = transactionManager.commit(transactionId, this);	
-					String operation = "";
-					/*if(didCommit){
-						operation = transactionId + ",canCommit,YES";
-					}else{
-						operation = transactionId + ",canCommit,NO";
-					}	*/		
-					operation = transactionId + ",canCommit,YES";
+					String operation = transactionId + ",canCommit,YES";
 					System.out.println("Can commit, sent vote YES.");
-					try {
-						stateLog.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+
+					synchronized(stateLog){
+						try {
+							stateLog.writeBytes(operation);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
-					return didCommit;
-				}/*else{
-					t.setReadyToCommit(false);
-					String operation = transactionId + ",canCommit,NO";
-					System.out.println("Cannot commit, sent vote NO, aborting transaction "+ transactionId);
-					transactionManager.abort(transactionId, this);					
-					abort(transactionId);
-					try {
-						stateLog.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					return false;
-				}*/
-				
-				transactionManager.commit(transactionId, this);
+					
+					return true;
+				}		
 			}
 		} 	
 		return false;
@@ -1008,51 +986,56 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {	
-		try{	
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							int line = workingRec.getLine(dataName);
-							workingRec.rewriteLine(line, convertItemLine(dataName));
+		
+		if(transactionManager.commit(transactionId, this)){
+			try{	
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								int line = workingRec.getLine(dataName);
+								workingRec.rewriteLine(line, convertItemLine(dataName));
+							}
 						}
+						break;
 					}
-					break;
 				}
-			}
-			masterSwitch(transactionId);
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							int line = workingRec.getLine(dataName);
-							System.out.println("Line is: " + line);
-							workingRec.rewriteLine(line, convertItemLine(dataName));
+				masterSwitch(transactionId);
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								int line = workingRec.getLine(dataName);
+								System.out.println("Line is: " + line);
+								workingRec.rewriteLine(line, convertItemLine(dataName));
+							}
 						}
+						break;
 					}
-					break;
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			//boolean returnValue = transactionManager.commit(transactionId, this);
+			lockManager.UnlockAll(transactionId);
+			System.out.println("Transaction " + transactionId + " has committed.");
+			for (int i = 0; i < ongoingTransactions.size(); i++) {
+				if (ongoingTransactions.get(i).getID() == transactionId) {
+					System.out.println("Lock of ongoingtransactions attempted"); 
+					synchronized(ongoingTransactions) { 
+						System.out.println("Lock of ongoingtransactions successful!");
+						//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+						return (ongoingTransactions.remove(ongoingTransactions.get(i)));
+					}
 				}
 			}
-		}catch(Exception e){
-			e.printStackTrace();
+			return true;
+		}else{
+			abort(transactionId);
+			return false;
 		}
-		//boolean returnValue = transactionManager.commit(transactionId, this);
-		lockManager.UnlockAll(transactionId);
-		System.out.println("Transaction " + transactionId + " has committed.");
-		for (int i = 0; i < ongoingTransactions.size(); i++) {
-			if (ongoingTransactions.get(i).getID() == transactionId) {
-				System.out.println("Lock of ongoingtransactions attempted"); 
-				synchronized(ongoingTransactions) { 
-					System.out.println("Lock of ongoingtransactions successful!");
-					//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
-					return (ongoingTransactions.remove(ongoingTransactions.get(i)));
-				}
-			}
-		}
-		//return returnValue;
-		return false;
 	}
 
 	@Override
@@ -1070,6 +1053,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			}
 		}
 		lockManager.UnlockAll(transactionId);
+		String operation = transactionId + ", abort\n";
+		try{
+			stateLog.writeBytes(operation);
+			System.out.println("Writing op");
+		}catch(Exception e){
+			System.out.println("Some god damn exception");
+		}
 	}
 
 	public void cancelNewFlight(String[] parameters) {
@@ -1148,13 +1138,15 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			operation +=  "," + param;
 		}
 		operation += "\n";
-		try{
-			stateLog.writeBytes(operation);
-			System.out.println("Writing op");
-			//write_stateLog.newLine();
-		}catch(Exception e){
-			System.out.println("Some god damn exception");
-		}
+		synchronized(stateLog){
+			try{
+				stateLog.writeBytes(operation);
+				System.out.println("Writing op");
+				//write_stateLog.newLine();
+			}catch(Exception e){
+				System.out.println("Some god damn exception");
+			}
+		}		
 	}
 
 	private RAFList getMasterRecord() {
@@ -1201,12 +1193,14 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
 		txnMaster = transactionID;
-		try{
-			stateLog.writeBytes(operation);
-		}catch(Exception e){
-			System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
-			System.out.println(e);
-		}		
+		synchronized(stateLog){
+			try{
+				stateLog.writeBytes(operation);
+			}catch(Exception e){
+				System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
+				System.out.println(e);
+			}
+		}				
 	}
 
 	private void initializeMemory(RAFList record) {

@@ -139,6 +139,9 @@ public interface ResourceManager extends Remote
     public int start() 
     throws RemoteException;
     
+    public boolean commit(int transactionId) 
+    throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    
     public boolean canCommit(int transactionId) 
     throws RemoteException, TransactionAbortedException, InvalidTransactionException;
     
@@ -150,7 +153,6 @@ public interface ResourceManager extends Remote
     
     public boolean shutdown() 
     throws RemoteException;
-
 
 	public void cancelNewFlight(String[] parameters) throws RemoteException;
 

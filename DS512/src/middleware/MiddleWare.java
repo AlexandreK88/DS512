@@ -1019,7 +1019,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-
 					return true;
 				}		
 			}

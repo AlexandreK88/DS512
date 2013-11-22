@@ -793,17 +793,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				}
 				return true;
 			}
-			else{
-				//t.setReadyToCommit(true);
-				String operation = transactionId + ", canCommit, NO";
-				try {
-					stableStorage.writeToLog(operation);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				abort(transactionId);
-			}
 		}
 		return false;
 	}

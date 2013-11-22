@@ -95,7 +95,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 
-		stableStorage = new DiskAccess(this);
+		stableStorage = new DiskAccess(this, responsibility);
 
 	}
 

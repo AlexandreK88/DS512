@@ -156,7 +156,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 		try {
-			stableStorage = new DiskAccess(this);
+			stableStorage = new DiskAccess(this, "Customer");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

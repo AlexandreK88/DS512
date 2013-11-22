@@ -24,14 +24,15 @@ public class DiskAccess {
 	private RandomAccessFile stateLog;
 	
 	private int txnMaster;
+	String task;
 	
 	
-	public DiskAccess(ResourceManager rm) throws IOException {
+	public DiskAccess(ResourceManager rm, String t) throws IOException {
 		txnMaster = -1;
-
-		String locationA = PATHING + "Customer/RecordA.db";
-		String locationB = PATHING + "Customer/RecordB.db";
-		String locationLog = PATHING + "Customer/StateLog.db";
+		task = t;
+		String locationA = PATHING + task + "/RecordA.db";
+		String locationB = PATHING + task + "/RecordB.db";
+		String locationLog = PATHING + task + "/StateLog.db";
 		
 		System.out.println(locationA + " is location.");
 		System.out.println(PATHING);
@@ -261,8 +262,8 @@ public class DiskAccess {
 		 *If crashes and no log file to be found, search for temp file.
 		 */
 
-		String locationLog = PATHING + "Customer/stateLog.db";
-		String locationTemp = PATHING + "Customer/temp.db";
+		String locationLog = PATHING + task + "/stateLog.db";
+		String locationTemp = PATHING + task + "/temp.db";
 		RandomAccessFile temp = null;
 		try {
 			temp = new RandomAccessFile(locationTemp, "rwd");

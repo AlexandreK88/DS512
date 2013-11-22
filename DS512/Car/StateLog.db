@@ -1,0 +1,5 @@
+1,newcustomer,555
+1, canCommit, YES1,commit,B
+3,newcar,bob,1,2
+3,reservecar,555,car-bob
+3, canCommit, YES

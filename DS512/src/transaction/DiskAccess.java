@@ -22,18 +22,18 @@ public class DiskAccess {
 	private RAFList masterRec;
 	private RAFList workingRec;
 	private RandomAccessFile stateLog;
-	
+
 	private int txnMaster;
 	String task;
-	
-	
+
+
 	public DiskAccess(ResourceManager rm, String t) throws IOException {
 		txnMaster = -1;
 		task = t;
 		String locationA = PATHING + task + "/RecordA.db";
 		String locationB = PATHING + task + "/RecordB.db";
 		String locationLog = PATHING + task + "/StateLog.db";
-		
+
 		System.out.println(locationA + " is location.");
 		System.out.println(PATHING);
 		File file = new File(locationA);
@@ -49,12 +49,21 @@ public class DiskAccess {
 		recordB.setNext(recordA);
 		masterRec = getMasterRecord();
 		workingRec = masterRec.getNext();
-		if (masterRec == recordA && readDataA) {
-			initializeMemory(recordA, rm);
-		} else {
-			initializeMemory(recordB, rm);
-		}	
-		
+		try {
+			if (masterRec == recordA && readDataA) {
+
+				initializeMemory(recordA, rm);
+
+			} else {
+				initializeMemory(recordB, rm);
+			}	
+		} catch (DeadlockException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void logOperation(int id, Operation op) {
@@ -74,7 +83,7 @@ public class DiskAccess {
 			}
 		}		
 	}
-	
+
 	public void writeToLog(String operation) throws IOException {
 		stateLog.writeBytes(operation);
 	}
@@ -133,7 +142,7 @@ public class DiskAccess {
 		}				
 	}
 
-	public void initializeMemory(RAFList record, ResourceManager rm) {
+	public void initializeMemory(RAFList record, ResourceManager rm) throws DeadlockException, InvalidTransactionException {
 		try {
 			String line = "";
 			try {
@@ -143,35 +152,35 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[0].startsWith("Room")) {
 					try {
-						rm.addRooms(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+						rm.addRooms(0, lineDetails[0].substring(4), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				} else if(lineDetails[0].startsWith("Car")) {
 					try {
-						rm.addCars(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+						rm.addCars(0, lineDetails[0].substring(3), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}				
 				} else if(lineDetails[0].startsWith("Flight")) {
 					try {
-						rm.addFlight(0, Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
+						rm.addFlight(0, Integer.parseInt(lineDetails[0].substring(6)), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+				}
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 
@@ -184,17 +193,12 @@ public class DiskAccess {
 			}
 
 			while (line != null && line != "") {
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[0].startsWith("Cust")) {
 					for (String reservation: lineDetails) {
 						if (reservation == lineDetails[0]) {
+							rm.newCustomer(0, Integer.parseInt(lineDetails[0].substring(8)));
 							continue;
 						}
 						String[] details = reservation.split(" ");
@@ -234,6 +238,12 @@ public class DiskAccess {
 
 						}
 					}
+					try {
+						line = record.getFileAccess().readLine();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 		} catch (NumberFormatException e) {
@@ -245,7 +255,7 @@ public class DiskAccess {
 		}
 	}
 
-	
+
 	public void updateData(String dataName, String updatedLine) {
 		int line = workingRec.getLine(dataName);
 		System.out.println("Line is: " + line);
@@ -302,7 +312,7 @@ public class DiskAccess {
 		File theTemp = new File(locationTemp);
 		theTemp.renameTo(theLog);
 		theLog.delete();
-		
+
 	}
-	
+
 }

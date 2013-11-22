@@ -77,8 +77,8 @@ public class TransactionManager {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
 				if(prepare(t)){
+					ongoingTransactions.remove(i);
 					for (ResourceManager rm: t.getRMList()) {
-						ongoingTransactions.remove(i);
 						try {
 							rm.doCommit(tid);
 						} catch (RemoteException | TransactionAbortedException

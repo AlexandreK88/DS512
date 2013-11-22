@@ -37,8 +37,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 
 
-	private static int SHUTDOWN_TIMEOUT = 30000;
-	private static int TIME_TO_LIVE = 20000;
+	private static int SHUTDOWN_TIMEOUT = 300000;
+	private static int TIME_TO_LIVE = 200000;
 	public static Random r = new Random();
 
 
@@ -147,11 +147,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 
-	public MiddleWare() throws RemoteException {
+	public MiddleWare() throws RemoteException, InvalidTransactionException {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
+			lockManager.UnlockAll(0);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -985,6 +986,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	
 	public boolean commit(int transactionId){
 		if(transactionManager.commit(transactionId, this)){
+			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
 			try {
@@ -1026,7 +1028,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
+							String updatedLine = convertItemLine(transactionId, dataName);
 							stableStorage.updateData(dataName, updatedLine);
 						}
 					}
@@ -1039,7 +1041,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
+							String updatedLine = convertItemLine(transactionId, dataName);
 							stableStorage.updateData(dataName, updatedLine);
 						}
 					}
@@ -1050,7 +1052,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			e.printStackTrace();
 		}
 		//boolean returnValue = transactionManager.commit(transactionId, this);
-		lockManager.UnlockAll(transactionId);
 		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -1090,7 +1091,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 	
 
-	private String convertItemLine(String dataName) {
+	private String convertItemLine(int id, String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
 		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
@@ -1110,7 +1111,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			String rawData = "";
 			try {
 				try {
-					rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+					rawData = queryCustomerInfo(id, Integer.parseInt(dataName.substring(8)));
 				} catch (DeadlockException | InvalidTransactionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1138,6 +1139,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 
 	private void addOperation(int id, Operation op) {
+		if (id == 0) {return;}
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == id) {
 				t.addOp(op);

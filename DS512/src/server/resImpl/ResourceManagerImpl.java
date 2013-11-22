@@ -776,6 +776,20 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return trCount;
 	}
 
+	public boolean commit(int transactionId) throws RemoteException,
+	TransactionAbortedException, InvalidTransactionException {
+		if (canCommit(transactionId)) {
+			if (doCommit(transactionId)) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			abort(transactionId);
+			return false;
+		}
+	}
+	
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
 		for (Transaction t: ongoingTransactions) {

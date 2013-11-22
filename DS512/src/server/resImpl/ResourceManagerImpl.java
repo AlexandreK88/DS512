@@ -712,7 +712,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					// if t's status is still ongoing.
 					// Add vote yes to log for trxn t.
 					// set transaction to have a ready to commit value (DONE)
-					t.setReadyToCommit(true);
+					//t.setReadyToCommit(true);
 					String operation = transactionId + ", canCommit, YES";
 					try {
 						stateLog.writeBytes(operation);
@@ -723,7 +723,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					return true;
 				}
 				else{
-					t.setReadyToCommit(true);
+					//t.setReadyToCommit(true);
 					String operation = transactionId + ", canCommit, NO";
 					try {
 						stateLog.writeBytes(operation);

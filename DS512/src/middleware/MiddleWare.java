@@ -967,7 +967,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					// if t's status is still ongoing.
 					// Add vote yes to log for trxn t.
 					// set transaction to have a ready to commit value (DONE)
-					t.setReadyToCommit(true);
+					//t.setReadyToCommit(true);
 					boolean didCommit = transactionManager.commit(transactionId, this);	
 					String operation = "";
 					/*if(didCommit){
@@ -984,7 +984,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 						e.printStackTrace();
 					}
 					return didCommit;
-				}else{
+				}/*else{
 					t.setReadyToCommit(false);
 					String operation = transactionId + ",canCommit,NO";
 					System.out.println("Cannot commit, sent vote NO, aborting transaction "+ transactionId);
@@ -997,7 +997,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 						e.printStackTrace();
 					}
 					return false;
-				}
+				}*/
+				
+				transactionManager.commit(transactionId, this);
 			}
 		} 	
 		return false;

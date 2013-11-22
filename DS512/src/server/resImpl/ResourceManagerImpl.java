@@ -799,6 +799,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// set transaction to have a ready to commit value (DONE)
 				//t.setReadyToCommit(true);
 				String operation = transactionId + ", canCommit, YES";
+				System.out.println("Yes, I do commit <3");
 				try {
 					stableStorage.writeToLog(operation);
 				} catch (IOException e) {

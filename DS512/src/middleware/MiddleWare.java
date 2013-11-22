@@ -1,10 +1,6 @@
 package middleware;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
@@ -22,7 +18,6 @@ import server.resInterface.ResourceManager;
 import server.resInterface.TransactionAbortedException;
 import transaction.DiskAccess;
 import transaction.Operation;
-import transaction.RAFList;
 import transaction.Transaction;
 import transaction.TransactionManager;
 
@@ -669,8 +664,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				lockManager.Lock(id, "Room"+location, LockManager.WRITE);
 			}
 
-
-
 			try{
 				if(lockManager.Lock(id, "Customer"+customerID, LockManager.WRITE)){					
 					rmFlight.deleteCustomer(id,customerID);
@@ -971,8 +964,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		// TODO Auto-generated method stub
 
 	}
-
-
 
 	@Override
 	public boolean shutdown() throws RemoteException {

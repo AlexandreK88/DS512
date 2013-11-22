@@ -6,10 +6,7 @@
 package server.resImpl;
 
 import java.util.*;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -20,7 +17,6 @@ import java.rmi.RMISecurityManager;
 import server.resInterface.*;
 import transaction.DiskAccess;
 import transaction.Operation;
-import transaction.RAFList;
 import transaction.Transaction;
 import transaction.TransactionManager;
 

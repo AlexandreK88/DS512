@@ -20,12 +20,15 @@ import lockManager.LockManager;
 import server.resInterface.InvalidTransactionException;
 import server.resInterface.ResourceManager;
 import server.resInterface.TransactionAbortedException;
+import transaction.DiskAccess;
 import transaction.Operation;
 import transaction.RAFList;
 import transaction.Transaction;
 import transaction.TransactionManager;
 
 public class MiddleWare implements server.resInterface.ResourceManager {
+
+	public static final String SEPARATOR = ",";
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	static ResourceManager rmFlight = null;
@@ -34,20 +37,16 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	static LockManager lockManager;
 	static TransactionManager transactionManager;
 	LinkedList<Transaction> ongoingTransactions;
+	DiskAccess stableStorage;
 	int trCount;
-	private RAFList recordA;
-	private RAFList recordB;
-	private RAFList masterRec;
-	private RAFList workingRec;
-	private RandomAccessFile stateLog;
-	private int txnMaster;
+
+
 
 	private static int SHUTDOWN_TIMEOUT = 30000;
 	private static int TIME_TO_LIVE = 20000;
 	public static Random r = new Random();
 
-	public static final String PATHING = System.getProperty("user.dir").substring(0,System.getProperty("user.dir").length() - 3);
-	public static final String SEPARATOR = ",";
+
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
@@ -153,35 +152,15 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 
-	public MiddleWare() throws RemoteException, IOException {
+	public MiddleWare() throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
-		txnMaster = -1;
-
-		String locationA = PATHING + "Customer/RecordA.db";
-		String locationB = PATHING + "Customer/RecordB.db";
-		String locationLog = PATHING + "Customer/StateLog.db";
-
-		System.out.println(locationA + " is location.");
-		System.out.println(PATHING);
-		File file = new File(locationA);
-		boolean readDataA = !file.createNewFile();
-		recordA = new RAFList("A", locationA, "rwd");
-		file = new File(locationB);
-		boolean readDataB = file.createNewFile();
-		recordB = new RAFList("B", locationB, "rwd");
-		file = new File(locationLog);
-		file.createNewFile();
-		stateLog = new RandomAccessFile(locationLog, "rwd");
-		recordA.setNext(recordB);
-		recordB.setNext(recordA);
-		masterRec = getMasterRecord();
-		workingRec = masterRec.getNext();
-		if (masterRec == recordA && readDataA) {
-			initializeMemory(recordA);
-		} else {
-			initializeMemory(recordB);
-		}	
+		try {
+			stableStorage = new DiskAccess(this);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void timeToLive() throws TransactionAbortedException{
@@ -941,126 +920,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	}
 
-	@Override
-	public boolean shutdown() throws RemoteException {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	@Override
-	public int start() throws RemoteException {
-		int newTr;
-		System.out.println("Lock of TM attempted"); 
-		synchronized(transactionManager) {
-			System.out.println("Lock of TM successful!");
-			newTr = transactionManager.start();
-		}
-		System.out.println("New transaction " + newTr + " started.");
-		return newTr;
-	}
-
-	public boolean canCommit(int transactionId) throws RemoteException, 
-	TransactionAbortedException, InvalidTransactionException {
-		synchronized(ongoingTransactions) {
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					String operation = transactionId + ",canCommit,YES";
-					System.out.println("Can commit, sent vote YES.");
-
-					synchronized(stateLog){
-						try {
-							stateLog.writeBytes(operation);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					
-					return true;
-				}		
-			}
-		} 	
-		return false;
-	}
-
-	@Override
-	public boolean doCommit(int transactionId) throws RemoteException,
-	TransactionAbortedException, InvalidTransactionException {	
-		
-		if(transactionManager.commit(transactionId, this)){
-			try{	
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
-						}
-						break;
-					}
-				}
-				masterSwitch(transactionId);
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								System.out.println("Line is: " + line);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
-						}
-						break;
-					}
-				}
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-			//boolean returnValue = transactionManager.commit(transactionId, this);
-			lockManager.UnlockAll(transactionId);
-			System.out.println("Transaction " + transactionId + " has committed.");
-			for (int i = 0; i < ongoingTransactions.size(); i++) {
-				if (ongoingTransactions.get(i).getID() == transactionId) {
-					System.out.println("Lock of ongoingtransactions attempted"); 
-					synchronized(ongoingTransactions) { 
-						System.out.println("Lock of ongoingtransactions successful!");
-						//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
-						return (ongoingTransactions.remove(ongoingTransactions.get(i)));
-					}
-				}
-			}
-			return true;
-		}else{
-			abort(transactionId);
-			return false;
-		}
-	}
-
-	@Override
-	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
-		transactionManager.abort(transactionId, this);
-		System.out.println("Transaction " + transactionId + " has ABORTED.");
-		for (int i = 0; i < ongoingTransactions.size(); i++) {
-			if (ongoingTransactions.get(i).getID() == transactionId) {
-				ongoingTransactions.get(i).undo();
-				System.out.println("Lock of ongoingtransactions attempted"); 
-				synchronized(ongoingTransactions) { 
-					System.out.println("Lock of ongoingtransactions successful!");
-					ongoingTransactions.remove(ongoingTransactions.get(i));
-				}
-			}
-		}
-		lockManager.UnlockAll(transactionId);
-		String operation = transactionId + ", abort\n";
-		try{
-			stateLog.writeBytes(operation);
-			System.out.println("Writing op");
-		}catch(Exception e){
-			System.out.println("Some god damn exception");
-		}
-	}
 
 	public void cancelNewFlight(String[] parameters) {
 
@@ -1113,6 +972,172 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	}
 
+
+
+	@Override
+	public boolean shutdown() throws RemoteException {
+		// TODO Auto-generated method stub
+		return true;
+	}
+
+	@Override
+	public int start() throws RemoteException {
+		int newTr;
+		System.out.println("Lock of TM attempted"); 
+		synchronized(transactionManager) {
+			System.out.println("Lock of TM successful!");
+			newTr = transactionManager.start();
+		}
+		System.out.println("New transaction " + newTr + " started.");
+		return newTr;
+	}
+
+	public boolean canCommit(int transactionId) throws RemoteException, 
+	TransactionAbortedException, InvalidTransactionException {
+		synchronized(ongoingTransactions) {
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					String operation = transactionId + ",canCommit,YES";
+					System.out.println("Can commit, sent vote YES.");
+					try {
+						stableStorage.writeToLog(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+					return true;
+				}		
+			}
+		} 	
+		return false;
+	}
+
+	@Override
+	public boolean doCommit(int transactionId) throws RemoteException,
+	TransactionAbortedException, InvalidTransactionException {	
+
+		if(transactionManager.commit(transactionId, this)){
+			try{	
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
+						}
+						break;
+					}
+				}
+				stableStorage.masterSwitch(transactionId);
+				for (Transaction t: ongoingTransactions) {
+					if (t.getID() == transactionId) {
+						List<Operation> ops = t.getOperations(); 
+						for (int i = ops.size()-1; i >= 0; i--) {
+							for (String dataName: ops.get(i).getDataNames()) {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
+						}
+						break;
+					}
+				}
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			//boolean returnValue = transactionManager.commit(transactionId, this);
+			lockManager.UnlockAll(transactionId);
+			System.out.println("Transaction " + transactionId + " has committed.");
+			for (int i = 0; i < ongoingTransactions.size(); i++) {
+				if (ongoingTransactions.get(i).getID() == transactionId) {
+					System.out.println("Lock of ongoingtransactions attempted"); 
+					synchronized(ongoingTransactions) { 
+						System.out.println("Lock of ongoingtransactions successful!");
+						//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+						return (ongoingTransactions.remove(ongoingTransactions.get(i)));
+					}
+				}
+			}
+			return true;
+		}else{
+			abort(transactionId);
+			return false;
+		}
+	}
+
+	@Override
+	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
+		transactionManager.abort(transactionId, this);
+		System.out.println("Transaction " + transactionId + " has ABORTED.");
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				ongoingTransactions.get(i).undo();
+				System.out.println("Lock of ongoingtransactions attempted"); 
+				synchronized(ongoingTransactions) { 
+					System.out.println("Lock of ongoingtransactions successful!");
+					ongoingTransactions.remove(ongoingTransactions.get(i));
+				}
+			}
+		}
+		lockManager.UnlockAll(transactionId);
+		String operation = transactionId + ", abort\n";
+		try{
+			stableStorage.writeToLog(operation);
+			System.out.println("Writing op");
+		}catch(Exception e){
+			System.out.println("Some god damn exception");
+		}
+	}
+
+	public String convertItemLine(String dataName) {
+		String line = "";
+		System.out.println("Name is " + dataName);
+		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
+			if ( flight == null ) {
+				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
+			}
+			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
+		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
+			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
+			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
+		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
+			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
+			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
+		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+			line += dataName;
+			String rawData = "";
+			try {
+				try {
+					rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+				} catch (DeadlockException | InvalidTransactionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				String[] lines = rawData.split("\n");
+				for (int i = 1; i < lines.length; i++) {
+					line += SEPARATOR + lines[i]; 
+				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+			line += " ";
+		}
+		line += "\n";
+		return line;
+
+	}
+
+
 	private void addOperation(int id, Operation op) {
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == id) {
@@ -1128,286 +1153,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			ongoingTransactions.add(t);
 		}
 
-		logOperation(id, op);
-	}
-
-	private void logOperation(int id, Operation op) {
-		//Add operation on stateLog file
-		String operation = id + "," + op.getOpName();
-		for (String param: op.getParameters()){
-			operation +=  "," + param;
-		}
-		operation += "\n";
-		synchronized(stateLog){
-			try{
-				stateLog.writeBytes(operation);
-				System.out.println("Writing op");
-				//write_stateLog.newLine();
-			}catch(Exception e){
-				System.out.println("Some god damn exception");
-			}
-		}		
-	}
-
-	private RAFList getMasterRecord() {
-		// TODO Auto-generated method stub
-		try {
-			String op = "";
-			String[] opElements;
-			String[] lastCommit = null;
-			op = stateLog.readLine();
-			if(op == null){
-				System.out.println("Log file is empty, master record is A");
-				return recordA;
-			}
-			do{
-				opElements = op.split(",");
-				if(opElements[1].trim().equals("commit")){
-					lastCommit = opElements;
-				}	
-				op = stateLog.readLine();
-			}while(op != null);
-
-			if(lastCommit == null){
-				System.out.println("Log file is not empty but has no commit, master record is A");
-				return recordA;
-			}else{
-				if(opElements[2].equals("A")){
-					System.out.println("Commit found, master record is A");
-					return recordA;
-				}else{
-					System.out.println("Commit found, master record is B");
-					return recordB;
-				}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	//Master points to the one which is currently the latest committed version, linked to transactionID
-	private void masterSwitch(int transactionID){
-		String operation = transactionID + ",commit," + workingRec.getName() + "\n";
-		workingRec = workingRec.getNext();
-		masterRec = masterRec.getNext();
-		txnMaster = transactionID;
-		synchronized(stateLog){
-			try{
-				stateLog.writeBytes(operation);
-			}catch(Exception e){
-				System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
-				System.out.println(e);
-			}
-		}				
-	}
-
-	private void initializeMemory(RAFList record) {
-		try {
-			String line = "";
-			try {
-				line = record.getFileAccess().readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			while (line != null && line != "") {
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[0].startsWith("Room")) {
-					try {
-						this.addRooms(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
-					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				} else if(lineDetails[0].startsWith("Car")) {
-					try {
-						this.addCars(0, lineDetails[1], Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
-					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}				
-				} else if(lineDetails[0].startsWith("Flight")) {
-					try {
-						this.addFlight(0, Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]), Integer.parseInt(lineDetails[3]));
-					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-
-			try {
-				record.getFileAccess().seek(0);
-				line = record.getFileAccess().readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			while (line != null && line != "") {
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[0].startsWith("Cust")) {
-					for (String reservation: lineDetails) {
-						if (reservation == lineDetails[0]) {
-							continue;
-						}
-						String[] details = reservation.split(" ");
-						if (details[1].startsWith("flight")) {
-							try {
-								this.addFlight(0, Integer.parseInt(details[1].substring(7)), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-									reserveFlight(0, Integer.parseInt(lineDetails[0].substring(8)), Integer.parseInt(details[1].substring(7)));
-								}
-							} catch (DeadlockException
-									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}						
-						} else if (details[1].startsWith("car")) {
-							try {
-								this.addCars(0, details[1].substring(4), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-									reserveCar(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(4));
-								}
-							} catch (DeadlockException
-									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}						
-						} else if (details[1].startsWith("room")) {
-							try {
-								this.addRooms(0, details[1].substring(5), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-								for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-									reserveRoom(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(5));
-								}
-							} catch (DeadlockException
-									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-
-						}
-					}
-				}
-			}
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	private String convertItemLine(String dataName) {
-		String line = "";
-		System.out.println("Name is " + dataName);
-		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
-		ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
-		if ( flight == null ) {
-			System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
-		}
-		line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
-	} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
-		ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
-		line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
-	} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
-		ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
-		line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
-	} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
-		line += dataName;
-		String rawData = "";
-		try {
-			try {
-				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
-			} catch (DeadlockException | InvalidTransactionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			String[] lines = rawData.split("\n");
-			for (int i = 1; i < lines.length; i++) {
-				line += SEPARATOR + lines[i]; 
-			}
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
-	for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
-		line += " ";
-	}
-		line += "\n";
-		return line;
-	}
-
-	private void clear(){
-		/* 
-		 *Generate a new file called temp.
-		 *In temp, write all transactions down.
-		 *Close and delete current log.
-		 *change name of temp to log.
-		 *If crashes and no log file to be found, search for temp file.
-		 */
-
-		String locationLog = PATHING + "Customer/stateLog.db";
-		String locationTemp = PATHING + "Customer/temp.db";
-		RandomAccessFile temp = null;
-		try {
-			temp = new RandomAccessFile(locationTemp, "rwd");
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		String operation = "";
-		synchronized(ongoingTransactions){
-			for (Transaction t: ongoingTransactions){				
-				for(Operation op: t.getOperations()){
-					operation = t.getID() + "," + op.getOpName() + ",";
-					for(String p: op.getParameters()){
-						operation += p + ",";
-					}
-					try {
-						temp.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}					
-				}
-			}
-		}
-
-		try {
-			stateLog.close();
-			temp.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		File theLog = new File(locationLog);
-		File theTemp = new File(locationTemp);
-		theTemp.renameTo(theLog);
-		theLog.delete();
+		stableStorage.logOperation(id, op);
 	}
 }

@@ -6,6 +6,8 @@ import java.rmi.RemoteException;
 
 import java.util.*;
 
+import transaction.Transaction;
+
 import lockManager.DeadlockException;
 /** 
  * Simplified version from CSE 593 Univ. of Washington
@@ -171,5 +173,5 @@ public interface ResourceManager extends Remote
 	public void cancelCarReservation(String[] parameters) throws RemoteException;
 	
 	public void cancelRoomReservation(String[] parameters) throws RemoteException;
-    			
+
 }

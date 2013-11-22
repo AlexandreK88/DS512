@@ -18,6 +18,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 
 import server.resInterface.*;
+import transaction.DiskAccess;
 import transaction.Operation;
 import transaction.RAFList;
 import transaction.Transaction;
@@ -34,12 +35,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
 	private static String responsibility;
-	private RAFList recordA;
-	private RAFList recordB;
-	private RAFList masterRec;
-	private RAFList workingRec;
-	private RandomAccessFile stateLog;
-	private int txnMaster;
+
+	DiskAccess stableStorage;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -90,118 +87,15 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
 		}
-		
-		obj.clear();
+
 	}
 
 	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
 
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
-		txnMaster = -1;
 
-		String locationA = PATHING + responsibility + "/RecordA.db";
-		String locationB = PATHING + responsibility + "/RecordB.db";
-		String locationLog = PATHING + responsibility + "/StateLog.db";
-
-		System.out.println(locationA + " is location.");
-		System.out.println(PATHING);
-		File file = new File(locationA);
-		boolean readDataA = !file.createNewFile();
-		recordA = new RAFList("A", locationA, "rwd");
-		file = new File(locationB);
-		boolean readDataB = file.createNewFile();
-		recordB = new RAFList("B", locationB, "rwd");
-		file = new File(locationLog);
-		file.createNewFile();
-		stateLog = new RandomAccessFile(locationLog, "rwd");
-		recordA.setNext(recordB);
-		recordB.setNext(recordA);
-		masterRec = getMasterRecord();
-		workingRec = masterRec.getNext();
-		if (masterRec == recordA && readDataA) {
-			initializeMemory(recordA);
-		} else {
-			initializeMemory(recordB);
-		}
-	}
-	private void initializeMemory(RAFList record) {
-		try {
-			String line = "";
-			try {
-				line = record.getFileAccess().readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			while (line != null && line != "") {
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[0].startsWith("Room")) {
-					this.addRooms(0, lineDetails[0].substring(4), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
-				} else if(lineDetails[0].startsWith("Car")) {
-					this.addCars(0, lineDetails[0].substring(3), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));				
-				} else if(lineDetails[0].startsWith("Flight")) {
-					this.addFlight(0, Integer.parseInt(lineDetails[0].substring(6)), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
-				}
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-
-			try {
-				record.getFileAccess().seek(0);
-				line = record.getFileAccess().readLine();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			while (line != null && line != "") {
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[0].startsWith("Cust")) {
-					for (String reservation: lineDetails) {
-						if (reservation == lineDetails[0]) {
-							newCustomer(0, Integer.parseInt(lineDetails[0].substring(8)));
-							continue;
-						}
-						String[] details = reservation.split(" ");
-						if (details[1].startsWith("flight")) {
-							this.addFlight(0, Integer.parseInt(details[1].substring(7)), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-								reserveFlight(0, Integer.parseInt(lineDetails[0].substring(8)), Integer.parseInt(details[1].substring(7)));
-							}
-						} else if (details[1].startsWith("car")) {
-							this.addCars(0, details[1].substring(4), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-								reserveCar(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(4));
-							}
-						} else if (details[1].startsWith("room")) {
-							this.addRooms(0, details[1].substring(5), Integer.parseInt(details[0]), Integer.parseInt(details[2].substring(1)));
-							for (int i = 0; i < Integer.parseInt(details[0]); i++) {
-								reserveRoom(0, Integer.parseInt(lineDetails[0].substring(8)), details[1].substring(5));
-							}
-						}
-					}
-				}
-				try {
-					line = record.getFileAccess().readLine();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		stableStorage = new DiskAccess(this);
 
 	}
 
@@ -701,175 +595,175 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			{
 		return false;
 			}
-	
+
 	// Parameter 0: flight number, parameter 1: number of seats, parameters 2: previous price.
-		public void cancelNewFlight(String[] parameters) {
-			int flightNum = Integer.parseInt(parameters[0]);
-			Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
-			if ( curObj != null ) {
+	public void cancelNewFlight(String[] parameters) {
+		int flightNum = Integer.parseInt(parameters[0]);
+		Flight curObj = (Flight) readData(0, Flight.getKey(flightNum));
+		if ( curObj != null ) {
 
-				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-					curObj.setPrice( Integer.parseInt(parameters[2]));
-					writeData( 0, curObj.getKey(), curObj );
-				} else {
-					deleteItem(0, Flight.getKey(flightNum));
-				}
-			} // else
-
-		}
-
-		// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
-		public void cancelNewCar(String[] parameters) {
-
-			Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
-			if (curObj != null) {
-				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-					curObj.setPrice(Integer.parseInt(parameters[2]));
-					writeData( 0, curObj.getKey(), curObj);
-				} else {
-					deleteItem(0, Car.getKey(parameters[0]));
-				}
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice( Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj );
+			} else {
+				deleteItem(0, Flight.getKey(flightNum));
 			}
+		} // else
 
-		}
+	}
 
-		// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
-		public void cancelNewRoom(String[] parameters) {
-			Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
-			if ( curObj != null ) {
-				if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
-					curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
-					curObj.setPrice(Integer.parseInt(parameters[2]));
-					writeData( 0, curObj.getKey(), curObj);
-				} else {
-					deleteItem(0, Hotel.getKey(parameters[0]));
-				}
-			} 
-		}
+	// Parameter 0: location, parameter 1: car count, parameter 2: previous price.
+	public void cancelNewCar(String[] parameters) {
 
-		// Parameter 0: cid
-		public void cancelNewCustomer(String[] parameters) {
-			// Generate a globally unique ID for the new customer
-			removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
-		}
-
-
-		public void cancelFlightDeletion(String[] parameters) {
-			try {
-				Flight newObj = new Flight(Integer.parseInt(parameters[0]), Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-				writeData( 0, newObj.getKey(), newObj );
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
+		Car curObj = (Car) readData(0, Car.getKey(parameters[0]) );
+		if (curObj != null) {
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice(Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj);
+			} else {
+				deleteItem(0, Car.getKey(parameters[0]));
 			}
 		}
 
-		public void cancelCarDeletion(String[] parameters) {
-			try {
-				Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-				writeData(0, newObj.getKey(), newObj );
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			}		
+	}
+
+	// Parameter 0: location, parameter 1: room count, parameter 2: previous price.
+	public void cancelNewRoom(String[] parameters) {
+		Hotel curObj = (Hotel) readData( 0, Hotel.getKey(parameters[0]) );
+		if ( curObj != null ) {
+			if (curObj.getCount() - Integer.parseInt(parameters[1]) > 0) {
+				curObj.setCount(curObj.getCount() - Integer.parseInt(parameters[1]));
+				curObj.setPrice(Integer.parseInt(parameters[2]));
+				writeData( 0, curObj.getKey(), curObj);
+			} else {
+				deleteItem(0, Hotel.getKey(parameters[0]));
+			}
+		} 
+	}
+
+	// Parameter 0: cid
+	public void cancelNewCustomer(String[] parameters) {
+		// Generate a globally unique ID for the new customer
+		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
+	}
+
+
+	public void cancelFlightDeletion(String[] parameters) {
+		try {
+			Flight newObj = new Flight(Integer.parseInt(parameters[0]), Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData( 0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
 		}
+	}
 
-		public void cancelRoomDeletion(String[] parameters) {
-			try {
-				Hotel newObj = new Hotel( parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
-				writeData( 0, newObj.getKey(), newObj );
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			}		
-		}
+	public void cancelCarDeletion(String[] parameters) {
+		try {
+			Car newObj = new Car(parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData(0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}		
+	}
 
-		// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
-		public void cancelCustomerDeletion(String[] parameters) {
-			int cID = Integer.parseInt(parameters[0]);
-			Customer cust = new Customer(cID);
-			writeData( 0, cust.getKey(), cust );
-			String[] reservationType = parameters[1].split("::");
-			String[] reservationIdentifier = parameters[2].split("::");
+	public void cancelRoomDeletion(String[] parameters) {
+		try {
+			Hotel newObj = new Hotel( parameters[0], Integer.parseInt(parameters[1]), Integer.parseInt(parameters[2]));
+			writeData( 0, newObj.getKey(), newObj );
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}		
+	}
 
-			for (int i = 0; i < reservationType.length; i++) {
-				if (reservationType[i].equals("flight")) {
-					reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
-				} else if (reservationType[i].equals("car")) {
-					reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
-				} else if (reservationType[i].equals("room")) {
-					reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
-				}
+	// Parameter 0: customerID, parameter 1: type of reservation for all reservations, parameter 2: reservation identifiers.
+	public void cancelCustomerDeletion(String[] parameters) {
+		int cID = Integer.parseInt(parameters[0]);
+		Customer cust = new Customer(cID);
+		writeData( 0, cust.getKey(), cust );
+		String[] reservationType = parameters[1].split("::");
+		String[] reservationIdentifier = parameters[2].split("::");
+
+		for (int i = 0; i < reservationType.length; i++) {
+			if (reservationType[i].equals("flight")) {
+				reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
+			} else if (reservationType[i].equals("car")) {
+				reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
+			} else if (reservationType[i].equals("room")) {
+				reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
 			}
 		}
+	}
 
 
-		public void cancelFlightReservation(String[] parameters) {
-			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-			RMHashtable reservationHT = cust.getReservations();
-			boolean canceled = false;
-			ReservedItem ri = null; 
-			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-				String reservedkey = (String) (e.nextElement());
-				if (reservedkey.equals(parameters[1])) {
-					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-					ri = reserveditem;
-					canceled = true;
-					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-					item.setReserved(item.getReserved()-1);
-					item.setCount(item.getCount()+1);
-					break;
-				}
-			}
-			if (canceled) {
-				cust.getReservations().remove(ri.getKey());
+	public void cancelFlightReservation(String[] parameters) {
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+		boolean canceled = false;
+		ReservedItem ri = null; 
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				break;
 			}
 		}
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
+		}
+	}
 
-		public void cancelCarReservation(String[] parameters) {
-			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-			RMHashtable reservationHT = cust.getReservations();
-			boolean canceled = false;
-			ReservedItem ri = null;
+	public void cancelCarReservation(String[] parameters) {
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+		boolean canceled = false;
+		ReservedItem ri = null;
 
-			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-				String reservedkey = (String) (e.nextElement());
-				if (reservedkey.equals(parameters[1])) {
-					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-					ri = reserveditem;
-					canceled = true;
-					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-					item.setReserved(item.getReserved()-1);
-					item.setCount(item.getCount()+1);
-					break;
-				}
-			}
-			if (canceled) {
-				cust.getReservations().remove(ri.getKey());
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				break;
 			}
 		}
-
-		public void cancelRoomReservation(String[] parameters) {
-			Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
-			RMHashtable reservationHT = cust.getReservations();
-			boolean canceled = false;
-			ReservedItem ri = null;
-
-			for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
-				String reservedkey = (String) (e.nextElement());
-				if (reservedkey.equals(parameters[1])) {
-					ReservedItem reserveditem = cust.getReservedItem(reservedkey);
-					ri = reserveditem;
-					canceled = true;
-					ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
-					item.setReserved(item.getReserved()-1);
-					item.setCount(item.getCount()+1);
-					break;
-				}
-			}	
-			if (canceled) {
-				cust.getReservations().remove(ri.getKey());
-			}
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
 		}
+	}
+
+	public void cancelRoomReservation(String[] parameters) {
+		Customer cust = (Customer) readData( 0, Customer.getKey(Integer.parseInt(parameters[0])) );
+		RMHashtable reservationHT = cust.getReservations();
+		boolean canceled = false;
+		ReservedItem ri = null;
+
+		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
+			String reservedkey = (String) (e.nextElement());
+			if (reservedkey.equals(parameters[1])) {
+				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
+				ri = reserveditem;
+				canceled = true;
+				ReservableItem item  = (ReservableItem) readData(0, reserveditem.getKey());
+				item.setReserved(item.getReserved()-1);
+				item.setCount(item.getCount()+1);
+				break;
+			}
+		}	
+		if (canceled) {
+			cust.getReservations().remove(ri.getKey());
+		}
+	}
 
 	@Override
 	public boolean shutdown() throws RemoteException {
@@ -884,33 +778,31 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
-		synchronized(ongoingTransactions) {
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					// if t's status is still ongoing.
-					// Add vote yes to log for trxn t.
-					// set transaction to have a ready to commit value (DONE)
-					//t.setReadyToCommit(true);
-					String operation = transactionId + ", canCommit, YES";
-					try {
-						stateLog.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					return true;
+		for (Transaction t: ongoingTransactions) {
+			if (t.getID() == transactionId) {
+				// if t's status is still ongoing.
+				// Add vote yes to log for trxn t.
+				// set transaction to have a ready to commit value (DONE)
+				//t.setReadyToCommit(true);
+				String operation = transactionId + ", canCommit, YES";
+				try {
+					stableStorage.writeToLog(operation);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-				else{
-					//t.setReadyToCommit(true);
-					String operation = transactionId + ", canCommit, NO";
-					try {
-						stateLog.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					abort(transactionId);
+				return true;
+			}
+			else{
+				//t.setReadyToCommit(true);
+				String operation = transactionId + ", canCommit, NO";
+				try {
+					stableStorage.writeToLog(operation);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
+				abort(transactionId);
 			}
 		}
 		return false;
@@ -919,38 +811,35 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
-		synchronized(workingRec){
-			try{	
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
+		try{	
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							String updatedLine = convertItemLine(dataName);
+							stableStorage.updateData(dataName, updatedLine);
 						}
-						break;
 					}
+					break;
 				}
-				masterSwitch(transactionId);
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								System.out.println("Line is: " + line);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
-						}
-						break;
-					}
-				}
-			}catch(Exception e){
-				e.printStackTrace();
 			}
-		}	
+			stableStorage.masterSwitch(transactionId);
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							String updatedLine = convertItemLine(dataName);
+							stableStorage.updateData(dataName, updatedLine);
+						}
+					}
+					break;
+				}
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -963,7 +852,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		synchronized(ongoingTransactions) {
@@ -975,14 +864,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 		}
 		String operation = transactionId + ", abort\n";
-		synchronized(stateLog){
-			try{
-				stateLog.writeBytes(operation);
-				System.out.println("Writing op");
-			}catch(Exception e){
-				System.out.println("Some god damn exception");
-			}
-		}		
+		try{
+			stableStorage.writeToLog(operation);
+			System.out.println("Writing op");
+		}catch(Exception e){
+			System.out.println("Some god damn exception");
+		}
 	}
 
 	private void addOperation(int id, Operation op) {
@@ -991,7 +878,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == id) {
 					t.addOp(op);
-					logOperation(id, op);
+					stableStorage.logOperation(id, op);
 					return;
 				}
 			}
@@ -1001,83 +888,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		synchronized(ongoingTransactions) {
 			ongoingTransactions.add(t);
 		}
-		logOperation(id, op);
+		stableStorage.logOperation(id, op);
 	}
 
-	private void logOperation(int id, Operation op) {
-		//Add operation on stateLog file
-		String operation = id + "," + op.getOpName();
-		for (String param: op.getParameters()){
-			operation +=  "," + param;
-		}
-		operation += "\n";
-		synchronized(stateLog){
-			try{
-				stateLog.writeBytes(operation);
-				System.out.println("Writing op");
-				//write_stateLog.newLine();
-			}catch(Exception e){
-				System.out.println("Some god damn exception");
-			}
-		}
-		
-	}
 
-	private RAFList getMasterRecord() {
-		// TODO Auto-generated method stub
-		try {
-			String op = "";
-			String[] opElements;
-			String[] lastCommit = null;
-			op = stateLog.readLine();
-			if(op == null){
-				System.out.println("Log file is empty, master record is A");
-				return recordA;
-			}
-			do{
-				opElements = op.split(",");
-				if(opElements[1].trim().equals("commit")){
-					lastCommit = opElements;
-				}	
-				op = stateLog.readLine();
-			}while(op != null);
-
-			if(lastCommit == null){
-				System.out.println("Log file is not empty but has no commit, master record is A");
-				return recordA;
-			}else{
-				if(opElements[2].equals("A")){
-					System.out.println("Commit found, master record is A");
-					return recordA;
-				}else{
-					System.out.println("Commit found, master record is B");
-					return recordB;
-				}
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	//Master points to the one which is currently the latest committed version, linked to transactionID
-	private void masterSwitch(int transactionID){
-		String operation = transactionID + ",commit," + workingRec.getName() + "\n";
-		workingRec = workingRec.getNext();
-		masterRec = masterRec.getNext();
-		txnMaster = transactionID;
-		synchronized(stateLog){
-			try{
-				stateLog.writeBytes(operation);
-			}catch(Exception e){
-				System.out.println("Problem trying to modify stateLog file on switchMaster on commit of transaction with ID : " + transactionID);
-				System.out.println(e);
-			}
-		}
-				
-	}
-	
 	private String convertItemLine(String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
@@ -1118,54 +932,5 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return line;
 	}
 
-	private void clear(){
-		/* 
-		 *Generate a new file called temp.
-		 *In temp, write all transactions down.
-		 *Close and delete current log.
-		 *change name of temp to log.
-		 *If crashes and no log file to be found, search for temp file.
-		 */
 
-		String locationLog = responsibility + "/stateLog.db";
-		String locationTemp = responsibility + "/temp.db";
-		RandomAccessFile temp = null;
-		try {
-			temp = new RandomAccessFile(locationTemp, "rwd");
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-
-		String operation = "";
-		synchronized(ongoingTransactions){
-			for (Transaction t: ongoingTransactions){				
-				for(Operation op: t.getOperations()){
-					operation = t.getID() + "," + op.getOpName() + ",";
-					for(String p: op.getParameters()){
-						operation += p + ",";
-					}
-					try {
-						temp.writeBytes(operation);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}					
-				}
-			}
-		}
-
-		try {
-			stateLog.close();
-			temp.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		File theLog = new File(locationLog);
-		File theTemp = new File(locationTemp);
-		theTemp.renameTo(theLog);
-		theLog.delete();
-	}
 }

@@ -1322,7 +1322,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private String convertItemLine(String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
-		/*if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
 		ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
 		if ( flight == null ) {
 			System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
@@ -1336,9 +1336,14 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
 	} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
 		line += dataName;
-		String rawData;
+		String rawData = "";
 		try {
-			rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+			try {
+				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+			} catch (DeadlockException | InvalidTransactionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			String[] lines = rawData.split("\n");
 			for (int i = 1; i < lines.length; i++) {
 				line += SEPARATOR + lines[i]; 
@@ -1354,7 +1359,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 	for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
 		line += " ";
-	}*/
+	}
 		line += "\n";
 		return line;
 	}

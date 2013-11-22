@@ -72,7 +72,10 @@ public class TransactionManager {
 					for (ResourceManager rm: t.getRMList()) {
 						if (rm != middleware) {
 							try {
-								canCommit = canCommit && rm.canCommit(tid);
+								canCommit = rm.canCommit(tid);
+								if (!canCommit){
+									break;
+								}
 							} catch(RemoteException | TransactionAbortedException
 									| InvalidTransactionException e) {
 								// TODO Auto-generated catch block

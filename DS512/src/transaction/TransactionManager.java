@@ -39,7 +39,6 @@ public class TransactionManager {
 	}
 
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
-		//System.out.println("Lock of TM's ongoingtransactions attempted"); 
 		synchronized(ongoingTransactions) { 
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == tid) {
@@ -51,7 +50,6 @@ public class TransactionManager {
 				}
 			}
 		}
-		//System.out.println("Lock of TM's ongoingtransactions successful!");
 		if (tid == -1) {
 			throw new InvalidTransactionException(tid, "The transaction was removed from transaction list (hence shows as -1).");
 		} else {
@@ -59,59 +57,46 @@ public class TransactionManager {
 		}
 	}
 
-	public boolean commit(int tid, ResourceManager middleware) {
+	public boolean prepare(Transaction t) /*throws RemoteException, 
+	TransactionAbortedException, InvalidTransactionException*/{
+		boolean canCommit = true;			
+		for (ResourceManager rm: t.getRMList()) {
+			try {
+				canCommit = rm.canCommit(t.getID());
+				if (!canCommit){
+					break;
+				}
+			} catch(RemoteException | TransactionAbortedException
+					| InvalidTransactionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return canCommit;
+	}
 
-		System.out.println("Lock of TM's ongoingtransactions attempted"); 
-		synchronized(ongoingTransactions) { 
-			for (int i=0; i < ongoingTransactions.size(); i++) {
-				if (ongoingTransactions.get(i).getID() == tid) {
-					Transaction t = ongoingTransactions.remove(i);
-					// if canCommit for all RMs.
-					// if can't, abort t.
-					boolean canCommit = true;
+	public boolean commit(int tid, ResourceManager middleware) {
+		for (int i=0; i < ongoingTransactions.size(); i++) {
+			Transaction t = ongoingTransactions.get(i);
+			if (t.getID() == tid) {
+				if(prepare(t)){
 					for (ResourceManager rm: t.getRMList()) {
-						//if (rm != middleware) {
-							try {
-								canCommit = rm.canCommit(tid);
-								if (!canCommit){
-									break;
-								}
-							} catch(RemoteException | TransactionAbortedException
-									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						//}
-					}
-					// All voted YES, so commit t.
-					// commit all RM.
-					if(canCommit){
-						for (ResourceManager rm: t.getRMList()) {
-							//if (rm != middleware) {
-							try {
-								rm.doCommit(tid);
-							} catch (RemoteException | TransactionAbortedException
-									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							//}
-						}
-						return true;
-					}
-					else{
-						/*try {
-							middleware.abort(tid);
-						} catch (RemoteException | InvalidTransactionException e) {
+						ongoingTransactions.remove(i);
+						try {
+							rm.doCommit(tid);
+						} catch (RemoteException | TransactionAbortedException
+								| InvalidTransactionException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
-						}*/
-						return false;
+						}
 					}
+					return true;
+				}
+				else{
+					return false;
 				}
 			}
 		}
-		System.out.println("Lock of TM's ongoingtransactions successful!");
 		return false;	
 	}
 

@@ -958,6 +958,20 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		System.out.println("New transaction " + newTr + " started.");
 		return newTr;
 	}
+	
+	public boolean commit(int transactionId){
+		if(transactionManager.commit(transactionId, this)){
+			return true;
+		}else{
+			try {
+				abort(transactionId);
+			} catch (RemoteException | InvalidTransactionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return false;
+		}
+	}
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
@@ -975,7 +989,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 							e.printStackTrace();
 						}
 					}
-					
+
 					return true;
 				}		
 			}
@@ -986,56 +1000,50 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {	
-		
-		if(transactionManager.commit(transactionId, this)){
-			try{	
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
+		try{	
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							workingRec.rewriteLine(line, convertItemLine(dataName));
 						}
-						break;
 					}
-				}
-				masterSwitch(transactionId);
-				for (Transaction t: ongoingTransactions) {
-					if (t.getID() == transactionId) {
-						List<Operation> ops = t.getOperations(); 
-						for (int i = ops.size()-1; i >= 0; i--) {
-							for (String dataName: ops.get(i).getDataNames()) {
-								int line = workingRec.getLine(dataName);
-								System.out.println("Line is: " + line);
-								workingRec.rewriteLine(line, convertItemLine(dataName));
-							}
-						}
-						break;
-					}
-				}
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-			//boolean returnValue = transactionManager.commit(transactionId, this);
-			lockManager.UnlockAll(transactionId);
-			System.out.println("Transaction " + transactionId + " has committed.");
-			for (int i = 0; i < ongoingTransactions.size(); i++) {
-				if (ongoingTransactions.get(i).getID() == transactionId) {
-					System.out.println("Lock of ongoingtransactions attempted"); 
-					synchronized(ongoingTransactions) { 
-						System.out.println("Lock of ongoingtransactions successful!");
-						//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
-						return (ongoingTransactions.remove(ongoingTransactions.get(i)));
-					}
+					break;
 				}
 			}
-			return true;
-		}else{
-			abort(transactionId);
-			return false;
+			masterSwitch(transactionId);
+			for (Transaction t: ongoingTransactions) {
+				if (t.getID() == transactionId) {
+					List<Operation> ops = t.getOperations(); 
+					for (int i = ops.size()-1; i >= 0; i--) {
+						for (String dataName: ops.get(i).getDataNames()) {
+							int line = workingRec.getLine(dataName);
+							System.out.println("Line is: " + line);
+							workingRec.rewriteLine(line, convertItemLine(dataName));
+						}
+					}
+					break;
+				}
+			}
+		}catch(Exception e){
+			e.printStackTrace();
 		}
+		//boolean returnValue = transactionManager.commit(transactionId, this);
+		lockManager.UnlockAll(transactionId);
+		System.out.println("Transaction " + transactionId + " has committed.");
+		for (int i = 0; i < ongoingTransactions.size(); i++) {
+			if (ongoingTransactions.get(i).getID() == transactionId) {
+				System.out.println("Lock of ongoingtransactions attempted"); 
+				synchronized(ongoingTransactions) { 
+					System.out.println("Lock of ongoingtransactions successful!");
+					//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
+					return (ongoingTransactions.remove(ongoingTransactions.get(i)));
+				}
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -1319,43 +1327,43 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		String line = "";
 		System.out.println("Name is " + dataName);
 		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
-		ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
-		if ( flight == null ) {
-			System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
-		}
-		line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
-	} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
-		ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
-		line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
-	} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
-		ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
-		line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
-	} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
-		line += dataName;
-		String rawData = "";
-		try {
+			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
+			if ( flight == null ) {
+				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
+			}
+			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
+		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
+			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
+			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
+		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
+			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
+			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
+		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+			line += dataName;
+			String rawData = "";
 			try {
-				rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
-			} catch (DeadlockException | InvalidTransactionException e) {
+				try {
+					rawData = queryCustomerInfo(0, Integer.parseInt(dataName.substring(8)));
+				} catch (DeadlockException | InvalidTransactionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				String[] lines = rawData.split("\n");
+				for (int i = 1; i < lines.length; i++) {
+					line += SEPARATOR + lines[i]; 
+				}
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			String[] lines = rawData.split("\n");
-			for (int i = 1; i < lines.length; i++) {
-				line += SEPARATOR + lines[i]; 
-			}
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
-	}
-	for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
-		line += " ";
-	}
+		}
+		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
+			line += " ";
+		}
 		line += "\n";
 		return line;
 	}

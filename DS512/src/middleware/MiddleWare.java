@@ -35,8 +35,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	DiskAccess stableStorage;
 	int trCount;
 
-
-
 	private static int SHUTDOWN_TIMEOUT = 300000;
 	private static int TIME_TO_LIVE = 200000;
 	public static Random r = new Random();

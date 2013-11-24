@@ -37,10 +37,12 @@ public class Transaction {
 		readyToCommit = ready;
 	}*/
 
-	public void addrm(ResourceManager rm) {
+	public boolean addrm(ResourceManager rm) {
 		if (!rmList.contains(rm)) {
 			rmList.add(rm);
+			return true;
 		}
+		return false;
 	}
 
 	public void undo() throws RemoteException {

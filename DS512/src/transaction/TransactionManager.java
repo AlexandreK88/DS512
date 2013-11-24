@@ -1,5 +1,6 @@
 package transaction;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,11 +16,18 @@ public class TransactionManager {
 
 	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;
+	DiskAccess stableStorage;
 	// Add transaction log.
 
 	public TransactionManager() {
-		latestTransaction = new AtomicInteger();
 		ongoingTransactions = new LinkedList<Transaction>();
+		try {
+			stableStorage = new DiskAccess();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
 	}
 
 	public int start() {
@@ -40,7 +48,14 @@ public class TransactionManager {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == tid) {
 					for (ResourceManager rm: rmL) {
-						t.addrm(rm);
+						if (t.addrm(rm)) {
+							try {
+								stableStorage.writeToLog(Integer.toString(tid) + ", " + rm.getName());
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
 						t.setCurrentTime();
 					}
 					return true;
@@ -87,6 +102,12 @@ public class TransactionManager {
 							e.printStackTrace();
 						}
 					}
+					try {
+						stableStorage.writeToLog(Integer.toString(tid) + ", Commit");
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return true;
 				}
 				else{
@@ -112,6 +133,12 @@ public class TransactionManager {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+					}
+					try {
+						stableStorage.writeToLog(Integer.toString(tid) + ", Abort");
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
 			}

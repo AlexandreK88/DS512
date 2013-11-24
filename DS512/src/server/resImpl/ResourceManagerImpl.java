@@ -31,6 +31,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private LinkedList<Transaction> ongoingTransactions;
 	int trCount;
 	private static String responsibility;
+	static String name;
 
 	DiskAccess stableStorage;
 
@@ -52,7 +53,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			System.out.println("Usage: java ResImpl.ResourceManagerImpl responsibility [port] ");
 			System.exit(1);
 		}
-
 		ResourceManagerImpl obj = null;
 		try {
 			// create a new Server object
@@ -64,7 +64,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			Registry registry = LocateRegistry.getRegistry(port);
 			// Defining the RM's task
 			responsibility = args[0];
-			registry.rebind(responsibility+"21ResourceManager", rm);
+			name = responsibility+"21ResourceManager";
+			registry.rebind(name, rm);
 
 			System.err.println("Server ready");
 		} catch (Exception e) {
@@ -932,5 +933,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return line;
 	}
 
+	public String getName() {
+		return name;
+	}
 
 }

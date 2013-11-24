@@ -39,6 +39,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	LinkedList<Transaction> ongoingTransactions;
 	DiskAccess stableStorage;
 	int trCount;
+	static String name;
 
 
 
@@ -61,6 +62,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		lockManager = new LockManager();
 		transactionManager = new TransactionManager();
 		MiddleWare obj = null;
+		name = "Resort21ResourceManager";
 
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
@@ -121,7 +123,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 			// Bind the remote object's stub in the registry
 			Registry registry = LocateRegistry.getRegistry(portMW);
-			registry.rebind("Resort21ResourceManager", rm);
+			registry.rebind(name, rm);
 			System.err.println("Server ready");
 		} catch (Exception e) {
 			System.err.println("Server exception: " + e.toString());
@@ -1164,5 +1166,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 
 		stableStorage.logOperation(id, op);
+	}
+	
+	public String getName() {
+		return name;
 	}
 }

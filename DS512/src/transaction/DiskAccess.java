@@ -25,9 +25,19 @@ public class DiskAccess {
 
 	private int txnMaster;
 	String task;
+	boolean isRM;
 
 
+	public DiskAccess() throws IOException {
+		isRM = false;
+		String location = PATHING + "TM/Transactions.db";
+		File file = new File(location);
+		boolean readData = !file.createNewFile();
+		stateLog = new RandomAccessFile(location, "rwd");
+	}
+	
 	public DiskAccess(ResourceManager rm, String t) throws IOException {
+		isRM = true;
 		txnMaster = -1;
 		task = t;
 		String locationA = PATHING + task + "/RecordA.db";
@@ -87,10 +97,37 @@ public class DiskAccess {
 	public void writeToLog(String operation) throws IOException {
 		stateLog.writeBytes(operation);
 	}
+	
+	public int getLatestTransaction() {
+		try {
+			stateLog.seek(0);
+			String op = "";
+			String[] opElements;
+			int value = 0;
+			op = stateLog.readLine();
+			if (op == null) {
+				System.out.println("Log file is empty, latest transaction is 0.");
+				return value;
+			}
+			do {
+				opElements = op.split(",");
+				if(Integer.parseInt(opElements[0].trim()) > value){
+					value = Integer.parseInt(opElements[0].trim());
+				}	
+				op = stateLog.readLine();
+			} while(op != null);
+			return value;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return 0;
+	}
 
 	public RAFList getMasterRecord() {
 		// TODO Auto-generated method stub
 		try {
+			stateLog.seek(0);
 			String op = "";
 			String[] opElements;
 			String[] lastCommit = null;
@@ -128,6 +165,9 @@ public class DiskAccess {
 
 	//Master points to the one which is currently the latest committed version, linked to transactionID
 	public void masterSwitch(int transactionID){
+		if (!isRM) {
+			return;
+		}
 		String operation = transactionID + ",commit," + workingRec.getName() + "\n";
 		workingRec = workingRec.getNext();
 		masterRec = masterRec.getNext();
@@ -142,7 +182,10 @@ public class DiskAccess {
 		}				
 	}
 
-	public void initializeMemory(RAFList record, ResourceManager rm) throws DeadlockException, InvalidTransactionException {
+	private void initializeMemory(RAFList record, ResourceManager rm) throws DeadlockException, InvalidTransactionException {
+		if (!isRM) {
+			return;
+		}
 		try {
 			String line = "";
 			try {
@@ -257,6 +300,9 @@ public class DiskAccess {
 
 
 	public void updateData(String dataName, String updatedLine) {
+		if (!isRM) {
+			return;
+		}
 		int line = workingRec.getLine(dataName);
 		System.out.println("Line is: " + line);
 		workingRec.rewriteLine(line, updatedLine);

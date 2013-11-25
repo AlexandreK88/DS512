@@ -77,23 +77,30 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-
+		obj.initiateFromDisk();
 		try {
 			Thread.sleep(10000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 
 	}
 
-	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
+	public ResourceManagerImpl() throws RemoteException {
 
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
 
-		stableStorage = new DiskAccess(this, responsibility);
-
+	}
+	
+	private void initiateFromDisk() {
+		try {
+			stableStorage = new DiskAccess(this, responsibility);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	// Reads a data item
@@ -683,11 +690,11 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		String[] reservationIdentifier = parameters[2].split("::");
 
 		for (int i = 0; i < reservationType.length; i++) {
-			if (reservationType[i].equals("flight")) {
+			if (reservationType[i].equalsIgnoreCase("flight")) {
 				reserveItem(0, cID, Flight.getKey(Integer.parseInt(reservationIdentifier[i])), reservationIdentifier[i]);
-			} else if (reservationType[i].equals("car")) {
+			} else if (reservationType[i].equalsIgnoreCase("car")) {
 				reserveItem(0, cID, Car.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
-			} else if (reservationType[i].equals("room")) {
+			} else if (reservationType[i].equalsIgnoreCase("room")) {
 				reserveItem(0, cID, Hotel.getKey(reservationIdentifier[i]), reservationIdentifier[i]);
 			}
 		}
@@ -701,7 +708,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		ReservedItem ri = null; 
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
+			if (reservedkey.equalsIgnoreCase(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
 				ri = reserveditem;
 				canceled = true;
@@ -724,7 +731,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
+			if (reservedkey.equalsIgnoreCase(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
 				ri = reserveditem;
 				canceled = true;
@@ -747,7 +754,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 		for (Enumeration e = reservationHT.keys(); e.hasMoreElements();) {        
 			String reservedkey = (String) (e.nextElement());
-			if (reservedkey.equals(parameters[1])) {
+			if (reservedkey.equalsIgnoreCase(parameters[1])) {
 				ReservedItem reserveditem = cust.getReservedItem(reservedkey);
 				ri = reserveditem;
 				canceled = true;
@@ -896,7 +903,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private String convertItemLine(String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
-		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
+		if (dataName.length() >= 6 && dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
 			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
 			if ( flight == null ) {
 				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");

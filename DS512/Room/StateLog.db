@@ -1,5 +1,4 @@
 1,newcustomer,555
+1,newroom,bob,345,98
+1,reserveroom,555,room-bob
 1, canCommit, YES1,commit,B
-3,newroom,bob,23,34
-3,reserveroom,555,room-bob
-3, canCommit, YES3,commit,A

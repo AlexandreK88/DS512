@@ -88,7 +88,7 @@ public class Operation {
 		} else if (opName.equals("reservecar")) {
 			dataNames = new String[2];
 			dataNames[0] = "Customer"+parameters[0];
-			dataNames[1] = "Room"+parameters[1].substring(4);			
+			dataNames[1] = "Car"+parameters[1].substring(4);			
 		} else if (opName.equals("reserveroom")) {
 			dataNames = new String[2];
 			dataNames[0] = "Customer"+parameters[0];

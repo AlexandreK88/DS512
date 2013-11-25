@@ -176,6 +176,6 @@ public interface ResourceManager extends Remote
 	
 	public void cancelRoomReservation(String[] parameters) throws RemoteException;
 
-	public String getName();
+	public String getName()throws RemoteException;
 
 }

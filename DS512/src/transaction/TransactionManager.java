@@ -34,23 +34,25 @@ public class TransactionManager {
 		Transaction t;
 		synchronized(latestTransaction) {
 			t = new Transaction(latestTransaction.incrementAndGet());
-			System.out.println("Lock of TM's ongoingtransactions attempted"); 
 			synchronized(ongoingTransactions) { 
 				ongoingTransactions.add(t);
 			}
-			System.out.println("Lock of TM's ongoingtransactions successful!");
 		}
+		System.out.println("New transaction " + t.getID() + " started.");
 		return t.getID();
 	}
 
 	public boolean enlist(int tid, LinkedList<ResourceManager> rmL) throws InvalidTransactionException {
+		if (tid == 0) {
+			return true;
+		}
 		synchronized(ongoingTransactions) { 
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == tid) {
 					for (ResourceManager rm: rmL) {
 						if (t.addrm(rm)) {
 							try {
-								stableStorage.writeToLog(Integer.toString(tid) + ", " + rm.getName());
+								stableStorage.writeToLog(Integer.toString(tid) + ", " + rm.getName() + "\n");
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -103,7 +105,8 @@ public class TransactionManager {
 						}
 					}
 					try {
-						stableStorage.writeToLog(Integer.toString(tid) + ", Commit");
+						System.out.println("Transaction " + t.getID() + " committed.");
+						stableStorage.writeToLog(Integer.toString(tid) + ", Commit\n");
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -119,7 +122,6 @@ public class TransactionManager {
 	}
 
 	public void abort(int tid, ResourceManager middleware) {
-		System.out.println("Lock of TM's ongoingtransactions attempted"); 
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
@@ -135,7 +137,8 @@ public class TransactionManager {
 						}
 					}
 					try {
-						stableStorage.writeToLog(Integer.toString(tid) + ", Abort");
+						System.out.println("Transaction " + t.getID() + " aborted.");
+						stableStorage.writeToLog(Integer.toString(tid) + ", Abort\n");
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -143,11 +146,12 @@ public class TransactionManager {
 				}
 			}
 		}
-		System.out.println("Lock of TM's ongoingtransactions successful!");
 	}
+	
 	public LinkedList<Transaction> getOngoingTransactions(){
 		return ongoingTransactions;
 	}
+	
 	public boolean hasOngoingTransactions(){
 		return !ongoingTransactions.isEmpty();
 	}

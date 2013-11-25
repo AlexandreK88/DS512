@@ -86,7 +86,7 @@ public class DiskAccess {
 		synchronized(stateLog){
 			try{
 				stateLog.writeBytes(operation);
-				System.out.println("Writing op");
+				System.out.println("Writing op " + operation);
 				//write_stateLog.newLine();
 			}catch(Exception e){
 				System.out.println("Some god damn exception");
@@ -138,7 +138,7 @@ public class DiskAccess {
 			}
 			do{
 				opElements = op.split(",");
-				if(opElements[1].trim().equals("commit")){
+				if(opElements[1].trim().equalsIgnoreCase("commit")){
 					lastCommit = opElements;
 				}	
 				op = stateLog.readLine();
@@ -148,7 +148,7 @@ public class DiskAccess {
 				System.out.println("Log file is not empty but has no commit, master record is A");
 				return recordA;
 			}else{
-				if(opElements[2].equals("A")){
+				if(opElements[2].equalsIgnoreCase("A")){
 					System.out.println("Commit found, master record is A");
 					return recordA;
 				}else{

@@ -129,10 +129,11 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
+		obj.initiateFromDisk();
 		while(true){
 			try{
 				if(obj != null){
-					System.out.println("Looping");
+					//System.out.println("Looping");
 					obj.verifyIfShutdown();
 					obj.timeToLive();
 				}
@@ -152,6 +153,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	public MiddleWare() throws RemoteException, InvalidTransactionException {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
+	}
+	
+	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
 			lockManager.UnlockAll(0);
@@ -864,9 +868,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			String[] bill2 = null;
 			String[] bill3 = null;
 			if(lockManager.Lock(id, "Customer"+customerID, LockManager.READ)){
-				bill1=rmFlight.queryCustomerInfo(id, customerID).split("\\n");
-				bill2=rmCar.queryCustomerInfo(id, customerID).split("\\n");
-				bill3=rmRoom.queryCustomerInfo(id, customerID).split("\\n");
+				bill1=rmFlight.queryCustomerInfo(id, customerID).split("\n");
+				bill2=rmCar.queryCustomerInfo(id, customerID).split("\n");
+				bill3=rmRoom.queryCustomerInfo(id, customerID).split("\n");
 			}
 			else{
 				return "Impossible to query customer";
@@ -883,7 +887,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 			String bill = "";
 			if(bill1.length == 1 || bill2.length == 1 || bill3.length == 1){
-				if(bill1[0].equals("")){
+				if(bill1[0].equalsIgnoreCase("")){
 					return bill;
 				}
 				bill = "This customer has no reservations.";
@@ -982,7 +986,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println("Lock of TM successful!");
 			newTr = transactionManager.start();
 		}
-		System.out.println("New transaction " + newTr + " started.");
 		return newTr;
 	}
 	
@@ -1057,9 +1060,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		System.out.println("Transaction " + transactionId + " has committed.");
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
-				System.out.println("Lock of ongoingtransactions attempted"); 
 				synchronized(ongoingTransactions) { 
-					System.out.println("Lock of ongoingtransactions successful!");
 					//return (returnValue && ongoingTransactions.remove(ongoingTransactions.get(i)));
 					return (ongoingTransactions.remove(ongoingTransactions.get(i)));
 				}
@@ -1075,9 +1076,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
 				ongoingTransactions.get(i).undo();
-				System.out.println("Lock of ongoingtransactions attempted"); 
 				synchronized(ongoingTransactions) { 
-					System.out.println("Lock of ongoingtransactions successful!");
 					ongoingTransactions.remove(ongoingTransactions.get(i));
 				}
 			}
@@ -1096,40 +1095,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private String convertItemLine(int id, String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
-		if (dataName.substring(0, 6).equalsIgnoreCase("Flight")) {
-			ReservableItem flight = (ReservableItem)readData(0,"flight-" + dataName.substring(6));
-			if ( flight == null ) {
-				System.out.println("well well well, " + "flight-" + dataName.substring(6) + " is messed up.");
-			}
-			line += dataName + SEPARATOR + flight.getCount() + SEPARATOR + flight.getPrice();
-		} else if (dataName.substring(0, 3).equalsIgnoreCase("Car")) {
-			ReservableItem car = (ReservableItem)readData(0,"car-" + dataName.substring(3));
-			line += dataName + SEPARATOR + car.getCount() + SEPARATOR + car.getPrice();
-		} else if (dataName.substring(0, 4).equalsIgnoreCase("Room")) {
-			ReservableItem room = (ReservableItem)readData(0,"room-" + dataName.substring(4));
-			line += dataName + SEPARATOR + room.getCount() + SEPARATOR + room.getPrice();
-		} else if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
+		if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
 			line += dataName;
-			String rawData = "";
-			try {
-				try {
-					rawData = queryCustomerInfo(id, Integer.parseInt(dataName.substring(8)));
-				} catch (DeadlockException | InvalidTransactionException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				String[] lines = rawData.split("\n");
-				for (int i = 1; i < lines.length; i++) {
-					line += SEPARATOR + lines[i]; 
-				}
-			} catch (NumberFormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
 		}
 		for (int i = line.length(); i < TransactionManager.LINE_SIZE-1; i++) {
 			line += " ";
@@ -1145,14 +1112,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == id) {
 				t.addOp(op);
+				stableStorage.logOperation(id, op);
 				return;
 			}
 		}
 		Transaction t = new Transaction(id);
 		t.addOp(op);
-		System.out.println("Lock of ongoingtransactions attempted"); 
 		synchronized(ongoingTransactions) { 
-			System.out.println("Lock of ongoingtransactions successful!");
 			ongoingTransactions.add(t);
 		}
 

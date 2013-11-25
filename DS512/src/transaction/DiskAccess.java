@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.rmi.RemoteException;
 import java.util.LinkedList;
-
 import lockManager.DeadlockException;
-import middleware.ReservableItem;
 import server.resInterface.InvalidTransactionException;
 import server.resInterface.ResourceManager;
 
@@ -35,7 +33,7 @@ public class DiskAccess {
 		boolean readData = !file.createNewFile();
 		stateLog = new RandomAccessFile(location, "rwd");
 	}
-	
+
 	public DiskAccess(ResourceManager rm, String t) throws IOException {
 		isRM = true;
 		txnMaster = -1;
@@ -61,9 +59,7 @@ public class DiskAccess {
 		workingRec = masterRec.getNext();
 		try {
 			if (masterRec == recordA && readDataA) {
-
 				initializeMemory(recordA, rm);
-
 			} else {
 				initializeMemory(recordB, rm);
 			}	
@@ -97,7 +93,7 @@ public class DiskAccess {
 	public void writeToLog(String operation) throws IOException {
 		stateLog.writeBytes(operation);
 	}
-	
+
 	public int getLatestTransaction() {
 		try {
 			stateLog.seek(0);
@@ -296,8 +292,71 @@ public class DiskAccess {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		readLog(rm);
+	}
+	
+	public LinkedList<Transaction> readLog(){
+		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
+		return ongoings;		
 	}
 
+	private	 void readLog(ResourceManager rm){
+		if(!isRM){
+			return;
+		}else{
+			//LinkedList<Integer> starts = new LinkedList<Integer>();
+			LinkedList<Integer> commits = new LinkedList<Integer>();
+			//LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
+			try {
+				String line = "";
+				try {
+					line = stateLog.readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				while (line != null && line != "") {
+					line = line.trim();
+					String[] lineDetails = line.split(",");
+					/*if(lineDetails[1].equals("start")){
+						starts.add(Integer.parseInt(lineDetails[0]));
+					}else*/ if(lineDetails[1].equals("commit")){
+						commits.add(Integer.parseInt(lineDetails[0]));
+					}		
+				}
+				/*for(Integer txn: starts){
+					if(!commits.contains(txn)){						
+						ongoings.add(new Transaction(txn));
+					}
+				}*/
+				
+				stateLog.seek(0);
+				
+				try {
+					line = stateLog.readLine();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				while (line != null && line != "") {
+					line = line.trim();
+					String[] lineDetails = line.split(",");
+					if(!commits.contains(Integer.parseInt(lineDetails[0]))){
+						String[] params = new String[lineDetails.length-2];
+						for(int i = 0; i < lineDetails.length; i++){
+							params[i] = lineDetails[i+2];
+						}
+						Operation op = new Operation(lineDetails[1], params, rm);
+						//ongoings.get(Integer.parseInt(lineDetails[0])).addOp(op);
+						op.doOp(Integer.parseInt(lineDetails[0]));
+					}	
+				}
+				
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+	}
 
 	public void updateData(String dataName, String updatedLine) {
 		if (!isRM) {
@@ -307,7 +366,6 @@ public class DiskAccess {
 		System.out.println("Line is: " + line);
 		workingRec.rewriteLine(line, updatedLine);
 	}
-
 
 	public void clearLog(LinkedList<Transaction> ongoingTransactions){
 		/* 
@@ -358,7 +416,6 @@ public class DiskAccess {
 		File theTemp = new File(locationTemp);
 		theTemp.renameTo(theLog);
 		theLog.delete();
-
 	}
 
 }

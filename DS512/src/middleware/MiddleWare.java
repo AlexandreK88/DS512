@@ -6,13 +6,9 @@ import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-
-
 import java.util.*;
-
 import lockManager.DeadlockException;
 import lockManager.LockManager;
-
 import server.resInterface.InvalidTransactionException;
 import server.resInterface.ResourceManager;
 import server.resInterface.TransactionAbortedException;
@@ -39,8 +35,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private static int SHUTDOWN_TIMEOUT = 300000;
 	private static int TIME_TO_LIVE = 200000;
 	public static Random r = new Random();
-
-
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
@@ -157,6 +151,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public String getName() {
+		return name;
 	}
 
 	private void timeToLive() throws TransactionAbortedException{
@@ -1004,7 +1002,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
-					String operation = transactionId + ",canCommit,YES";
+					String operation = transactionId + ",canCommit,YES \n";
 					System.out.println("Can commit, sent vote YES.");
 					try {
 						stableStorage.writeToLog(operation);
@@ -1090,7 +1088,25 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 	
-
+	public void selfDestruct(){
+		System.exit(1);
+	}
+		
+	public boolean crash(String which) throws RemoteException{
+		if(which.equalsIgnoreCase("flight")){
+			rmFlight.selfDestruct();
+			return true;
+		}else if(which.equalsIgnoreCase("car")){
+			rmCar.selfDestruct();
+			return true;
+		}else if(which.equalsIgnoreCase("room")){
+			rmRoom.selfDestruct();
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
 	private String convertItemLine(int id, String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
@@ -1134,7 +1150,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		line += "\n";
 		return line;
-
 	}
 
 
@@ -1157,7 +1172,5 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		stableStorage.logOperation(id, op);
 	}
 	
-	public String getName() {
-		return name;
-	}
+	
 }

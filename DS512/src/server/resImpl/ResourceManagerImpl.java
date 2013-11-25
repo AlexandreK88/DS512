@@ -13,7 +13,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
-
 import server.resInterface.*;
 import transaction.DiskAccess;
 import transaction.Operation;
@@ -84,7 +83,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			// TODO Auto-generated catch block
 			//e.printStackTrace();
 		}
-
 	}
 
 	public ResourceManagerImpl() throws RemoteException, FileAlreadyExistsException, IOException {
@@ -94,6 +92,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 		stableStorage = new DiskAccess(this, responsibility);
 
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	// Reads a data item
@@ -331,7 +333,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return(true);
 			}
 
-
 	// Delete cars from a location
 	public boolean deleteCars(int id, String location)
 			throws RemoteException
@@ -347,28 +348,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 			}
 
-
-
 	// Returns the number of empty seats on this flight
 	public int queryFlight(int id, int flightNum)
 			throws RemoteException
 			{
 		return queryNum(id, Flight.getKey(flightNum));
 			}
-
-	// Returns the number of reservations for this flight. 
-	//    public int queryFlightReservations(int id, int flightNum)
-	//        throws RemoteException
-	//    {
-	//        Trace.info("RM::queryFlightReservations(" + id + ", #" + flightNum + ") called" );
-	//        RMInteger numReservations = (RMInteger) readData( id, Flight.getNumReservationsKey(flightNum) );
-	//        if ( numReservations == null ) {
-	//            numReservations = new RMInteger(0);
-	//        } // if
-	//        Trace.info("RM::queryFlightReservations(" + id + ", #" + flightNum + ") returns " + numReservations );
-	//        return numReservations.getValue();
-	//    }
-
 
 	// Returns price of this flight
 	public int queryFlightPrice(int id, int flightNum )
@@ -377,17 +362,13 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return queryPrice(id, Flight.getKey(flightNum));
 			}
 
-
 	// Returns the number of rooms available at a location
 	public int queryRooms(int id, String location)
 			throws RemoteException
 			{
 		return queryNum(id, Hotel.getKey(location));
 			}
-
-
-
-
+	
 	// Returns room price at this location
 	public int queryRoomsPrice(int id, String location)
 			throws RemoteException
@@ -395,14 +376,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return queryPrice(id, Hotel.getKey(location));
 			}
 
-
 	// Returns the number of cars available at a location
 	public int queryCars(int id, String location)
 			throws RemoteException
 			{
 		return queryNum(id, Car.getKey(location));
 			}
-
 
 	// Returns price of cars at this location
 	public int queryCarsPrice(int id, String location)
@@ -486,9 +465,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 
 	// Deletes customer from the database. 
-	public boolean deleteCustomer(int id, int customerID)
-			throws RemoteException
-			{
+	public boolean deleteCustomer(int id, int customerID) throws RemoteException {
 		Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
 		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		if ( cust == null ) {
@@ -536,7 +513,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
 			return true;
 		} // if
-			}
+	}
 
 
 
@@ -572,9 +549,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 
 	// Adds flight reservation to this customer.  
-	public boolean reserveFlight(int id, int customerID, int flightNum)
-			throws RemoteException
-			{
+	public boolean reserveFlight(int id, int customerID, int flightNum) throws RemoteException
+	{
 		if (reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum))) {
 			String[] parameters = {String.valueOf(customerID), Flight.getKey(flightNum)};		 
 			Operation op = new Operation("reserveflight", parameters, this);
@@ -584,7 +560,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			return false;
 		}
 
-			}
+	}
 
 	// Reserve an itinerary 
 	public boolean itinerary(int id,int customer, Vector flightNumbers,String location,boolean Car,boolean Room)
@@ -786,7 +762,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			return false;
 		}
 	}
-	
+
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
 		for (Transaction t: ongoingTransactions) {
@@ -795,7 +771,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// Add vote yes to log for trxn t.
 				// set transaction to have a ready to commit value (DONE)
 				//t.setReadyToCommit(true);
-				String operation = transactionId + ", canCommit, YES";
+				String operation = transactionId + ", canCommit, YES \n";
 				System.out.println("Yes, I do commit <3");
 				try {
 					stableStorage.writeToLog(operation);
@@ -873,6 +849,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 	}
 
+	public void selfDestruct(){
+		System.exit(1);
+	}
+
 	private void addOperation(int id, Operation op) {
 		if (id == 0) {return;}
 		synchronized(ongoingTransactions) {
@@ -933,8 +913,6 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		return line;
 	}
 
-	public String getName() {
-		return name;
-	}
+
 
 }

@@ -297,7 +297,52 @@ public class DiskAccess {
 	
 	public LinkedList<Transaction> readLog(){
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
-		return ongoings;		
+		//LinkedList<Integer> starts = new LinkedList<Integer>();
+		LinkedList<Integer> commits = new LinkedList<Integer>();
+		//LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
+			String line = "";
+			try {
+				line = stateLog.readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			while (line != null && line != "") {
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				/*if(lineDetails[1].equals("start")){
+					starts.add(Integer.parseInt(lineDetails[0]));
+				}else*/ if(lineDetails[1].trim().equalsIgnoreCase("commit")) {
+					commits.add(Integer.parseInt(lineDetails[0]));
+				}		
+			}
+			/*for(Integer txn: starts){
+				if(!commits.contains(txn)){						
+					ongoings.add(new Transaction(txn));
+				}
+			}*/
+			
+			try {
+				stateLog.seek(0);
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+			try {
+				line = stateLog.readLine();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			while (line != null && line != "") {
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if(!commits.contains(Integer.parseInt(lineDetails[0]))){
+					
+				}	
+			}
+		return ongoings;
 	}
 
 	private	 void readLog(ResourceManager rm){

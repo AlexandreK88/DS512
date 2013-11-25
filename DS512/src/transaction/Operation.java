@@ -9,72 +9,57 @@ import server.resInterface.ResourceManager;
 
 
 public class Operation {
- 
+
 	private String opName;
 	private String[] params;
 	private ResourceManager rm;
-	
+
 	public Operation(String opN, String[] prmtrs, ResourceManager rMan) {
 		opName = opN;
 		params = prmtrs;
 		rm = rMan;
 	}
-	
+
 	public String getOpName(){
 		return opName;
 	}
-	
+
 	public String[] getParameters(){
 		return params;
 	}
-	
+
 	public void doOp(int id) throws RemoteException {
-		if (opName.equals("newflight")) {
-			try {
+		try{
+			if (opName.equals("newflight")) {
 				rm.addFlight(id, Integer.parseInt(params[1]), Integer.parseInt(params[2]), Integer.parseInt(params[3]));
-			} catch (NumberFormatException | DeadlockException | InvalidTransactionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (opName.equals("newcar")) {
-			try {
+			} else if (opName.equals("newcar")) {
 				rm.addCars(id, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
-			} catch (NumberFormatException | DeadlockException | InvalidTransactionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (opName.equals("newroom")) {
-			try {
+			} else if (opName.equals("newroom")) {
 				rm.addRooms(id, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
-			} catch (NumberFormatException | DeadlockException
-					| InvalidTransactionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (opName.equals("newcustomer")) {
-			try {
+			} else if (opName.equals("newcustomer")) {
 				rm.newCustomer(id, Integer.parseInt(params[0]));
-			} catch (DeadlockException | InvalidTransactionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} else if (opName.equals("deleteflight")) {
+				rm.deleteFlight(id, Integer.parseInt(params[0]));
+			} else if (opName.equals("deletecar")) {
+				rm.deleteCars(id, params[1]);
+			} else if (opName.equals("deleteroom")) {
+				rm.deleteRooms(id, params[0]);
+			} else if (opName.equals("deletecustomer")) {
+				rm.deleteCustomer(id, Integer.parseInt(params[0]));
+			} else if (opName.equals("reserveflight")) {
+				rm.reserveFlight(id, Integer.parseInt(params[0]), Integer.parseInt(params[1]));
+			} else if (opName.equals("reservecar")) {
+				rm.reserveCar(id, Integer.parseInt(params[0]),params[1]);
+			} else if (opName.equals("reserveroom")) {
+				rm.reserveRoom(id, Integer.parseInt(params[0]),params[1]);
 			}
-		} else if (opName.equals("deleteflight")) {
-			//rm.deleteFlight(params);
-		} else if (opName.equals("deletecar")) {
-			rm.cancelCarDeletion(params);
-		} else if (opName.equals("deleteroom")) {
-			rm.cancelRoomDeletion(params);
-		} else if (opName.equals("deletecustomer")) {
-			rm.cancelCustomerDeletion(params);
-		} else if (opName.equals("reserveflight")) {
-			rm.cancelFlightReservation(params);
-		} else if (opName.equals("reservecar")) {
-			rm.cancelCarReservation(params);
-		} else if (opName.equals("reserveroom")) {
-			rm.cancelRoomReservation(params);
+		}
+		catch (DeadlockException | InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
-	
+
 	public void undoOp() throws RemoteException {
 		if (opName.equals("newflight")) {
 			rm.cancelNewFlight(params);
@@ -100,13 +85,13 @@ public class Operation {
 			rm.cancelRoomReservation(params);
 		}
 	}
-	
+
 	//TO DO
 	public String getOperationData() {
 		return null;
 	}
 
-	
+
 	//TO DO
 	// Will return all the different data structures modified by the operation.
 	public String[] getDataNames() {
@@ -146,5 +131,5 @@ public class Operation {
 		}
 		return dataNames;
 	}
-	
+
 }

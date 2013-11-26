@@ -193,6 +193,7 @@ public class client
 				location = obj.getString(arguments.elementAt(1));
 				numCars = obj.getInt(arguments.elementAt(2));
 				price = obj.getInt(arguments.elementAt(3));
+				// Catch the exception in case the RM has crashed.
 				if(rm.addCars(transactionID,location,numCars,price)){
 					System.out.println("Cars added");
 				}

@@ -1,6 +1,8 @@
 package middleware;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.RMISecurityManager;
@@ -31,7 +33,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	DiskAccess stableStorage;
 	int trCount;
 	static String name;
-
+	// For crash control.
+	static BufferedReader stdin;
+	
 	private static int SHUTDOWN_TIMEOUT = 300000;
 	private static int TIME_TO_LIVE = 200000;
 	public static Random r = new Random();
@@ -50,7 +54,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		transactionManager = new TransactionManager();
 		MiddleWare obj = null;
 		name = "Resort21ResourceManager";
-
+		stdin = new BufferedReader(new InputStreamReader(System.in));
 		if(args.length == 1){
 			serverMW = serverMW + ":" + args[0];
 			portMW = Integer.parseInt(args[0]);
@@ -73,17 +77,24 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		} else{
 			System.err.println ("Wrong usage");
 			System.out.println ("Usage: java middleware [port]"
-					+ "[(flight)rmihost (flight)rmiport (car)rmihost (car)rmiportCar (room)rmihost (room)rmiport]");       
+					+ "[(flight)rmihost (flight)rmiport (car)rmihost (car)rmiportCar (room)rmihost (room)rmiport]");
+			try {
+				stdin.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			System.exit(1);
 		}
 
 		//Connection to RMIs
 		try {
+			
 			// get a reference to the rmiregistry
 			Registry registry1 = LocateRegistry.getRegistry(server1, port1);
 			Registry registry2 = LocateRegistry.getRegistry(server2, port2);
 			Registry registry3 = LocateRegistry.getRegistry(server3, port3);
 
+			// This should be put in a function so that upon crash, an RM can be looked up again. 
 			// get the proxy and the remote reference by rmiregistry lookup
 			rmFlight = (ResourceManager) registry1.lookup("Flight21ResourceManager");
 			rmCar = (ResourceManager) registry2.lookup("Car21ResourceManager");
@@ -123,6 +134,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		obj.initiateFromDisk();
 		while(true){
+			try {
+				if (stdin.ready()) {
+					String input = stdin.readLine();
+					// Write a parser for crashing.
+					// This parser will have 2 types of commands:
+					// One identifying which one of the rm should crash from now.
+					// One identifying at which moment should the middleware crash 
+					// (assuming the middleware is the one that should crash).
+					// If no parser is to be setup at the RMs then a 3rd command should then
+					// indicate at which moment the specified crashing RM needs to crash.
+					// This means keeping in memory which RM is crashing.
+				}
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 			try{
 				if(obj != null){
 					//System.out.println("Looping");
@@ -132,7 +158,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					//e.printStackTrace();
 				}
 			}catch(Exception e){
@@ -152,7 +177,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			stableStorage = new DiskAccess(this, "Customer");
 			lockManager.UnlockAll(0);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -171,11 +195,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				try {
 					abort(tID);
 				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
+					e.printStackTrace();
 				} catch (InvalidTransactionException e) {
-					// TODO Auto-generated catch block
-					//e.printStackTrace();
+					e.printStackTrace();
 				}
 				throw new TransactionAbortedException(tID, "Transaction expired");
 			} else {
@@ -856,7 +878,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return true;
 	}
 
-	@Override
 	public String queryCustomerInfo(int id, int customerID)
 			throws RemoteException, DeadlockException, InvalidTransactionException {
 		try{
@@ -952,25 +973,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	public void cancelFlightReservation(String[] parameters) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void cancelCarReservation(String[] parameters) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void cancelRoomReservation(String[] parameters) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public boolean shutdown() throws RemoteException {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
@@ -990,10 +1007,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
+			// That should be transported in the TM in order to have appropriate log information.
 			try {
 				abort(transactionId);
 			} catch (RemoteException | InvalidTransactionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return false;
@@ -1010,7 +1027,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					try {
 						stableStorage.writeToLog(operation);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					return true;
@@ -1065,7 +1081,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return true;
 	}
 
-	@Override
+	// Might need to be modified to account the fact that abort might be called by different inputs.
+	// Might be from a commit that actually won't commit.
+	// Might be from a client that just didn't want to commit the transaction.
+	// The 2 cases will need to be treated separately.
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		transactionManager.abort(transactionId, this);
 		System.out.println("Transaction " + transactionId + " has ABORTED.");
@@ -1088,6 +1107,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 	
 	public void selfDestruct(){
+		System.out.println("ME?!? YOU ARE CRASHING ME?!? THE MOST IMPORTANT PIECE OF THE SYSTEM! WHAT THE HELL?");
+		try {
+			stdin.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.exit(1);
 	}
 		

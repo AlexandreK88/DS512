@@ -17,17 +17,16 @@ public class TransactionManager {
 	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;
 	DiskAccess stableStorage;
-	// Add transaction log.
 
 	public TransactionManager() {
 		ongoingTransactions = new LinkedList<Transaction>();
 		try {
 			stableStorage = new DiskAccess();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
+		// Call the read log from the stable storage.s
 	}
 
 	public int start() {
@@ -54,7 +53,6 @@ public class TransactionManager {
 							try {
 								stableStorage.writeToLog(Integer.toString(tid) + ", " + rm.getName() + "\n");
 							} catch (IOException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
@@ -73,47 +71,61 @@ public class TransactionManager {
 
 	public boolean prepare(Transaction t) /*throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException*/{
-		boolean canCommit = true;			
+		boolean canCommit = true;
+		// Write to log started TID's vote request
+		// Implement a crash here.
 		for (ResourceManager rm: t.getRMList()) {
 			try {
 				canCommit = rm.canCommit(t.getID());
+				// Write to log rm's vote and name with the TID.
+				// Implement a crash here.
 				if (!canCommit){
 					break;
 				}
 			} catch(RemoteException | TransactionAbortedException
 					| InvalidTransactionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
+		// Write to log vote ended.
+		// Another crash.
 		return canCommit;
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {
+		// Implement a crash here.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
+				// Or here.
 				if(prepare(t)){
 					ongoingTransactions.remove(i);
+					// Write to log. Vote ended, decision is YES.
+					// Craa-aasssh.
 					for (ResourceManager rm: t.getRMList()) {
 						try {
 							rm.doCommit(tid);
 						} catch (RemoteException | TransactionAbortedException
 								| InvalidTransactionException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+						// Write to log. Confirm decision sent to rm.
+						// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
 					}
 					try {
+						// All decisions are sent. Already writing to log.
 						System.out.println("Transaction " + t.getID() + " committed.");
 						stableStorage.writeToLog(Integer.toString(tid) + ", Commit\n");
+						// Boom! Boom! Boom! Boom! I want you in my crash!...
+						// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
+						// It's just another crash.
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					return true;
 				}
 				else{
+					// Should complete abort here so log can be updated accordingly.
 					return false;
 				}
 			}
@@ -121,6 +133,7 @@ public class TransactionManager {
 		return false;	
 	}
 
+	// Subject to changes.
 	public void abort(int tid, ResourceManager middleware) {
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
@@ -132,7 +145,6 @@ public class TransactionManager {
 								rm.abort(tid);
 							}
 						} catch (RemoteException | InvalidTransactionException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
@@ -140,7 +152,6 @@ public class TransactionManager {
 						System.out.println("Transaction " + t.getID() + " aborted.");
 						stableStorage.writeToLog(Integer.toString(tid) + ", Abort\n");
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}

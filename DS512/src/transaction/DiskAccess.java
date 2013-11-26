@@ -64,10 +64,8 @@ public class DiskAccess {
 				initializeMemory(recordB, rm);
 			}	
 		} catch (DeadlockException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidTransactionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -114,14 +112,12 @@ public class DiskAccess {
 			} while(op != null);
 			return value;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return 0;
 	}
 
 	public RAFList getMasterRecord() {
-		// TODO Auto-generated method stub
 		try {
 			stateLog.seek(0);
 			String op = "";
@@ -146,14 +142,15 @@ public class DiskAccess {
 			}else{
 				if(opElements[2].equalsIgnoreCase("A")){
 					System.out.println("Commit found, master record is A");
+					// Needs to rewrite record B, as it could have been corrupted on a crash.
 					return recordA;
 				}else{
 					System.out.println("Commit found, master record is B");
+					// Needs to rewrite record A, as it could have been corrupted on a crash.
 					return recordB;
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
@@ -187,7 +184,6 @@ public class DiskAccess {
 			try {
 				line = record.getFileAccess().readLine();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
@@ -197,28 +193,24 @@ public class DiskAccess {
 					try {
 						rm.addRooms(0, lineDetails[0].substring(4), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				} else if(lineDetails[0].startsWith("Car")) {
 					try {
 						rm.addCars(0, lineDetails[0].substring(3), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}				
 				} else if(lineDetails[0].startsWith("Flight")) {
 					try {
 						rm.addFlight(0, Integer.parseInt(lineDetails[0].substring(6)), Integer.parseInt(lineDetails[1]), Integer.parseInt(lineDetails[2]));
 					} catch (DeadlockException | InvalidTransactionException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 				try {
 					line = record.getFileAccess().readLine();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -227,7 +219,6 @@ public class DiskAccess {
 				record.getFileAccess().seek(0);
 				line = record.getFileAccess().readLine();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -249,7 +240,6 @@ public class DiskAccess {
 								}
 							} catch (DeadlockException
 									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}						
 						} else if (details[1].startsWith("car")) {
@@ -260,7 +250,6 @@ public class DiskAccess {
 								}
 							} catch (DeadlockException
 									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}						
 						} else if (details[1].startsWith("room")) {
@@ -271,7 +260,6 @@ public class DiskAccess {
 								}
 							} catch (DeadlockException
 									| InvalidTransactionException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 
@@ -280,16 +268,13 @@ public class DiskAccess {
 					try {
 						line = record.getFileAccess().readLine();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 			}
 		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		readLog(rm);
@@ -297,49 +282,40 @@ public class DiskAccess {
 	
 	public LinkedList<Transaction> readLog(){
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
-		//LinkedList<Integer> starts = new LinkedList<Integer>();
 		LinkedList<Integer> commits = new LinkedList<Integer>();
-		//LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
 			String line = "";
 			try {
 				line = stateLog.readLine();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
-				/*if(lineDetails[1].equals("start")){
-					starts.add(Integer.parseInt(lineDetails[0]));
-				}else*/ if(lineDetails[1].trim().equalsIgnoreCase("commit")) {
+				if(lineDetails[1].trim().equalsIgnoreCase("commit")) {
 					commits.add(Integer.parseInt(lineDetails[0]));
 				}		
 			}
-			/*for(Integer txn: starts){
-				if(!commits.contains(txn)){						
-					ongoings.add(new Transaction(txn));
-				}
-			}*/
 			
 			try {
 				stateLog.seek(0);
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			
 			try {
 				line = stateLog.readLine();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(!commits.contains(Integer.parseInt(lineDetails[0]))){
-					
+					// Hmmm what should I do here? Definitely, this will depends on what the line's details is.
+					// Also, it depends on the status of the transaction. Say this line is adding an rm, or
+					// a transaction start, it will be fairly different. It can also be a: prepare, vote answer,
+					// decision, decision confirmation. So lots of work here.
 				}	
 			}
 		return ongoings;
@@ -357,7 +333,6 @@ public class DiskAccess {
 				try {
 					line = stateLog.readLine();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				while (line != null && line != "") {
@@ -380,7 +355,6 @@ public class DiskAccess {
 				try {
 					line = stateLog.readLine();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				while (line != null && line != "") {
@@ -427,7 +401,6 @@ public class DiskAccess {
 		try {
 			temp = new RandomAccessFile(locationTemp, "rwd");
 		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -442,7 +415,6 @@ public class DiskAccess {
 					try {
 						temp.writeBytes(operation);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}					
 				}
@@ -453,7 +425,6 @@ public class DiskAccess {
 			stateLog.close();
 			temp.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

@@ -857,6 +857,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public void selfDestruct(){
+		System.out.println("Why me?? :(");
 		System.exit(1);
 	}
 

@@ -22,7 +22,7 @@ public class Master {
 	
 	public static void main (String[] args) throws IOException  {
 		
-		stdin = new BufferedReader(new InputStreamReader(System.in));
+	//	stdin = new BufferedReader(new InputStreamReader(System.in));
 		boolean performanceTestsCompleted = false;
 		String command;
 		testCounter = 1;

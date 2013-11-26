@@ -282,7 +282,7 @@ public class DiskAccess {
 	
 	public LinkedList<Transaction> readLog(){
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
-		LinkedList<Integer> commits = new LinkedList<Integer>();
+		LinkedList<Integer> completed = new LinkedList<Integer>();
 			String line = "";
 			try {
 				line = stateLog.readLine();
@@ -292,8 +292,8 @@ public class DiskAccess {
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
-				if(lineDetails[1].trim().equalsIgnoreCase("commit")) {
-					commits.add(Integer.parseInt(lineDetails[0]));
+				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
+					completed.add(Integer.parseInt(lineDetails[0]));
 				}		
 			}
 			
@@ -311,11 +311,25 @@ public class DiskAccess {
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
-				if(!commits.contains(Integer.parseInt(lineDetails[0]))){
-					// Hmmm what should I do here? Definitely, this will depends on what the line's details is.
+				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
+					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
+						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
+					} else {
+						for (Transaction t: ongoings) {
+							if (t.getID() == Integer.parseInt(lineDetails[0])) {
+								t.addLogLine(line);
+								break;
+							}
+						}
+					}
 					// Also, it depends on the status of the transaction. Say this line is adding an rm, or
 					// a transaction start, it will be fairly different. It can also be a: prepare, vote answer,
-					// decision, decision confirmation. So lots of work here.
+					// decision, decision confirmation. So lots of work here. Will be treated later
+					try {
+						line = stateLog.readLine();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}	
 			}
 		return ongoings;
@@ -340,7 +354,7 @@ public class DiskAccess {
 					String[] lineDetails = line.split(",");
 					/*if(lineDetails[1].equals("start")){
 						starts.add(Integer.parseInt(lineDetails[0]));
-					}else*/ if(lineDetails[1].equals("commit")){
+					}else*/ if(lineDetails[1].equals("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
 						commits.add(Integer.parseInt(lineDetails[0]));
 					}		
 				}
@@ -368,7 +382,12 @@ public class DiskAccess {
 						Operation op = new Operation(lineDetails[1], params, rm);
 						//ongoings.get(Integer.parseInt(lineDetails[0])).addOp(op);
 						op.doOp(Integer.parseInt(lineDetails[0]));
-					}	
+					}
+					try {
+						line = stateLog.readLine();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 				
 			}catch(Exception e){

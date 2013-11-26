@@ -14,6 +14,7 @@ public class Transaction {
 	int id;
 	Stack<Operation> writeRequests;
 	LinkedList<ResourceManager> rmList;
+	LinkedList<String> relevantLogLines;
 	//boolean readyToCommit;
 
 	private Date date = new Date();
@@ -23,6 +24,7 @@ public class Transaction {
 		id = i;
 		writeRequests = new Stack<Operation>();
 		rmList = new LinkedList<ResourceManager>();
+		relevantLogLines = new LinkedList<String>();
 		//readyToCommit = false;
 	}
 
@@ -74,6 +76,10 @@ public class Transaction {
 		synchronized(date){
 			date = new Date();
 		}		 	
+	}
+	
+	public void addLogLine(String line) {
+		relevantLogLines.add(line);
 	}
 
 

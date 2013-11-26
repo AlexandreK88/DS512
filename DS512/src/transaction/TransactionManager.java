@@ -26,7 +26,7 @@ public class TransactionManager {
 			e.printStackTrace();
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
-		// Call the read log from the stable storage.s
+		// Call the read log from the stable storage.
 	}
 
 	public int start() {
@@ -36,6 +36,13 @@ public class TransactionManager {
 			synchronized(ongoingTransactions) { 
 				ongoingTransactions.add(t);
 			}
+		}
+		// Write to log started TID
+		String started = t.getID() + ",StartedTID";
+		try {
+			stableStorage.writeToLog(started);
+		} catch (IOException e1) {
+			e1.printStackTrace();
 		}
 		System.out.println("New transaction " + t.getID() + " started.");
 		return t.getID();
@@ -51,7 +58,7 @@ public class TransactionManager {
 					for (ResourceManager rm: rmL) {
 						if (t.addrm(rm)) {
 							try {
-								stableStorage.writeToLog(Integer.toString(tid) + ", " + rm.getName() + "\n");
+								stableStorage.writeToLog(Integer.toString(tid) + ", " + "rm, " + rm.getName() + "\n");
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
@@ -73,12 +80,23 @@ public class TransactionManager {
 	TransactionAbortedException, InvalidTransactionException*/{
 		boolean canCommit = true;
 		// Write to log started TID's vote request
-		// Implement a crash here.
+		String prepareStarted = t.getID() + ",Start2PC";
+		try {
+			stableStorage.writeToLog(prepareStarted);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 		for (ResourceManager rm: t.getRMList()) {
 			try {
 				canCommit = rm.canCommit(t.getID());
-				// Write to log rm's vote and name with the TID.
-				// Implement a crash here.
+				// Write to log started TID's vote request
+				String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit;
+				try {
+					stableStorage.writeToLog(voteResponse);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				// Implement a crash here. Crash after some but not all votes
 				if (!canCommit){
 					break;
 				}
@@ -87,20 +105,24 @@ public class TransactionManager {
 				e.printStackTrace();
 			}
 		}
-		// Write to log vote ended.
-		// Another crash.
+		// Crash here. Crash after all votes but no decision.
 		return canCommit;
 	}
 
 	public boolean commit(int tid, ResourceManager middleware) {
-		// Implement a crash here.
+		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
 				// Or here.
 				if(prepare(t)){
 					ongoingTransactions.remove(i);
-					// Write to log. Vote ended, decision is YES.
+					String voteDecision = t.getID() + ",decision,YES";
+					try {
+						stableStorage.writeToLog(voteDecision);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 					// Craa-aasssh.
 					for (ResourceManager rm: t.getRMList()) {
 						try {
@@ -110,10 +132,16 @@ public class TransactionManager {
 							e.printStackTrace();
 						}
 						// Write to log. Confirm decision sent to rm.
+						String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
+						try {
+							stableStorage.writeToLog(rmCommit);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 						// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
 					}
 					try {
-						// All decisions are sent. Already writing to log.
+						// All decisions are sent. Write to log.
 						System.out.println("Transaction " + t.getID() + " committed.");
 						stableStorage.writeToLog(Integer.toString(tid) + ", Commit\n");
 						// Boom! Boom! Boom! Boom! I want you in my crash!...
@@ -126,6 +154,12 @@ public class TransactionManager {
 				}
 				else{
 					// Should complete abort here so log can be updated accordingly.
+					String voteDecision = t.getID() + ",NOOOOOOO";
+					try {
+						stableStorage.writeToLog(voteDecision);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 					return false;
 				}
 			}

@@ -13,7 +13,7 @@ public class TransactionManager {
 	public static final int READ_REQUEST = 0;
 	public static final int WRITE_REQUEST = 1;
 	public static final int LINE_SIZE = 1000;
-	
+
 	private boolean crashBeforeSendingRequest;
 	private boolean crashAfterSendingRequest;
 	private boolean crashAfterSomeReplies;
@@ -36,7 +36,7 @@ public class TransactionManager {
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
 		// Call the read log from the stable storage.
-		
+
 		crashBeforeSendingRequest = false;
 		crashAfterSendingRequest = false;
 		crashAfterSomeReplies = false;
@@ -45,7 +45,7 @@ public class TransactionManager {
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
 		transactionToCrash = 0;
-		
+
 		ongoingTransactions = stableStorage.readLog();
 		for (Transaction t: ongoingTransactions) {
 			LinkedList<String> logLines = t.getLogLines();
@@ -154,17 +154,74 @@ public class TransactionManager {
 					// No decisions sent.
 					if (decision) {
 						// commit
+						doCommit(t);
 					} else {
 						// abort
+						abort(t.getID());
 					}
 				} else {
 					// Some decisions received, but not all.
 					if (decision) {
 						// commit
+						ongoingTransactions.remove(t);
+						// Craa-aasssh.
+						for (ResourceManager rm: t.getRMList()) {
+							if (decisionConfirmed.contains(rm)) {
+								continue;
+							}
+							try {
+								rm.doCommit(t.getID());
+							} catch (RemoteException | TransactionAbortedException
+									| InvalidTransactionException e) {
+								e.printStackTrace();
+							}
+							// Write to log. Confirm decision sent to rm.
+							String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
+							try {
+								stableStorage.writeToLog(rmCommit);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+							// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
+						}
+						try {
+							// All decisions are sent. Write to log.
+							System.out.println("Transaction " + t.getID() + " committed.");
+							stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
+							// Boom! Boom! Boom! Boom! I want you in my crash!...
+							// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
+							// It's just another crash.
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					} else {
 						// abort
+						for (ResourceManager rm: t.getRMList()) {
+							if (decisionConfirmed.contains(rm)) {
+								continue;
+							}
+							try {
+								rm.doAbort(t.getID());
+							} catch (RemoteException | InvalidTransactionException e) {
+								e.printStackTrace();
+							}
+							// Write to log. Confirm decision sent to rm.
+							String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName();
+							try {
+								stableStorage.writeToLog(rmAbort);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+						try {
+							System.out.println("Transaction " + t.getID() + " aborted.");
+							stableStorage.writeToLog(Integer.toString(t.getID()) + ", Abort\n");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 					}
 				}
+
 			}
 		}
 	}
@@ -229,7 +286,6 @@ public class TransactionManager {
 		for (ResourceManager rm: t.getRMList()) {
 			try {
 				canCommit = rm.canCommit(t.getID());
-				// Write to log started TID's vote request
 				String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit;
 				try {
 					stableStorage.writeToLog(voteResponse);
@@ -259,21 +315,20 @@ public class TransactionManager {
 					doCommit(t);
 					return true;
 				} else{
-					abort(t.getID());
-					// Should complete abort here so log can be updated accordingly.
 					String voteDecision = t.getID() + ",NOOOOOOO";
 					try {
 						stableStorage.writeToLog(voteDecision);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
+					abort(t.getID());
 					return false;
 				}
 			}
 		}
 		return false;	
 	}
-	
+
 	private void doCommit(Transaction t) {
 		ongoingTransactions.remove(t);
 		String voteDecision = t.getID() + ",decision,YES";
@@ -341,15 +396,15 @@ public class TransactionManager {
 			}
 		}
 	}
-	
+
 	public LinkedList<Transaction> getOngoingTransactions(){
 		return ongoingTransactions;
 	}
-	
+
 	public boolean hasOngoingTransactions(){
 		return !ongoingTransactions.isEmpty();
 	}
-	
+
 	public void neatCrash(int transactionId, int option){
 		crashBeforeSendingRequest = false;
 		crashAfterSendingRequest = false;
@@ -358,9 +413,9 @@ public class TransactionManager {
 		crashAfterDeciding = false;
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
-		
+
 		transactionToCrash = transactionId;
-		
+
 		switch(option){
 		case 1:
 			crashBeforeSendingRequest = true;
@@ -386,7 +441,7 @@ public class TransactionManager {
 		default:
 			System.out.println("What are you talking about, this option is not an option.");
 		}
-		
+
 	}
 
 }

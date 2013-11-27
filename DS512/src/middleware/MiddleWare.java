@@ -1014,16 +1014,11 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 	
 	public boolean commit(int transactionId){
-		if(transactionManager.commit(transactionId, this)){
+		if(transactionManager.commit(transactionId)){
 			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
-			// That should be transported in the TM in order to have appropriate log information.
-			try {
-				abort(transactionId);
-			} catch (RemoteException | InvalidTransactionException e) {
-				e.printStackTrace();
-			}
+			lockManager.UnlockAll(transactionId);
 			return false;
 		}
 	}
@@ -1098,8 +1093,11 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	// Might be from a client that just didn't want to commit the transaction.
 	// The 2 cases will need to be treated separately.
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
-		transactionManager.abort(transactionId, this);
+		transactionManager.abort(transactionId);
 		System.out.println("Transaction " + transactionId + " has ABORTED.");
+	}
+	
+	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
 				ongoingTransactions.get(i).undo();
@@ -1116,10 +1114,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}catch(Exception e){
 			System.out.println("Some god damn exception");
 		}
-	}
-	
-	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
-		abort(transactionId);
 	}
 	
 	public void selfDestruct(){

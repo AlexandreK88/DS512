@@ -50,6 +50,7 @@ public class TransactionManager {
 		for (Transaction t: ongoingTransactions) {
 			LinkedList<String> logLines = t.getLogLines();
 			boolean started2PC = false;
+			boolean abortVoteReceived = false;
 			boolean decided = false;
 			boolean decision = false;
 			LinkedList<ResourceManager> votesReceived = new LinkedList<ResourceManager>();
@@ -77,7 +78,11 @@ public class TransactionManager {
 						votesReceived.add(room);
 					} else if (lineDetails[2].trim().equalsIgnoreCase(mw.getName())) {
 						votesReceived.add(mw);
-					}		
+					}
+					if (lineDetails[3].trim().equalsIgnoreCase("false")) {
+						// There is one abort received.
+						abortVoteReceived = true;
+					}
 				} else if (lineDetails[1].trim().equalsIgnoreCase("decision")) {
 					decided = true;
 					if (lineDetails[2].trim().equalsIgnoreCase("YES")) {
@@ -97,14 +102,54 @@ public class TransactionManager {
 						decisionConfirmed.add(mw);
 					}					
 				}
+				// If the 2PC didn't start, transaction can be aborted.
 				if (!started2PC) {
-					//abort
+					abort(t.getID());
 				} else if (votesReceived.isEmpty()) {
 					// No votes received, but the vote started
-					// Resend votes.
+					// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
+					commit(t.getID());
 				} else if (!decided) {
 					// Votes received, but not all.
-					// Ask for the rest of the votes, if none said abort yet.
+					// Abort if abort vote received, simply keep on asking votes otherwise.
+					if (abortVoteReceived) {
+						abort(t.getID());
+					} else {
+						boolean canCommit = true;
+						for (ResourceManager rm: t.getRMList()) {
+							if (!votesReceived.contains(rm)) {
+								try {
+									canCommit = rm.canCommit(t.getID());
+									// Write to log started TID's vote request
+									String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit;
+									try {
+										stableStorage.writeToLog(voteResponse);
+									} catch (IOException e1) {
+										e1.printStackTrace();
+									}
+									// Implement a crash here. Crash after some but not all votes
+									if (!canCommit){
+										break;
+									}
+								} catch(RemoteException | TransactionAbortedException
+										| InvalidTransactionException e) {
+									e.printStackTrace();
+								}
+							}
+						}
+						if (canCommit) {
+							doCommit(t);
+						} else{
+							abort(t.getID());
+							// Should complete abort here so log can be updated accordingly.
+							String voteDecision = t.getID() + ",NOOOOOOO";
+							try {
+								stableStorage.writeToLog(voteDecision);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+					}
 				} else if (decisionConfirmed.isEmpty()) {
 					// No decisions sent.
 					if (decision) {
@@ -204,50 +249,17 @@ public class TransactionManager {
 		return canCommit;
 	}
 
-	public boolean commit(int tid, ResourceManager middleware) {
+	public boolean commit(int tid) {
 		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
 				// Or here.
 				if(prepare(t)){
-					ongoingTransactions.remove(i);
-					String voteDecision = t.getID() + ",decision,YES";
-					try {
-						stableStorage.writeToLog(voteDecision);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-					// Craa-aasssh.
-					for (ResourceManager rm: t.getRMList()) {
-						try {
-							rm.doCommit(tid);
-						} catch (RemoteException | TransactionAbortedException
-								| InvalidTransactionException e) {
-							e.printStackTrace();
-						}
-						// Write to log. Confirm decision sent to rm.
-						String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
-						try {
-							stableStorage.writeToLog(rmCommit);
-						} catch (IOException e1) {
-							e1.printStackTrace();
-						}
-						// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
-					}
-					try {
-						// All decisions are sent. Write to log.
-						System.out.println("Transaction " + t.getID() + " committed.");
-						stableStorage.writeToLog(Integer.toString(tid) + ", Commit\n");
-						// Boom! Boom! Boom! Boom! I want you in my crash!...
-						// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
-						// It's just another crash.
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+					doCommit(t);
 					return true;
-				}
-				else{
+				} else{
+					abort(t.getID());
 					// Should complete abort here so log can be updated accordingly.
 					String voteDecision = t.getID() + ",NOOOOOOO";
 					try {
@@ -261,20 +273,62 @@ public class TransactionManager {
 		}
 		return false;	
 	}
+	
+	private void doCommit(Transaction t) {
+		ongoingTransactions.remove(t);
+		String voteDecision = t.getID() + ",decision,YES";
+		try {
+			stableStorage.writeToLog(voteDecision);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		// Craa-aasssh.
+		for (ResourceManager rm: t.getRMList()) {
+			try {
+				rm.doCommit(t.getID());
+			} catch (RemoteException | TransactionAbortedException
+					| InvalidTransactionException e) {
+				e.printStackTrace();
+			}
+			// Write to log. Confirm decision sent to rm.
+			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
+			try {
+				stableStorage.writeToLog(rmCommit);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
+		}
+		try {
+			// All decisions are sent. Write to log.
+			System.out.println("Transaction " + t.getID() + " committed.");
+			stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
+			// Boom! Boom! Boom! Boom! I want you in my crash!...
+			// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
+			// It's just another crash.
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	// Subject to changes.
-	public void abort(int tid, ResourceManager middleware) {
+	public void abort(int tid) {
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
 					for (ResourceManager rm: t.getRMList()) {
 						try {
-							if (rm != middleware) {
-								rm.abort(tid);
-							}
+							rm.doAbort(tid);
 						} catch (RemoteException | InvalidTransactionException e) {
 							e.printStackTrace();
+						}
+						// Write to log. Confirm decision sent to rm.
+						String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName();
+						try {
+							stableStorage.writeToLog(rmAbort);
+						} catch (IOException e1) {
+							e1.printStackTrace();
 						}
 					}
 					try {

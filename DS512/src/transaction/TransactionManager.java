@@ -13,6 +13,15 @@ public class TransactionManager {
 	public static final int READ_REQUEST = 0;
 	public static final int WRITE_REQUEST = 1;
 	public static final int LINE_SIZE = 1000;
+	
+	private boolean crashBeforeSendingRequest;
+	private boolean crashAfterSendingRequest;
+	private boolean crashAfterSomeReplies;
+	private boolean crashAfterAllReplies;
+	private boolean crashAfterDeciding;
+	private boolean crashAfterSendingSomeDecisions;
+	private boolean crashAfterSendingAllDecisions;
+	private int transactionToCrash;
 
 	AtomicInteger latestTransaction;
 	LinkedList<Transaction> ongoingTransactions;
@@ -27,6 +36,16 @@ public class TransactionManager {
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
 		// Call the read log from the stable storage.
+		
+		crashBeforeSendingRequest = false;
+		crashAfterSendingRequest = false;
+		crashAfterSomeReplies = false;
+		crashAfterAllReplies = false;
+		crashAfterDeciding = false;
+		crashAfterSendingSomeDecisions = false;
+		crashAfterSendingAllDecisions = false;
+		transactionToCrash = 0;
+		
 		ongoingTransactions = stableStorage.readLog();
 		for (Transaction t: ongoingTransactions) {
 			LinkedList<String> logLines = t.getLogLines();
@@ -257,6 +276,45 @@ public class TransactionManager {
 	
 	public boolean hasOngoingTransactions(){
 		return !ongoingTransactions.isEmpty();
+	}
+	
+	public void neatCrash(int transactionId, int option){
+		crashBeforeSendingRequest = false;
+		crashAfterSendingRequest = false;
+		crashAfterSomeReplies = false;
+		crashAfterAllReplies = false;
+		crashAfterDeciding = false;
+		crashAfterSendingSomeDecisions = false;
+		crashAfterSendingAllDecisions = false;
+		
+		transactionToCrash = transactionId;
+		
+		switch(option){
+		case 1:
+			crashBeforeSendingRequest = true;
+			break;
+		case 2:
+			crashAfterSendingRequest = true;
+			break;
+		case 3:
+			crashAfterSomeReplies = true;
+			break;
+		case 4:
+			crashAfterAllReplies = true;
+			break;
+		case 5: 
+			crashAfterDeciding = true;
+			break;
+		case 6: 
+			crashAfterSendingSomeDecisions = true;
+			break;
+		case 7:
+			crashAfterSendingAllDecisions = true;
+			break;
+		default:
+			System.out.println("What are you talking about, this option is not an option.");
+		}
+		
 	}
 
 }

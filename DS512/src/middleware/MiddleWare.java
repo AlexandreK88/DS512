@@ -9,6 +9,8 @@ import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import lockManager.DeadlockException;
 import lockManager.LockManager;
 import server.resInterface.InvalidTransactionException;
@@ -178,7 +180,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	public MiddleWare() throws RemoteException, InvalidTransactionException {
 		ongoingTransactions = new LinkedList<Transaction>();
-		trCount = 0;
+		trCount = 0;		
 	}
 	
 	private void initiateFromDisk() {
@@ -1028,6 +1030,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
+		boolean canCommit = false;
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
@@ -1041,7 +1044,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					return true;
 				}		
 			}
-		} 	
+		} 
 		return false;
 	}
 
@@ -1115,6 +1118,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 	}
 	
+	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
+		abort(transactionId);
+	}
+	
 	public void selfDestruct(){
 		System.out.println("ME?!? YOU ARE CRASHING ME?!? THE MOST IMPORTANT PIECE OF THE SYSTEM! WHAT THE HELL?");
 		try {
@@ -1135,9 +1142,34 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}else if(which.equalsIgnoreCase("room")){
 			rmRoom.selfDestruct();
 			return true;
+		}else if(which.equalsIgnoreCase("mw")){
+			selfDestruct();		
+			return true;
 		}else{
 			return false;
 		}
+	}
+	
+	public boolean crash(String which, int transactionId, int option) throws RemoteException{
+		if(which.equalsIgnoreCase("flight")){
+			rmFlight.neatCrash(transactionId, option);			
+			return true;
+		}else if(which.equalsIgnoreCase("car")){
+			rmCar.neatCrash(transactionId, option);
+			return true;
+		}else if(which.equalsIgnoreCase("room")){
+			rmRoom.neatCrash(transactionId, option);
+			return true;
+		}else if(which.equalsIgnoreCase("mw")){
+			neatCrash(transactionId, option);		
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	public void neatCrash(int transactionId, int option){
+		transactionManager.neatCrash(transactionId, option);
 	}
 	
 	private String convertItemLine(int id, String dataName) {

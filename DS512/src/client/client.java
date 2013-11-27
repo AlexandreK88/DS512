@@ -33,14 +33,17 @@ public class client
 	static BufferedReader stdin;
 	static int transactionID = -1; 
 
+	static String server;
+	static int port;
+
 	public static void main(String args[])
 	{
 		obj = new client();
 		String command = "";
 		arguments  = new Vector();
 
-		String server = "localhost";
-		int port = 1099;
+		server = "localhost";
+		port = 1099;
 		if (args.length == 1)
 		{
 			server = args[0];
@@ -129,742 +132,661 @@ public class client
 		}
 
 		//decide which of the commands this was
-		switch(obj.findChoice(arguments.elementAt(0).toString())){
-		case 1: //help section
-			if(arguments.size()==1)   //command was "help"
-				obj.listCommands();
-			else if (arguments.size()==2)  //command was "help <commandname>"
-				obj.listSpecific(arguments.elementAt(1).toString());
-			else  //wrong use of help command
-				System.out.println("Improper use of help command. Type help or help, <commandname>");
-			break;
+		try{
 
-		case 2:  //new flight
-			if(arguments.size()!=4){
-				obj.wrongNumber();
+
+			switch(obj.findChoice(arguments.elementAt(0).toString())){
+			case 1: //help section
+				if(arguments.size()==1)   //command was "help"
+					obj.listCommands();
+				else if (arguments.size()==2)  //command was "help <commandname>"
+					obj.listSpecific(arguments.elementAt(1).toString());
+				else  //wrong use of help command
+					System.out.println("Improper use of help command. Type help or help, <commandname>");
 				break;
-			}
-			//System.out.println("Adding a new Flight using id: "+arguments.elementAt(1));
-			System.out.println("Flight number: "+arguments.elementAt(1));
-			System.out.println("Add Flight Seats: "+arguments.elementAt(2));
-			System.out.println("Set Flight Price: "+arguments.elementAt(3));
 
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				flightNum = obj.getInt(arguments.elementAt(1));
-				flightSeats = obj.getInt(arguments.elementAt(2));
-				flightPrice = obj.getInt(arguments.elementAt(3));
-				if(rm.addFlight(transactionID,flightNum,flightSeats,flightPrice)){
-					System.out.println("Flight added");
+			case 2:  //new flight
+				if(arguments.size()!=4){
+					obj.wrongNumber();
+					break;
 				}
-				else{
-					System.out.println("Flight could not be added");
-				}		
-			}catch(DeadlockException e){
-				try {
+				//System.out.println("Adding a new Flight using id: "+arguments.elementAt(1));
+				System.out.println("Flight number: "+arguments.elementAt(1));
+				System.out.println("Add Flight Seats: "+arguments.elementAt(2));
+				System.out.println("Set Flight Price: "+arguments.elementAt(3));
+
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					flightNum = obj.getInt(arguments.elementAt(1));
+					flightSeats = obj.getInt(arguments.elementAt(2));
+					flightPrice = obj.getInt(arguments.elementAt(3));
+					if(rm.addFlight(transactionID,flightNum,flightSeats,flightPrice)){
+						System.out.println("Flight added");
+					}
+					else{
+						System.out.println("Flight could not be added");
+					}		
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 3:  //new Car
-			if(arguments.size()!=4){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Adding a new Car using id: "+arguments.elementAt(1));
-			System.out.println("Car Location: "+arguments.elementAt(1));
-			System.out.println("Add Number of Cars: "+arguments.elementAt(2));
-			System.out.println("Set Price: "+arguments.elementAt(3));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				numCars = obj.getInt(arguments.elementAt(2));
-				price = obj.getInt(arguments.elementAt(3));
-				// Catch the exception in case the RM has crashed.
-				if(rm.addCars(transactionID,location,numCars,price)){
-					System.out.println("Cars added");
+			case 3:  //new Car
+				if(arguments.size()!=4){
+					obj.wrongNumber();
+					break;
 				}
-				else{
-					System.out.println("Cars could not be added");
-				}
-			}catch(DeadlockException e){
-				try {
+				//System.out.println("Adding a new Car using id: "+arguments.elementAt(1));
+				System.out.println("Car Location: "+arguments.elementAt(1));
+				System.out.println("Add Number of Cars: "+arguments.elementAt(2));
+				System.out.println("Set Price: "+arguments.elementAt(3));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					numCars = obj.getInt(arguments.elementAt(2));
+					price = obj.getInt(arguments.elementAt(3));
+					// Catch the exception in case the RM has crashed.
+					if(rm.addCars(transactionID,location,numCars,price)){
+						System.out.println("Cars added");
+					}
+					else{
+						System.out.println("Cars could not be added");
+					}
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 4:  //new Room
-			if(arguments.size()!=4){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Adding a new Room using id: "+arguments.elementAt(1));			
-			System.out.println("Room Location: "+arguments.elementAt(1));
-			System.out.println("Add Number of Rooms: "+arguments.elementAt(2));
-			System.out.println("Set Price: "+arguments.elementAt(3));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				numRooms = obj.getInt(arguments.elementAt(2));
-				price = obj.getInt(arguments.elementAt(3));
-				if(rm.addRooms(transactionID,location,numRooms,price)){
-					System.out.println("Rooms added");
-				}					
-				else{
-					System.out.println("Rooms could not be added");
-				}		
-			}catch(DeadlockException e){
-				try {
+			case 4:  //new Room
+				if(arguments.size()!=4){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Adding a new Room using id: "+arguments.elementAt(1));			
+				System.out.println("Room Location: "+arguments.elementAt(1));
+				System.out.println("Add Number of Rooms: "+arguments.elementAt(2));
+				System.out.println("Set Price: "+arguments.elementAt(3));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					numRooms = obj.getInt(arguments.elementAt(2));
+					price = obj.getInt(arguments.elementAt(3));
+					if(rm.addRooms(transactionID,location,numRooms,price)){
+						System.out.println("Rooms added");
+					}					
+					else{
+						System.out.println("Rooms could not be added");
+					}		
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 5:  //new Customer
-			if(arguments.size()!=1){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Adding a new Customer using id:"+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer=rm.newCustomer(transactionID);
-				System.out.println("New customer ID: " + customer);
-			}catch(DeadlockException e){
-				try {
+			case 5:  //new Customer
+				if(arguments.size()!=1){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Adding a new Customer using id:"+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer=rm.newCustomer(transactionID);
+					System.out.println("New customer ID: " + customer);
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 6: //delete Flight
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Deleting a flight using id: "+arguments.elementAt(1));
-			System.out.println("Flight Number: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				flightNum = obj.getInt(arguments.elementAt(1));
-				if(rm.deleteFlight(transactionID,flightNum))
-					System.out.println("Flight Deleted");
-				else
-					System.out.println("Flight could not be deleted");
-			}catch(DeadlockException e){
-				try {
+
+			case 6: //delete Flight
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Deleting a flight using id: "+arguments.elementAt(1));
+				System.out.println("Flight Number: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					flightNum = obj.getInt(arguments.elementAt(1));
+					if(rm.deleteFlight(transactionID,flightNum))
+						System.out.println("Flight Deleted");
+					else
+						System.out.println("Flight could not be deleted");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 7: //delete Car
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Deleting the cars from a particular location  using id: "+arguments.elementAt(1));
-			System.out.println("Car Location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
 
-				if(rm.deleteCars(transactionID,location))
-					System.out.println("Cars Deleted");
-				else
-					System.out.println("Cars could not be deleted");
-			}catch(DeadlockException e){
-				try {
+			case 7: //delete Car
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Deleting the cars from a particular location  using id: "+arguments.elementAt(1));
+				System.out.println("Car Location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+
+					if(rm.deleteCars(transactionID,location))
+						System.out.println("Cars Deleted");
+					else
+						System.out.println("Cars could not be deleted");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 8: //delete Room
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Deleting all rooms from a particular location  using id: "+arguments.elementAt(1));
-			System.out.println("Room Location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				if(rm.deleteRooms(transactionID,location))
-					System.out.println("Rooms Deleted");
-				else
-					System.out.println("Rooms could not be deleted");
-			}catch(DeadlockException e){
-				try {
+
+			case 8: //delete Room
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Deleting all rooms from a particular location  using id: "+arguments.elementAt(1));
+				System.out.println("Room Location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					if(rm.deleteRooms(transactionID,location))
+						System.out.println("Rooms Deleted");
+					else
+						System.out.println("Rooms could not be deleted");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 9: //delete Customer
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Deleting a customer from the database using id: "+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				if(rm.deleteCustomer(transactionID,customer))
-					System.out.println("Customer Deleted");
-				else
-					System.out.println("Customer could not be deleted");
-			}catch(DeadlockException e){
-				try {
+
+			case 9: //delete Customer
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Deleting a customer from the database using id: "+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					if(rm.deleteCustomer(transactionID,customer))
+						System.out.println("Customer Deleted");
+					else
+						System.out.println("Customer could not be deleted");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 10: //querying a flight
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Querying a flight using id: "+arguments.elementAt(1));
-			System.out.println("Flight number: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				flightNum = obj.getInt(arguments.elementAt(1));
-				int seats=rm.queryFlight(transactionID,flightNum);
-				if(seats < 0){
-					System.out.println("There are no existing flights with this flight number.");
-				}else{
-					System.out.println("Number of seats available: " + seats);
-				}	
-			}catch(DeadlockException e){
-				try {
+
+			case 10: //querying a flight
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Querying a flight using id: "+arguments.elementAt(1));
+				System.out.println("Flight number: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					flightNum = obj.getInt(arguments.elementAt(1));
+					int seats=rm.queryFlight(transactionID,flightNum);
+					if(seats < 0){
+						System.out.println("There are no existing flights with this flight number.");
+					}else{
+						System.out.println("Number of seats available: " + seats);
+					}	
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 11: //querying a Car Location
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Querying a car location using id: "+arguments.elementAt(1));
-			System.out.println("Car location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				numCars=rm.queryCars(transactionID, location);
-				if(numCars < 0){
-					System.out.println("There are no car rentals at this location.");
-				}else{
-					System.out.println("Number of cars at this location: " + numCars);
+
+			case 11: //querying a Car Location
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
 				}
-			}catch(DeadlockException e){
-				try {
+				//System.out.println("Querying a car location using id: "+arguments.elementAt(1));
+				System.out.println("Car location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					numCars=rm.queryCars(transactionID, location);
+					if(numCars < 0){
+						System.out.println("There are no car rentals at this location.");
+					}else{
+						System.out.println("Number of cars at this location: " + numCars);
+					}
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 12: //querying a Room location
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Querying a room location using id: "+arguments.elementAt(1));
-			System.out.println("Room location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				numRooms=rm.queryRooms(transactionID,location);
-				if(numRooms < 0){
-					System.out.println("There are no car rentals at this location.");
-				}else{
-					System.out.println("Number of rooms at this location: " + numRooms);
-				}				
-			}catch(DeadlockException e){
-				try {
+
+			case 12: //querying a Room location
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Querying a room location using id: "+arguments.elementAt(1));
+				System.out.println("Room location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					numRooms=rm.queryRooms(transactionID,location);
+					if(numRooms < 0){
+						System.out.println("There are no car rentals at this location.");
+					}else{
+						System.out.println("Number of rooms at this location: " + numRooms);
+					}				
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 13: //querying Customer Information
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Querying Customer information using id: "+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				String bill=rm.queryCustomerInfo(transactionID,customer);
-				if(bill.equals("")){
-					System.out.println("This customer does not exist.");
-				}else{
-					System.out.println("Customer info: " + bill);
+
+			case 13: //querying Customer Information
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
 				}
-			}catch(DeadlockException e){
-				try {
+				//System.out.println("Querying Customer information using id: "+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					String bill=rm.queryCustomerInfo(transactionID,customer);
+					if(bill.equals("")){
+						System.out.println("This customer does not exist.");
+					}else{
+						System.out.println("Customer info: " + bill);
+					}
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;               
+				break;               
 
-		case 14: //querying a flight Price
-			if(arguments.size()!=2){
-				obj.wrongNumber();
-				break;
-			}
-			//System.out.println("Querying a flight Price using id: "+arguments.elementAt(1));
-			System.out.println("Flight number: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				flightNum = obj.getInt(arguments.elementAt(1));
-				price=rm.queryFlightPrice(transactionID,flightNum);
-				if(price < 0){
-					System.out.println("There are no existing flights with this flight number");
-				}else{
-					System.out.println("Price of a seat: " + price);
-				}			
-			}catch(DeadlockException e){
-				try {
+			case 14: //querying a flight Price
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Querying a flight Price using id: "+arguments.elementAt(1));
+				System.out.println("Flight number: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					flightNum = obj.getInt(arguments.elementAt(1));
+					price=rm.queryFlightPrice(transactionID,flightNum);
+					if(price < 0){
+						System.out.println("There are no existing flights with this flight number");
+					}else{
+						System.out.println("Price of a seat: " + price);
+					}			
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 15: //querying a Car Price
-			if(arguments.size()!=2){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Querying a car price using id: "+arguments.elementAt(1));
-			System.out.println("Car location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				price=rm.queryCarsPrice(transactionID,location);
-				if(price < 0){
-					System.out.println("There are no car rentals at this location.");
-				}else{
-					System.out.println("Price of a car at this location: " + price);
-				}				
-			}catch(DeadlockException e){
-				try {
+
+			case 15: //querying a Car Price
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Querying a car price using id: "+arguments.elementAt(1));
+				System.out.println("Car location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					price=rm.queryCarsPrice(transactionID,location);
+					if(price < 0){
+						System.out.println("There are no car rentals at this location.");
+					}else{
+						System.out.println("Price of a car at this location: " + price);
+					}				
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
-				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}                
-			break;
-
-		case 16: //querying a Room price
-			if(arguments.size()!=2){
-				obj.wrongNumber();
+				}               
 				break;
-			}
-			//System.out.println("Querying a room price using id: "+arguments.elementAt(1));
-			System.out.println("Room Location: "+arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(1));
-				price=rm.queryRoomsPrice(transactionID,location);
-				if(price < 0){
-					System.out.println("There are no hotels at this location.");
-				}else{
-					System.out.println("Price of Rooms at this location: " + price);
-				}			
-			}catch(DeadlockException e){
-				try {
+
+			case 16: //querying a Room price
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Querying a room price using id: "+arguments.elementAt(1));
+				System.out.println("Room Location: "+arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(1));
+					price=rm.queryRoomsPrice(transactionID,location);
+					if(price < 0){
+						System.out.println("There are no hotels at this location.");
+					}else{
+						System.out.println("Price of Rooms at this location: " + price);
+					}			
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 17:  //reserve a flight
-			if(arguments.size()!=3){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Reserving a seat on a flight using id: "+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			System.out.println("Flight number: "+arguments.elementAt(2));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				flightNum = obj.getInt(arguments.elementAt(2));
-				if(rm.reserveFlight(transactionID,customer,flightNum))
-					System.out.println("Flight Reserved");
-				else
-					System.out.println("Flight could not be reserved.");
-			}catch(DeadlockException e){
-				try {
+
+			case 17:  //reserve a flight
+				if(arguments.size()!=3){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Reserving a seat on a flight using id: "+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
+				System.out.println("Flight number: "+arguments.elementAt(2));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					flightNum = obj.getInt(arguments.elementAt(2));
+					if(rm.reserveFlight(transactionID,customer,flightNum))
+						System.out.println("Flight Reserved");
+					else
+						System.out.println("Flight could not be reserved.");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 18:  //reserve a car
-			if(arguments.size()!=3){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Reserving a car at a location using id: "+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			System.out.println("Location: "+arguments.elementAt(2));
 
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(2));
-				if(rm.reserveCar(transactionID,customer,location))
-					System.out.println("Car Reserved");
-				else
-					System.out.println("Car could not be reserved.");
-			}catch(DeadlockException e){
-				try {
+			case 18:  //reserve a car
+				if(arguments.size()!=3){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Reserving a car at a location using id: "+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
+				System.out.println("Location: "+arguments.elementAt(2));
+
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(2));
+					if(rm.reserveCar(transactionID,customer,location))
+						System.out.println("Car Reserved");
+					else
+						System.out.println("Car could not be reserved.");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 19:  //reserve a room
-			if(arguments.size()!=3){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Reserving a room at a location using id: "+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			System.out.println("Location: "+arguments.elementAt(2));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				location = obj.getString(arguments.elementAt(2));
-				if(rm.reserveRoom(transactionID,customer,location))
-					System.out.println("Room Reserved");
-				else
-					System.out.println("Room could not be reserved.");
-			}catch(DeadlockException e){
-				try {
+
+			case 19:  //reserve a room
+				if(arguments.size()!=3){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Reserving a room at a location using id: "+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
+				System.out.println("Location: "+arguments.elementAt(2));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					location = obj.getString(arguments.elementAt(2));
+					if(rm.reserveRoom(transactionID,customer,location))
+						System.out.println("Room Reserved");
+					else
+						System.out.println("Room could not be reserved.");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 20:  //reserve an Itinerary
-			if(arguments.size()<6){
-				obj.wrongNumber();
 				break;
-			}
-			//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
-			System.out.println("Customer id: "+arguments.elementAt(1));
-			for(int i=0;i<arguments.size()-5;i++)
-				System.out.println("Flight number: "+arguments.elementAt(2+i));
-			System.out.println("Location for Car/Room booking: "+arguments.elementAt(arguments.size()-3));
-			System.out.println("Car to book?: "+arguments.elementAt(arguments.size()-2));
-			System.out.println("Room to book?: "+arguments.elementAt(arguments.size()-1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				int customer = obj.getInt(arguments.elementAt(1));
-				Vector<Integer> flightNumbers = new Vector<Integer>();
+
+			case 20:  //reserve an Itinerary
+				if(arguments.size()<6){
+					obj.wrongNumber();
+					break;
+				}
+				//System.out.println("Reserving an Itinerary using id:"+arguments.elementAt(1));
+				System.out.println("Customer id: "+arguments.elementAt(1));
 				for(int i=0;i<arguments.size()-5;i++)
-					flightNumbers.addElement(Integer.parseInt(arguments.elementAt(2+i).toString()));
-				location = obj.getString(arguments.elementAt(arguments.size()-3));
-				Car = obj.getBoolean(arguments.elementAt(arguments.size()-2));
-				Room = obj.getBoolean(arguments.elementAt(arguments.size()-1));
-				if(rm.itinerary(transactionID,customer,flightNumbers,location,Car,Room))
-					System.out.println("Itinerary Reserved");
-				else
-					System.out.println("Itinerary could not be reserved.");
-			}catch(DeadlockException e){
-				try {
+					System.out.println("Flight number: "+arguments.elementAt(2+i));
+				System.out.println("Location for Car/Room booking: "+arguments.elementAt(arguments.size()-3));
+				System.out.println("Car to book?: "+arguments.elementAt(arguments.size()-2));
+				System.out.println("Room to book?: "+arguments.elementAt(arguments.size()-1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					int customer = obj.getInt(arguments.elementAt(1));
+					Vector<Integer> flightNumbers = new Vector<Integer>();
+					for(int i=0;i<arguments.size()-5;i++)
+						flightNumbers.addElement(Integer.parseInt(arguments.elementAt(2+i).toString()));
+					location = obj.getString(arguments.elementAt(arguments.size()-3));
+					Car = obj.getBoolean(arguments.elementAt(arguments.size()-2));
+					Room = obj.getBoolean(arguments.elementAt(arguments.size()-1));
+					if(rm.itinerary(transactionID,customer,flightNumbers,location,Car,Room))
+						System.out.println("Itinerary Reserved");
+					else
+						System.out.println("Itinerary could not be reserved.");
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-
-		case 21:  //quit the client
-			if(arguments.size()!=1){
-				obj.wrongNumber();
 				break;
-			}
-			System.out.println("Quitting client.");
-			System.exit(1);
+
+			case 21:  //quit the client
+				if(arguments.size()!=1){
+					obj.wrongNumber();
+					break;
+				}
+				System.out.println("Quitting client.");
+				System.exit(1);
 
 
-		case 22:  //new Customer given id
-			if(arguments.size()!=2){
-				obj.wrongNumber();
-				break;
-			}
-			System.out.println("Adding a new Customer using customer ID " +arguments.elementAt(1));
-			try{
-				//Id = obj.getInt(arguments.elementAt(1));
-				Cid = obj.getInt(arguments.elementAt(1));
-				boolean customer=rm.newCustomer(transactionID, Cid);
-				if(customer){
-					System.out.println("New customer id: "+ Cid);
+			case 22:  //new Customer given id
+				if(arguments.size()!=2){
+					obj.wrongNumber();
+					break;
 				}
-				else{
-					System.out.println("Customer could not be added: A customer with this ID already exists.");
-				}
-				
-			}catch(DeadlockException e){
-				try {
+				System.out.println("Adding a new Customer using customer ID " +arguments.elementAt(1));
+				try{
+					//Id = obj.getInt(arguments.elementAt(1));
+					Cid = obj.getInt(arguments.elementAt(1));
+					boolean customer=rm.newCustomer(transactionID, Cid);
+					if(customer){
+						System.out.println("New customer id: "+ Cid);
+					}
+					else{
+						System.out.println("Customer could not be added: A customer with this ID already exists.");
+					}
+
+				}catch(DeadlockException e){
+					try {
+						System.out.println(e.getMessage());
+						rm.abort(transactionID);
+						transactionID = -1;
+						System.out.println("Transaction aborted.");
+					} catch (Exception e1) {
+						System.out.println(e1.getMessage());
+					}
+				}catch(InvalidTransactionException e){
+					transactionID = -1; 
 					System.out.println(e.getMessage());
-					rm.abort(transactionID);
-					transactionID = -1;
-					System.out.println("Transaction aborted.");
-				} catch (Exception e1) {
-					System.out.println(e1.getMessage());
 				}
-			}catch(InvalidTransactionException e){
-				transactionID = -1; 
-				System.out.println(e.getMessage());
-			}catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-		case 23: //start
-			if(arguments.size()!=1){
-				obj.wrongNumber();
 				break;
-			}
-			try{
+			case 23: //start
+				if(arguments.size()!=1){
+					obj.wrongNumber();
+					break;
+				}
 				//Id = obj.getInt(arguments.elementAt(1));
 				if(transactionID >= 0){
 					obj.ongoingTxn();
@@ -872,50 +794,47 @@ public class client
 				}
 				transactionID = rm.start();
 				System.out.println("A transaction with id " + transactionID + " is now started.");
-			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-		case 24: //commit
-			if(arguments.size()!=1){
-				obj.wrongNumber();
 				break;
-			}
-			try{
+			case 24: //commit
+				if(arguments.size()!=1){
+					obj.wrongNumber();
+					break;
+				}
 				rm.commit(transactionID);
 				System.out.println("Transaction with id " + transactionID + " committed successfully.");
 				transactionID = -1;
-			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-		case 25: //abort
-			if(arguments.size()!=1){
-				obj.wrongNumber();
 				break;
-			}
-			try{
+			case 25: //abort
+				if(arguments.size()!=1){
+					obj.wrongNumber();
+					break;
+				}
 				rm.abort(transactionID);
 				System.out.println("Transaction with id " + transactionID + " was aborted.");
 				transactionID = -1;
+				break;
+			default:
+				System.out.println("The interface does not support this command.");
+				break;
+			}//end of switch
+		}catch(Exception e){
+			try{
+				// get a reference to the rmiregistry
+				Registry registry = LocateRegistry.getRegistry(server, port);
+				// get the proxy and the remote reference by rmiregistry lookup
+				rm = (ResourceManager) registry.lookup("Resort21ResourceManager");
+				if(rm!=null){
+					System.out.println("Successful");
+					System.out.println("Connected to RM");
+				}else{
+					System.out.println("Unsuccessful");
+				}
+			}catch(Exception ex) {    
+				System.err.println("Client exception: " + ex.toString());
+				ex.printStackTrace();
 			}
-			catch(Exception e){
-				System.out.println("EXCEPTION:");
-				System.out.println(e.getMessage());
-				e.printStackTrace();
-			}
-			break;
-		default:
-			System.out.println("The interface does not support this command.");
-			break;
-		}//end of switch
-
+			readCommand(command);
+		}
 	}
 
 	public Vector parse(String command)
@@ -1206,7 +1125,7 @@ public class client
 			System.out.println(command);
 			System.out.println("The interface does not support this command.");
 			break;
-		}
+		}			
 	}
 
 	public void wrongNumber() {

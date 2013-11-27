@@ -27,7 +27,8 @@ import lockManager.DeadlockException;
 
 public interface ResourceManager extends Remote 
 {
-	public String getName();
+	public String getName()
+			throws RemoteException;
 
 	/* Add seats to a flight.  In general this will be used to create a new
 	 * flight, but it should be possible to add seats to an existing flight.
@@ -181,8 +182,10 @@ public interface ResourceManager extends Remote
 	public boolean shutdown() 
 			throws RemoteException;
 	
-	public void neatCrash(int transactionId, int option);
+	public void neatCrash(int transactionId, int option)
+			throws RemoteException;
 
-	public void selfDestruct();
+	public void selfDestruct()
+			throws RemoteException;
 
 }

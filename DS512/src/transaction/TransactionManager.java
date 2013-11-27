@@ -27,7 +27,7 @@ public class TransactionManager {
 	LinkedList<Transaction> ongoingTransactions;
 	DiskAccess stableStorage;
 
-	public TransactionManager(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) {
+	public TransactionManager(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) throws RemoteException {
 		ongoingTransactions = new LinkedList<Transaction>();
 		try {
 			stableStorage = new DiskAccess();
@@ -305,7 +305,7 @@ public class TransactionManager {
 		return canCommit;
 	}
 
-	public boolean commit(int tid) {
+	public boolean commit(int tid) throws RemoteException {
 		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
@@ -329,7 +329,7 @@ public class TransactionManager {
 		return false;	
 	}
 
-	private void doCommit(Transaction t) {
+	private void doCommit(Transaction t) throws RemoteException {
 		ongoingTransactions.remove(t);
 		String voteDecision = t.getID() + ",decision,YES";
 		try {
@@ -367,7 +367,7 @@ public class TransactionManager {
 	}
 
 	// Subject to changes.
-	public void abort(int tid) {
+	public void abort(int tid) throws RemoteException {
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {

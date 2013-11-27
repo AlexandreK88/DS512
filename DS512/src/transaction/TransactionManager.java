@@ -81,7 +81,7 @@ public class TransactionManager {
 				if (!started2PC) {
 					//abort
 				} else if (votesReceived.isEmpty()) {
-					
+					// No votes received, but the 
 				}
 			}
 		}

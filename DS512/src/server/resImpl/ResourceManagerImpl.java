@@ -6,6 +6,7 @@
 package server.resImpl;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.Registry;
@@ -33,6 +34,13 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	static String name;
 
 	DiskAccess stableStorage;
+
+	private boolean crashBeforeVoting;
+	private boolean crashAfterVoting;
+	private boolean crashAfterDecision;
+	private int transactionToCrash;
+
+	private static AtomicBoolean crashNow;
 
 	public static void main(String args[]) {
 		// Figure out where server is running
@@ -83,15 +91,34 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		while(true){
+			try {
+				Thread.sleep(2);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			if(crashNow.get()){
+				try {
+					Thread.sleep(2);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				obj.selfDestruct();
+			}
+		}
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
-
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;
-
+		crashBeforeVoting = false;
+		crashAfterVoting = false;
+		crashAfterDecision = false;
+		transactionToCrash = 0;		
+		crashNow = new AtomicBoolean();
 	}
-	
+
 	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
@@ -103,6 +130,18 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public String getName() {
 		return name;
+	}
+
+	public void setCrashBeforeVoting(boolean crash) {
+		crashBeforeVoting = crash;
+	}
+
+	public void setcrashAfterVoting(boolean crash) {
+		crashAfterVoting = crash;
+	}
+
+	public void setcrashAfterDecision(boolean crash) {
+		crashAfterDecision = crash;
 	}
 
 	// Reads a data item
@@ -375,7 +414,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			{
 		return queryNum(id, Hotel.getKey(location));
 			}
-	
+
 	// Returns room price at this location
 	public int queryRoomsPrice(int id, String location)
 			throws RemoteException
@@ -771,13 +810,15 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
-	TransactionAbortedException, InvalidTransactionException {
+	TransactionAbortedException, InvalidTransactionException {		
+		if(crashBeforeVoting && transactionToCrash == transactionId){
+			selfDestruct();
+		}
+		boolean canCommit = false;
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == transactionId) {
 				// if t's status is still ongoing.
 				// Add vote yes to log for trxn t.
-				// set transaction to have a ready to commit value (DONE)
-				//t.setReadyToCommit(true);
 				String operation = transactionId + ", canCommit, YES \n";
 				System.out.println("Yes, I do commit <3");
 				try {
@@ -786,15 +827,22 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				return true;
+				canCommit = true;
+				break;
 			}
 		}
-		return false;
+		if(crashAfterVoting && transactionToCrash == transactionId){
+			crashNow.set(true);
+		}	
+		return canCommit;
 	}
 
 	@Override
 	public boolean doCommit(int transactionId) throws RemoteException,
 	TransactionAbortedException, InvalidTransactionException {
+		if(crashAfterDecision && transactionToCrash == transactionId){
+			selfDestruct();
+		}
 		try{	
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
@@ -853,6 +901,35 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			System.out.println("Writing op");
 		}catch(Exception e){
 			System.out.println("Some god damn exception");
+		}
+	}
+	
+	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
+		if(crashAfterDecision && transactionToCrash == transactionId){
+			selfDestruct();
+		}
+		abort(transactionId);
+	}
+
+	public void neatCrash(int transactionId, int option){
+		crashBeforeVoting = false;
+		crashAfterVoting = false;
+		crashAfterDecision = false;		
+
+		transactionToCrash = transactionId;
+
+		switch(option){
+		case 1:
+			crashBeforeVoting = true;
+			break;
+		case 2:
+			crashAfterVoting = true;
+			break;
+		case 3:
+			crashAfterDecision = true;
+			break;
+		default:
+			System.out.println("What are you talking about, this option is not an option.");
 		}
 	}
 

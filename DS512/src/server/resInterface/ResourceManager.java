@@ -174,9 +174,14 @@ public interface ResourceManager extends Remote
 
 	public void abort(int transactionId) 
 			throws RemoteException, InvalidTransactionException;
+	
+	public void doAbort(int transactionId) 
+			throws RemoteException, InvalidTransactionException;
 
 	public boolean shutdown() 
 			throws RemoteException;
+	
+	public void neatCrash(int transactionId, int option);
 
 	public void selfDestruct();
 

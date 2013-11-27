@@ -151,13 +151,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 						if (crashArgs.length != 4) {
 							System.out.println("Dude, listen. You don't write your thing correctly. Here's how you do it: ");
 							System.out.println("crash [victim] [tID] [timing] ");
-							System.out.println("Victim is a name (mw, car, room, flight), tID and timing are ints.");
-							System.out.println("Timings for mw are: 1 is , 2 is , 3 is , 4 is , 5 is , and 6 is .");
-							System.out.println("Timings for the others are: 1 is before voting, 2 is after voting, 3 is after decision.");
+							System.out.println("Victim is a name (mw, car, room, flight), tID and timing are ints.\n");
+							System.out.println("Timings for mw are: 1 is crash before start 2PC, \n" +
+											   "2 is crash after start2PC but no votes, \n" +
+											   "3 is crash after some but not all votes, \n" +
+											   "4 is crash after all votes but no decision, \n" +
+											   "5 is crash after decision but no decision sent, \n" +
+											   "6 is crash after sending some but not all decisions, \n" +
+											   "and 7 is crash after sending all decisions.\n");
+							System.out.println("Timings for the others are: 1 is before voting, \n" +
+											   "2 is after voting, \n" +
+											   "3 is after decision.\n");
 							System.out.println("And don't be an idiot, make your tID a positive nonzero integer.");
 							System.out.println("Now be awesome and do it properly!");
 						} else {
-							obj.crash(crashArgs[1]/*, crashArgs[2], crashArgs[3]*/);
+							obj.crash(crashArgs[1], Integer.parseInt(crashArgs[2]), Integer.parseInt(crashArgs[3]));
 						}
 					} else {
 						System.out.println("Command unknown (hint: so far, there exists only the crash command...");

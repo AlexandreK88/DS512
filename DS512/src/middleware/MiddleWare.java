@@ -37,20 +37,27 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	static String name;
 	// For crash control.
 	static BufferedReader stdin;
-	
+
+	static String server1 = "localhost";
+	static String server2 = "localhost"; 
+	static String server3 = "localhost";
+	static int port1 = 1099;
+	static int port2 = 1099;
+	static int port3 = 1099;
+
 	private static int SHUTDOWN_TIMEOUT = 300000;
 	private static int TIME_TO_LIVE = 200000;
 	public static Random r = new Random();
 
 	public static void main(String args[]) {
 		// Figure out where server is running		
-		String server1 = "localhost";
-		String server2 = "localhost"; 
-		String server3 = "localhost";
+		server1 = "localhost";
+		server2 = "localhost"; 
+		server3 = "localhost";
 		String serverMW = "localhost";
-		int port1 = 1099;
-		int port2 = 1099;
-		int port3 = 1099;
+		port1 = 1099;
+		port2 = 1099;
+		port3 = 1099;
 		int portMW = 1099;
 		lockManager = new LockManager();
 		MiddleWare obj = null;
@@ -89,7 +96,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 		//Connection to RMIs
 		try {
-			
+
 			// get a reference to the rmiregistry
 			Registry registry1 = LocateRegistry.getRegistry(server1, port1);
 			Registry registry2 = LocateRegistry.getRegistry(server2, port2);
@@ -182,7 +189,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		ongoingTransactions = new LinkedList<Transaction>();
 		trCount = 0;		
 	}
-	
+
 	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
@@ -191,7 +198,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public String getName() {
 		return name;
 	}
@@ -272,12 +279,14 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				return rmFlight.addFlight(id,flightNum,flightSeats,flightPrice);
 			}
 			return false;
-		}
-		catch(DeadlockException e) {
+		}catch(DeadlockException e) {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
-		} catch(Exception e){
+		}catch(RemoteException e){
+			reconnect("flight");
+			return addFlight(id, flightNum, flightSeats, flightPrice);
+		}catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
 			//e.printStackTrace();
@@ -1012,7 +1021,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		return newTr;
 	}
-	
+
 	public boolean commit(int transactionId){
 		if(transactionManager.commit(transactionId)){
 			lockManager.UnlockAll(transactionId);
@@ -1096,7 +1105,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		transactionManager.abort(transactionId);
 		System.out.println("Transaction " + transactionId + " has ABORTED.");
 	}
-	
+
 	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
 		for (int i = 0; i < ongoingTransactions.size(); i++) {
 			if (ongoingTransactions.get(i).getID() == transactionId) {
@@ -1115,7 +1124,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println("Some god damn exception");
 		}
 	}
-	
+
 	public void selfDestruct(){
 		System.out.println("ME?!? YOU ARE CRASHING ME?!? THE MOST IMPORTANT PIECE OF THE SYSTEM! WHAT THE HELL?");
 		try {
@@ -1125,7 +1134,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		System.exit(1);
 	}
-		
+
 	public boolean crash(String which) throws RemoteException{
 		if(which.equalsIgnoreCase("flight")){
 			rmFlight.selfDestruct();
@@ -1143,7 +1152,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			return false;
 		}
 	}
-	
+
 	public boolean crash(String which, int transactionId, int option) throws RemoteException{
 		if(which.equalsIgnoreCase("flight")){
 			rmFlight.neatCrash(transactionId, option);			
@@ -1161,11 +1170,11 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			return false;
 		}
 	}
-	
+
 	public void neatCrash(int transactionId, int option){
 		transactionManager.neatCrash(transactionId, option);
 	}
-	
+
 	private String convertItemLine(int id, String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
@@ -1197,6 +1206,35 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 		stableStorage.logOperation(id, op);
 	}
-	
-	
+
+	private void reconnect(String rm){
+		try {
+			if(rm.equals("flight")){
+				Registry registry1 = LocateRegistry.getRegistry(server1, port1);
+				rmFlight = (ResourceManager) registry1.lookup("Flight21ResourceManager");
+				if(rmFlight!=null){
+					System.out.println("Successful");
+					System.out.println("Reconnected to RMFlight");
+				}
+			}else if(rm.equals("flight")){
+				Registry registry2 = LocateRegistry.getRegistry(server2, port2);
+				rmCar = (ResourceManager)registry2.lookup("Car21ResourceManager");
+				if(rmCar!=null){
+					System.out.println("Successful");
+					System.out.println("Reconnected to RMCar");
+				}
+			}else{
+				Registry registry3 = LocateRegistry.getRegistry(server3, port3);
+				rmRoom = (ResourceManager) registry3.lookup("Room21ResourceManager");
+				if(rmRoom!=null){
+					System.out.println("Successful");
+					System.out.println("Reconnected to RMRoom");
+				}
+			}
+		} catch (Exception e) {    
+			System.err.println("Client exception: " + e.toString());
+		}
+	}
+
+
 }

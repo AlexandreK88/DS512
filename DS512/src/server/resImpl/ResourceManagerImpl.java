@@ -772,6 +772,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public boolean canCommit(int transactionId) throws RemoteException, 
 	TransactionAbortedException, InvalidTransactionException {
+		
+		// if boolean that should crash before voting,
+		// crash
+		
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == transactionId) {
 				// if t's status is still ongoing.

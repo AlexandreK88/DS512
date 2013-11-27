@@ -18,7 +18,7 @@ public class TransactionManager {
 	LinkedList<Transaction> ongoingTransactions;
 	DiskAccess stableStorage;
 
-	public TransactionManager() {
+	public TransactionManager(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) {
 		ongoingTransactions = new LinkedList<Transaction>();
 		try {
 			stableStorage = new DiskAccess();
@@ -27,6 +27,64 @@ public class TransactionManager {
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
 		// Call the read log from the stable storage.
+		ongoingTransactions = stableStorage.readLog();
+		for (Transaction t: ongoingTransactions) {
+			LinkedList<String> logLines = t.getLogLines();
+			boolean started2PC = false;
+			boolean decided = false;
+			boolean decision = false;
+			LinkedList<ResourceManager> votesReceived = new LinkedList<ResourceManager>();
+			LinkedList<ResourceManager> decisionConfirmed = new LinkedList<ResourceManager>();
+			for (String line: logLines) {
+				String[] lineDetails = line.split(",");
+				if (lineDetails[1].trim().equalsIgnoreCase("rm")) {
+					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
+						t.addrm(flight);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(car.getName())) {
+						t.addrm(car);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(room.getName())) {
+						t.addrm(room);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(mw.getName())) {
+						t.addrm(mw);
+					}
+				} else if (lineDetails[1].trim().equalsIgnoreCase("Start2PC")) {
+					started2PC = true;
+				} else if (lineDetails[1].trim().equalsIgnoreCase("vote")) {
+					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
+						votesReceived.add(flight);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(car.getName())) {
+						votesReceived.add(car);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(room.getName())) {
+						votesReceived.add(room);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(mw.getName())) {
+						votesReceived.add(mw);
+					}		
+				} else if (lineDetails[1].trim().equalsIgnoreCase("decision")) {
+					decided = true;
+					if (lineDetails[2].trim().equalsIgnoreCase("YES")) {
+						decision = true;
+					} else {
+						decision = false;
+					}
+				} else if (lineDetails[1].trim().equalsIgnoreCase("commitconfirm")
+						|| lineDetails[1].trim().equalsIgnoreCase("abortconfirm")) {
+					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
+						decisionConfirmed.add(flight);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(car.getName())) {
+						decisionConfirmed.add(car);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(room.getName())) {
+						decisionConfirmed.add(room);
+					} else if (lineDetails[2].trim().equalsIgnoreCase(mw.getName())) {
+						decisionConfirmed.add(mw);
+					}					
+				}
+				if (!started2PC) {
+					//abort
+				} else if (votesReceived.isEmpty()) {
+					
+				}
+			}
+		}
 	}
 
 	public int start() {

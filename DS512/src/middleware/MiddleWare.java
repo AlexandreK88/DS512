@@ -51,7 +51,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		int port3 = 1099;
 		int portMW = 1099;
 		lockManager = new LockManager();
-		transactionManager = new TransactionManager();
 		MiddleWare obj = null;
 		name = "Resort21ResourceManager";
 		stdin = new BufferedReader(new InputStreamReader(System.in));
@@ -116,6 +115,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			// create a new Server object
 			obj = new MiddleWare();
+			transactionManager = new TransactionManager(rmFlight, rmCar, rmRoom, obj);
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -137,14 +137,23 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			try {
 				if (stdin.ready()) {
 					String input = stdin.readLine();
-					// Write a parser for crashing.
-					// This parser will have 2 types of commands:
-					// One identifying which one of the rm should crash from now.
-					// One identifying at which moment should the middleware crash 
-					// (assuming the middleware is the one that should crash).
-					// If no parser is to be setup at the RMs then a 3rd command should then
-					// indicate at which moment the specified crashing RM needs to crash.
-					// This means keeping in memory which RM is crashing.
+					String[] crashArgs = input.split(" ");
+					if (crashArgs[0].equalsIgnoreCase("crash")) {
+						if (crashArgs.length != 4) {
+							System.out.println("Dude, listen. You don't write your thing correctly. Here's how you do it: ");
+							System.out.println("crash [victim] [tID] [timing] ");
+							System.out.println("Victim is a name (mw, car, room, flight), tID and timing are ints.");
+							System.out.println("Timings for mw are: 1 is , 2 is , 3 is , 4 is , 5 is , and 6 is .");
+							System.out.println("Timings for the others are: 1 is before voting, 2 is after voting, 3 is after decision.");
+							System.out.println("And don't be an idiot, make your tID a positive nonzero integer.");
+							System.out.println("Now be awesome and do it properly!");
+						} else {
+							obj.crash(crashArgs[1]/*, crashArgs[2], crashArgs[3]*/);
+						}
+					} else {
+						System.out.println("Command unknown (hint: so far, there exists only the crash command...");
+					}
+
 				}
 			} catch (IOException e1) {
 				e1.printStackTrace();

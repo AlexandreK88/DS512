@@ -81,6 +81,10 @@ public class Transaction {
 	public void addLogLine(String line) {
 		relevantLogLines.add(line);
 	}
+	
+	public LinkedList<String> getLogLines() {
+		return relevantLogLines;
+	}
 
 
 }

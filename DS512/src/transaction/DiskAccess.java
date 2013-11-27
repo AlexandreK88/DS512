@@ -324,7 +324,7 @@ public class DiskAccess {
 					}
 					// Also, it depends on the status of the transaction. Say this line is adding an rm, or
 					// a transaction start, it will be fairly different. It can also be a: prepare, vote answer,
-					// decision, decision confirmation. So lots of work here. Will be treated later
+					// decision, decision confirmation. So lots of work here. Will be treated later.
 					try {
 						line = stateLog.readLine();
 					} catch (IOException e) {

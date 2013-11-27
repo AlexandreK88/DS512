@@ -815,6 +815,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			selfDestruct();
 		}
 		boolean canCommit = false;
+
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == transactionId) {
 				// if t's status is still ongoing.

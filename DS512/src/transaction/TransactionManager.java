@@ -100,7 +100,25 @@ public class TransactionManager {
 				if (!started2PC) {
 					//abort
 				} else if (votesReceived.isEmpty()) {
-					// No votes received, but the 
+					// No votes received, but the vote started
+					// Resend votes.
+				} else if (!decided) {
+					// Votes received, but not all.
+					// Ask for the rest of the votes, if none said abort yet.
+				} else if (decisionConfirmed.isEmpty()) {
+					// No decisions sent.
+					if (decision) {
+						// commit
+					} else {
+						// abort
+					}
+				} else {
+					// Some decisions received, but not all.
+					if (decision) {
+						// commit
+					} else {
+						// abort
+					}
 				}
 			}
 		}

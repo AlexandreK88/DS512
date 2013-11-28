@@ -51,7 +51,6 @@ public class TransactionManager {
 
 	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
 		ongoingTransactions = stableStorage.readLog();
-		LinkedList<Transaction> toBeRemoved = new LinkedList<Transaction>();
 		while (!ongoingTransactions.isEmpty()) {
 			Transaction t = ongoingTransactions.getFirst();
 			LinkedList<String> logLines = t.getLogLines();
@@ -169,7 +168,7 @@ public class TransactionManager {
 				// Some decisions received, but not all.
 				if (decision) {
 					// commit
-					toBeRemoved.add(t);
+					
 					// Craa-aasssh.
 					for (ResourceManager rm: t.getRMList()) {
 						if (decisionConfirmed.contains(rm)) {
@@ -227,9 +226,7 @@ public class TransactionManager {
 					}
 				}
 			}
-
 		}
-		ongoingTransactions.removeAll(toBeRemoved);
 	}
 
 	public int start() {
@@ -320,8 +317,8 @@ public class TransactionManager {
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
-				// Or here.
 				if(prepare(t, mw)){
+					ongoingTransactions.remove(t);
 					doCommit(t, mw);
 					return true;
 				} else{

@@ -288,6 +288,7 @@ public class DiskAccess {
 		LinkedList<Integer> completed = new LinkedList<Integer>();
 			String line = "";
 			try {
+				stateLog.seek(0);
 				line = stateLog.readLine();
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -295,9 +296,16 @@ public class DiskAccess {
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
+				System.out.println("Started");
 				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
+					System.out.println(lineDetails[0] + " is already committed.");
 					completed.add(Integer.parseInt(lineDetails[0]));
-				}		
+				}
+				try {
+					line = stateLog.readLine();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 			
 			try {

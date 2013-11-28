@@ -60,6 +60,7 @@ public class DiskAccess {
 	}
 
 	public void memInit(ResourceManager rm) {
+		System.out.println("RM memory initialization...");
 		try {
 			if (masterRec == recordA) {
 				initializeMemory(recordA, rm);
@@ -87,6 +88,7 @@ public class DiskAccess {
 				System.out.println("Writing op " + operation);
 				//write_stateLog.newLine();
 			}catch(Exception e){
+				e.printStackTrace();
 				System.out.println("Some god damn exception");
 			}
 		}		
@@ -285,6 +287,7 @@ public class DiskAccess {
 	}
 	
 	public LinkedList<Transaction> readLog(){
+		System.out.println("TM reading stored log...");
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
 		LinkedList<Integer> completed = new LinkedList<Integer>();
 			String line = "";
@@ -295,6 +298,7 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
+				System.out.println("TM parsing log line...");
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
@@ -322,6 +326,7 @@ public class DiskAccess {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
+					System.out.println("Line is not part of committed transaction... ID: " + lineDetails[0]);
 					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
 						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
 					} else {

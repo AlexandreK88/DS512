@@ -31,14 +31,15 @@ public class TransactionManager {
 
 	public TransactionManager() {
 		ongoingTransactions = new LinkedList<Transaction>();
+		System.out.println("TM initializing...");
 		try {
+			System.out.println("TM getting disk access...");
 			stableStorage = new DiskAccess();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		latestTransaction = new AtomicInteger(stableStorage.getLatestTransaction());
 		// Call the read log from the stable storage.
-
 		crashBeforeSendingRequest = false;
 		crashAfterSendingRequest = false;
 		crashAfterSomeReplies = false;
@@ -47,7 +48,6 @@ public class TransactionManager {
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
 		transactionToCrash = 0;
-		System.out.println("TM initialized.");
 	}
 
 	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {

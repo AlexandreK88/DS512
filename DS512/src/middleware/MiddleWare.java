@@ -144,12 +144,14 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		
 		try {
-			System.out.println("MW generated, TM initializing...");
+			System.out.println("MW generated, starting TM initialization...");
 			transactionManager = new TransactionManager();
+			System.out.println("TM initialized. Starting MW initiation from disk...");
 			obj.initiateFromDisk();
 			System.out.println("**************** MW disk init completed. *********************");
 			System.out.println("**************** TM disk init started... *********************");
 			transactionManager.initializeTMFromDisk(rmFlight, rmCar, rmRoom, obj);
+			System.out.println("**************** TM disk init completed. *********************");
 			
 		} catch (RemoteException e2) {
 			System.out.println("God damnit...");

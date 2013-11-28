@@ -323,6 +323,7 @@ public class DiskAccess {
 				String[] lineDetails = line.split(",");
 				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
 					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
+						System.out.print("Transaction " + lineDetails[0] + " was ongoing.");
 						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
 					} else {
 						for (Transaction t: ongoings) {

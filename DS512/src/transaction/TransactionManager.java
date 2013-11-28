@@ -60,7 +60,9 @@ public class TransactionManager {
 			boolean decision = false;
 			LinkedList<ResourceManager> votesReceived = new LinkedList<ResourceManager>();
 			LinkedList<ResourceManager> decisionConfirmed = new LinkedList<ResourceManager>();
+			System.out.println("Starting to initialize transaction " + t.getID());
 			for (String line: logLines) {
+				System.out.println(line);
 				String[] lineDetails = line.split(",");
 				if (lineDetails[1].trim().equalsIgnoreCase("rm")) {
 					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
@@ -110,6 +112,7 @@ public class TransactionManager {
 			}
 			// If the 2PC didn't start, transaction can be aborted.
 			if (!started2PC) {
+				System.out.println(t.getID() + " since 2PC didn't start, was aborted.");
 				abort(t.getID());
 			} else if (votesReceived.isEmpty()) {
 				// No votes received, but the vote started

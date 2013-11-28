@@ -375,6 +375,7 @@ public class DiskAccess {
 						//ongoings.get(Integer.parseInt(lineDetails[0])).addOp(op);
 						try {
 							op.doOp(Integer.parseInt(lineDetails[0].trim()));
+							System.out.println("Transaction executed with id > 0.");
 						} catch (InvalidTransactionException e) {
 							System.out.println("Ok, An aborted transaction was attempted.");
 						}

@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
@@ -32,7 +34,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	int trCount;
 	private static String responsibility;
 	static String name;
-
+	static String server;
+	static int port;
 	DiskAccess stableStorage;
 
 	private boolean crashBeforeVoting;
@@ -44,8 +47,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public static void main(String args[]) {
 		// Figure out where server is running
-		String server = "localhost";
-		int port = 1099;
+		server = "localhost";
+		port = 1099;
 		responsibility = "";
 
 		if (args.length > 0) {
@@ -937,6 +940,13 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 	public void selfDestruct(){
 		System.out.println("Why me?? :(");
+		try {
+		Registry registry = LocateRegistry.getRegistry(port);
+		// Defining the RM's task
+			registry.unbind(name);
+		} catch (RemoteException | NotBoundException e) {
+			e.printStackTrace();
+		}
 		System.exit(1);
 	}
 

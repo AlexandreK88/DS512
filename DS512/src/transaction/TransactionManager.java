@@ -52,7 +52,8 @@ public class TransactionManager {
 	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
 		ongoingTransactions = stableStorage.readLog();
 		LinkedList<Transaction> toBeRemoved = new LinkedList<Transaction>();
-		for (Transaction t: ongoingTransactions) {
+		while (!ongoingTransactions.isEmpty()) {
+			Transaction t = ongoingTransactions.getFirst();
 			LinkedList<String> logLines = t.getLogLines();
 			boolean started2PC = false;
 			boolean abortVoteReceived = false;
@@ -126,7 +127,6 @@ public class TransactionManager {
 						if (!votesReceived.contains(rm)) {
 							try {
 								canCommit = rm.canCommit(t.getID());
-								// Write to log started TID's vote request
 								String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";	
 								try {
 									stableStorage.writeToLog(voteResponse);
@@ -338,7 +338,9 @@ public class TransactionManager {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		// Craa-aasssh.
+		if (t.getID() == transactionToCrash && crashAfterDeciding) {
+			mw.selfDestruct();
+		}
 		for (ResourceManager rm: t.getRMList()) {
 			attemptIndividualCommit(rm, mw, t);
 			// Write to log. Confirm decision sent to rm.
@@ -348,15 +350,17 @@ public class TransactionManager {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
+			if (t.getID() == transactionToCrash && this.crashAfterSendingSomeDecisions) {
+				mw.selfDestruct();
+			}
 		}
 		try {
 			// All decisions are sent. Write to log.
 			System.out.println("Transaction " + t.getID() + " committed.");
 			stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
-			// Boom! Boom! Boom! Boom! I want you in my crash!...
-			// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
-			// It's just another crash.
+			if (t.getID() == transactionToCrash && this.crashAfterSendingAllDecisions) {
+				mw.selfDestruct();
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -370,7 +374,6 @@ public class TransactionManager {
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			mw.reconnect("flight");
@@ -382,7 +385,6 @@ public class TransactionManager {
 		}
 	}
 
-	// Subject to changes.
 	public void abort(int tid) throws RemoteException {
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {

@@ -1030,7 +1030,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return newTr;
 	}
 
-	public boolean commit(int transactionId){
+	public boolean commit(int transactionId) throws RemoteException{
 		if(transactionManager.commit(transactionId)){
 			lockManager.UnlockAll(transactionId);
 			return true;

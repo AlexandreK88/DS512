@@ -449,5 +449,21 @@ public class DiskAccess {
 		theTemp.renameTo(theLog);
 		theLog.delete();
 	}
+	
+	private void resetWorking(){
+		try {
+			masterRec.getFileAccess().seek(0);
+			workingRec.getFileAccess().seek(0);
+
+			String line = masterRec.getFileAccess().readLine();
+			while(line != null && line != ""){
+				workingRec.getFileAccess().writeBytes(line);
+				line = masterRec.getFileAccess().readLine();
+			}		
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 }

@@ -817,8 +817,11 @@ public class client
 				System.out.println("The interface does not support this command.");
 				break;
 			}//end of switch
-		}catch(Exception e){
+		}catch(RemoteException e){
+			
 			try{
+				Thread.sleep(2000);
+				
 				// get a reference to the rmiregistry
 				Registry registry = LocateRegistry.getRegistry(server, port);
 				// get the proxy and the remote reference by rmiregistry lookup
@@ -834,6 +837,8 @@ public class client
 				ex.printStackTrace();
 			}
 			readCommand(command);
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 

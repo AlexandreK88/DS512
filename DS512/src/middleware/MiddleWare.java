@@ -310,7 +310,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}catch(RemoteException e){
 			System.out.println("Connection with flight failed, retrying...");
 			reconnect("flight");
-			return addFlight(id, flightNum, flightSeats, flightPrice);
+			abort(id);
+			return false;
 		}catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -335,6 +336,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -361,6 +366,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -386,6 +395,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -412,6 +425,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("car");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -437,6 +454,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("car");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -462,6 +483,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -487,6 +512,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -513,6 +542,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -538,6 +571,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -564,6 +601,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("car");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -589,6 +630,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("car");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -629,6 +674,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -670,6 +721,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				abort(id);
 				System.out.println(e.getMessage());
 				throw e;
+			}catch(RemoteException e){
+				reconnect("flight");
+				reconnect("car");
+				reconnect("room");
+				abort(id);
+				throw new InvalidTransactionException(id, "Server failed");
 			} catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
@@ -758,6 +815,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				abort(id);
 				System.out.println(e.getMessage());
 				throw e;
+			}catch(RemoteException e){
+				reconnect("flight");
+				reconnect("car");
+				reconnect("room");
+				abort(id);
+				throw new InvalidTransactionException(id, "Server failed");
 			} catch(Exception e){
 				System.out.println("EXCEPTION:");
 				System.out.println(e.getMessage());
@@ -787,6 +850,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("car");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -814,6 +881,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -841,7 +912,11 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
-		} catch(Exception e){
+		}catch(RemoteException e){
+			reconnect("flight");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
+		}catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
 			//e.printStackTrace();
@@ -914,6 +989,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());
@@ -973,6 +1054,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			abort(id);
 			System.out.println(e.getMessage());
 			throw e;
+		}catch(RemoteException e){
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			abort(id);
+			throw new InvalidTransactionException(id, "Server failed");
 		} catch(Exception e){
 			System.out.println("EXCEPTION:");
 			System.out.println(e.getMessage());

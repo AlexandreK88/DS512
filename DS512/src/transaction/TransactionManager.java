@@ -27,7 +27,7 @@ public class TransactionManager {
 	LinkedList<Transaction> ongoingTransactions;
 	DiskAccess stableStorage;
 
-	public TransactionManager(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) throws RemoteException {
+	public TransactionManager() {
 		ongoingTransactions = new LinkedList<Transaction>();
 		try {
 			stableStorage = new DiskAccess();
@@ -45,8 +45,11 @@ public class TransactionManager {
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
 		transactionToCrash = 0;
+	}
 
+	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) throws RemoteException {
 		ongoingTransactions = stableStorage.readLog();
+		LinkedList<Transaction> toBeRemoved = new LinkedList<Transaction>();
 		for (Transaction t: ongoingTransactions) {
 			LinkedList<String> logLines = t.getLogLines();
 			boolean started2PC = false;
@@ -102,128 +105,129 @@ public class TransactionManager {
 						decisionConfirmed.add(mw);
 					}					
 				}
-				// If the 2PC didn't start, transaction can be aborted.
-				if (!started2PC) {
+			}
+			// If the 2PC didn't start, transaction can be aborted.
+			if (!started2PC) {
+				abort(t.getID());
+			} else if (votesReceived.isEmpty()) {
+				// No votes received, but the vote started
+				// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
+				commit(t.getID());
+			} else if (!decided) {
+				// Votes received, but not all.
+				// Abort if abort vote received, simply keep on asking votes otherwise.
+				if (abortVoteReceived) {
 					abort(t.getID());
-				} else if (votesReceived.isEmpty()) {
-					// No votes received, but the vote started
-					// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
-					commit(t.getID());
-				} else if (!decided) {
-					// Votes received, but not all.
-					// Abort if abort vote received, simply keep on asking votes otherwise.
-					if (abortVoteReceived) {
-						abort(t.getID());
-					} else {
-						boolean canCommit = true;
-						for (ResourceManager rm: t.getRMList()) {
-							if (!votesReceived.contains(rm)) {
-								try {
-									canCommit = rm.canCommit(t.getID());
-									// Write to log started TID's vote request
-									String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit;
-									try {
-										stableStorage.writeToLog(voteResponse);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									// Implement a crash here. Crash after some but not all votes
-									if (!canCommit){
-										break;
-									}
-								} catch(RemoteException | TransactionAbortedException
-										| InvalidTransactionException e) {
-									e.printStackTrace();
-								}
-							}
-						}
-						if (canCommit) {
-							doCommit(t);
-						} else{
-							abort(t.getID());
-							// Should complete abort here so log can be updated accordingly.
-							String voteDecision = t.getID() + ",NOOOOOOO";
-							try {
-								stableStorage.writeToLog(voteDecision);
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-						}
-					}
-				} else if (decisionConfirmed.isEmpty()) {
-					// No decisions sent.
-					if (decision) {
-						// commit
-						doCommit(t);
-					} else {
-						// abort
-						abort(t.getID());
-					}
 				} else {
-					// Some decisions received, but not all.
-					if (decision) {
-						// commit
-						ongoingTransactions.remove(t);
-						// Craa-aasssh.
-						for (ResourceManager rm: t.getRMList()) {
-							if (decisionConfirmed.contains(rm)) {
-								continue;
-							}
+					boolean canCommit = true;
+					for (ResourceManager rm: t.getRMList()) {
+						if (!votesReceived.contains(rm)) {
 							try {
-								rm.doCommit(t.getID());
-							} catch (RemoteException | TransactionAbortedException
+								canCommit = rm.canCommit(t.getID());
+								// Write to log started TID's vote request
+								String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";	
+								try {
+									stableStorage.writeToLog(voteResponse);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								// Implement a crash here. Crash after some but not all votes
+								if (!canCommit){
+									break;
+								}
+							} catch(RemoteException | TransactionAbortedException
 									| InvalidTransactionException e) {
 								e.printStackTrace();
 							}
-							// Write to log. Confirm decision sent to rm.
-							String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
-							try {
-								stableStorage.writeToLog(rmCommit);
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-							// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
 						}
+					}
+					if (canCommit) {
+						doCommit(t);
+					} else{
+						abort(t.getID());
+						// Should complete abort here so log can be updated accordingly.
+						String voteDecision = t.getID() + ",NOOOOOOO\n";
 						try {
-							// All decisions are sent. Write to log.
-							System.out.println("Transaction " + t.getID() + " committed.");
-							stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
-							// Boom! Boom! Boom! Boom! I want you in my crash!...
-							// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
-							// It's just another crash.
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					} else {
-						// abort
-						for (ResourceManager rm: t.getRMList()) {
-							if (decisionConfirmed.contains(rm)) {
-								continue;
-							}
-							try {
-								rm.doAbort(t.getID());
-							} catch (RemoteException | InvalidTransactionException e) {
-								e.printStackTrace();
-							}
-							// Write to log. Confirm decision sent to rm.
-							String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName();
-							try {
-								stableStorage.writeToLog(rmAbort);
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-						}
-						try {
-							System.out.println("Transaction " + t.getID() + " aborted.");
-							stableStorage.writeToLog(Integer.toString(t.getID()) + ", Abort\n");
-						} catch (IOException e) {
-							e.printStackTrace();
+							stableStorage.writeToLog(voteDecision);
+						} catch (IOException e1) {
+							e1.printStackTrace();
 						}
 					}
 				}
-
+			} else if (decisionConfirmed.isEmpty()) {
+				// No decisions sent.
+				if (decision) {
+					// commit
+					doCommit(t);
+				} else {
+					// abort
+					abort(t.getID());
+				}
+			} else {
+				// Some decisions received, but not all.
+				if (decision) {
+					// commit
+					toBeRemoved.add(t);
+					// Craa-aasssh.
+					for (ResourceManager rm: t.getRMList()) {
+						if (decisionConfirmed.contains(rm)) {
+							continue;
+						}
+						try {
+							rm.doCommit(t.getID());
+						} catch (RemoteException | TransactionAbortedException
+								| InvalidTransactionException e) {
+							e.printStackTrace();
+						}
+						// Write to log. Confirm decision sent to rm.
+						String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName() + "\n";
+						try {
+							stableStorage.writeToLog(rmCommit);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
+					}
+					try {
+						// All decisions are sent. Write to log.
+						System.out.println("Transaction " + t.getID() + " committed.");
+						stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
+						// Boom! Boom! Boom! Boom! I want you in my crash!...
+						// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
+						// It's just another crash.
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else {
+					// abort
+					for (ResourceManager rm: t.getRMList()) {
+						if (decisionConfirmed.contains(rm)) {
+							continue;
+						}
+						try {
+							rm.doAbort(t.getID());
+						} catch (RemoteException | InvalidTransactionException e) {
+							e.printStackTrace();
+						}
+						// Write to log. Confirm decision sent to rm.
+						String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName() + "\n";
+						try {
+							stableStorage.writeToLog(rmAbort);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+					try {
+						System.out.println("Transaction " + t.getID() + " aborted.");
+						stableStorage.writeToLog(Integer.toString(t.getID()) + ", Abort\n");
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
+
 		}
+		ongoingTransactions.removeAll(toBeRemoved);
 	}
 
 	public int start() {
@@ -235,7 +239,7 @@ public class TransactionManager {
 			}
 		}
 		// Write to log started TID
-		String started = t.getID() + ",StartedTID";
+		String started = t.getID() + ",StartedTID\n";
 		try {
 			stableStorage.writeToLog(started);
 		} catch (IOException e1) {
@@ -273,39 +277,34 @@ public class TransactionManager {
 		}
 	}
 
-	public boolean prepare(Transaction t) /*throws RemoteException, 
-	TransactionAbortedException, InvalidTransactionException*/{
+	public boolean prepare(Transaction t) throws RemoteException, 
+	TransactionAbortedException, InvalidTransactionException{
 		boolean canCommit = true;
 		// Write to log started TID's vote request
-		String prepareStarted = t.getID() + ",Start2PC";
+		String prepareStarted = t.getID() + ",Start2PC\n";
 		try {
 			stableStorage.writeToLog(prepareStarted);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		for (ResourceManager rm: t.getRMList()) {
+			canCommit = rm.canCommit(t.getID());
+			String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";
 			try {
-				canCommit = rm.canCommit(t.getID());
-				String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit;
-				try {
-					stableStorage.writeToLog(voteResponse);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-				// Implement a crash here. Crash after some but not all votes
-				if (!canCommit){
-					break;
-				}
-			} catch(RemoteException | TransactionAbortedException
-					| InvalidTransactionException e) {
-				e.printStackTrace();
+				stableStorage.writeToLog(voteResponse);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			// Implement a crash here. Crash after some but not all votes
+			if (!canCommit){
+				break;
 			}
 		}
 		// Crash here. Crash after all votes but no decision.
 		return canCommit;
 	}
 
-	public boolean commit(int tid) throws RemoteException {
+	public boolean commit(int tid) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
 		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
@@ -315,7 +314,7 @@ public class TransactionManager {
 					doCommit(t);
 					return true;
 				} else{
-					String voteDecision = t.getID() + ",NOOOOOOO";
+					String voteDecision = t.getID() + ",NOOOOOOO\n";
 					try {
 						stableStorage.writeToLog(voteDecision);
 					} catch (IOException e1) {
@@ -331,7 +330,7 @@ public class TransactionManager {
 
 	private void doCommit(Transaction t) throws RemoteException {
 		ongoingTransactions.remove(t);
-		String voteDecision = t.getID() + ",decision,YES";
+		String voteDecision = t.getID() + ",decision,YES\n";
 		try {
 			stableStorage.writeToLog(voteDecision);
 		} catch (IOException e1) {
@@ -346,7 +345,7 @@ public class TransactionManager {
 				e.printStackTrace();
 			}
 			// Write to log. Confirm decision sent to rm.
-			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName();
+			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName() + "\n";
 			try {
 				stableStorage.writeToLog(rmCommit);
 			} catch (IOException e1) {
@@ -379,7 +378,7 @@ public class TransactionManager {
 							e.printStackTrace();
 						}
 						// Write to log. Confirm decision sent to rm.
-						String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName();
+						String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName() + "\n";
 						try {
 							stableStorage.writeToLog(rmAbort);
 						} catch (IOException e1) {

@@ -124,7 +124,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			// create a new Server object
 			obj = new MiddleWare();
-			transactionManager = new TransactionManager(rmFlight, rmCar, rmRoom, obj);
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -141,7 +140,16 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-		obj.initiateFromDisk();
+		
+		try {
+			transactionManager = new TransactionManager();
+			obj.initiateFromDisk();
+			transactionManager.initializeTMFromDisk(rmFlight, rmCar, rmRoom, obj);
+		} catch (RemoteException e2) {
+			System.out.println("God damnit...");
+			e2.printStackTrace();
+		}
+		
 		while(true){
 			try {
 				if (stdin.ready()) {
@@ -201,6 +209,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
+			stableStorage.memInit(this);
 			lockManager.UnlockAll(0);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -283,6 +292,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
+				System.out.println("Enlisted transaction... Now ready to attempt add flight");
 				rmList.clear();
 				return rmFlight.addFlight(id,flightNum,flightSeats,flightPrice);
 			}
@@ -292,6 +302,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println(e.getMessage());
 			throw e;
 		}catch(RemoteException e){
+			System.out.println("Connection with flight failed, retrying...");
 			reconnect("flight");
 			return addFlight(id, flightNum, flightSeats, flightPrice);
 		}catch(Exception e){
@@ -1030,13 +1041,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return newTr;
 	}
 
-	public boolean commit(int transactionId) throws RemoteException{
+	public boolean commit(int transactionId) {
+		try {
 		if(transactionManager.commit(transactionId)){
 			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
 			lockManager.UnlockAll(transactionId);
 			return false;
+		}
+		} catch(RemoteException e){
+			System.out.println("How in the world...");
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			return commit(transactionId);
 		}
 	}
 
@@ -1162,6 +1181,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	public boolean crash(String which, int transactionId, int option) throws RemoteException{
+		System.out.println("Let the fun begin <=D");
 		if(which.equalsIgnoreCase("flight")){
 			rmFlight.neatCrash(transactionId, option);			
 			return true;
@@ -1217,6 +1237,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	private void reconnect(String rm){
 		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
 			if(rm.equals("flight")){
 				Registry registry1 = LocateRegistry.getRegistry(server1, port1);
 				rmFlight = (ResourceManager) registry1.lookup("Flight21ResourceManager");
@@ -1224,7 +1250,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					System.out.println("Successful");
 					System.out.println("Reconnected to RMFlight");
 				}
-			}else if(rm.equals("flight")){
+			}else if(rm.equals("car")){
 				Registry registry2 = LocateRegistry.getRegistry(server2, port2);
 				rmCar = (ResourceManager)registry2.lookup("Car21ResourceManager");
 				if(rmCar!=null){

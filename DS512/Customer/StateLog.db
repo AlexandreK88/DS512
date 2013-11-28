@@ -1,3 +1,3 @@
-1,newcustomer,555
-1,canCommit,YES1,commit,B
-2, abort
+1,newcustomer,123
+1,canCommit,YES 
+1,commit,B

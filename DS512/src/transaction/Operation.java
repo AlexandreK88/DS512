@@ -28,10 +28,10 @@ public class Operation {
 		return params;
 	}
 
-	public void doOp(int id) throws RemoteException {
+	public void doOp(int id) throws RemoteException, InvalidTransactionException {
 		try{
 			if (opName.equals("newflight")) {
-				rm.addFlight(id, Integer.parseInt(params[1]), Integer.parseInt(params[2]), Integer.parseInt(params[3]));
+				rm.addFlight(id, Integer.parseInt(params[0]), Integer.parseInt(params[1]), Integer.parseInt(params[2]));
 			} else if (opName.equals("newcar")) {
 				rm.addCars(id, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
 			} else if (opName.equals("newroom")) {
@@ -54,8 +54,11 @@ public class Operation {
 				rm.reserveRoom(id, Integer.parseInt(params[0]),params[1]);
 			}
 		}
-		catch (DeadlockException | InvalidTransactionException e) {
-			// TODO Auto-generated catch block
+		catch (InvalidTransactionException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		catch (DeadlockException e) {
 			e.printStackTrace();
 		}
 	}

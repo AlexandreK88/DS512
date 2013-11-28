@@ -122,6 +122,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
+			stableStorage.memInit(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -918,7 +919,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		crashAfterDecision = false;		
 
 		transactionToCrash = transactionId;
-
+		System.out.println("Ok, I am to crash at some point. =(");
 		switch(option){
 		case 1:
 			crashBeforeVoting = true;

@@ -1,4 +1,12 @@
-1,newcustomer,555
-1,newflight,1,23,45
-1,reserveflight,555,flight-1
-1, canCommit, YES1,commit,B
+1,newcustomer,123
+1, canCommit, YES 
+1,commit,B
+2,newflight,5,78,78
+2,newflight,5,78,78
+2,commit,A
+4,reserveflight,123,flight-5
+4, canCommit, YES 
+4,commit,B
+5,newflight,1,45,56
+5, canCommit, YES 
+6,newflight,2,78,23

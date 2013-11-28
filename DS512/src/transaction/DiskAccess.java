@@ -45,10 +45,10 @@ public class DiskAccess {
 		System.out.println(locationA + " is location.");
 		System.out.println(PATHING);
 		File file = new File(locationA);
-		boolean readDataA = !file.createNewFile();
+		file.createNewFile();
 		recordA = new RAFList("A", locationA, "rwd");
 		file = new File(locationB);
-		boolean readDataB = file.createNewFile();
+		file.createNewFile();
 		recordB = new RAFList("B", locationB, "rwd");
 		file = new File(locationLog);
 		file.createNewFile();
@@ -57,8 +57,11 @@ public class DiskAccess {
 		recordB.setNext(recordA);
 		masterRec = getMasterRecord();
 		workingRec = masterRec.getNext();
+	}
+
+	public void memInit(ResourceManager rm) {
 		try {
-			if (masterRec == recordA && readDataA) {
+			if (masterRec == recordA) {
 				initializeMemory(recordA, rm);
 			} else {
 				initializeMemory(recordB, rm);
@@ -69,7 +72,7 @@ public class DiskAccess {
 			e.printStackTrace();
 		}
 	}
-
+	
 	public void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
 		String operation = id + "," + op.getOpName();
@@ -349,18 +352,10 @@ public class DiskAccess {
 				while (line != null && line != "") {
 					line = line.trim();
 					String[] lineDetails = line.split(",");
-					/*if(lineDetails[1].equals("start")){
-						starts.add(Integer.parseInt(lineDetails[0]));
-					}else*/ if(lineDetails[1].equals("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
+					if(lineDetails[1].equals("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
 						commits.add(Integer.parseInt(lineDetails[0]));
 					}		
 				}
-				/*for(Integer txn: starts){
-					if(!commits.contains(txn)){						
-						ongoings.add(new Transaction(txn));
-					}
-				}*/
-				
 				stateLog.seek(0);
 				
 				try {
@@ -373,12 +368,16 @@ public class DiskAccess {
 					String[] lineDetails = line.split(",");
 					if(!commits.contains(Integer.parseInt(lineDetails[0]))){
 						String[] params = new String[lineDetails.length-2];
-						for(int i = 0; i < lineDetails.length; i++){
-							params[i] = lineDetails[i+2];
+						for(int i = 0; i < lineDetails.length - 2; i++){
+							params[i] = lineDetails[i+2].trim();
 						}
 						Operation op = new Operation(lineDetails[1], params, rm);
 						//ongoings.get(Integer.parseInt(lineDetails[0])).addOp(op);
-						op.doOp(Integer.parseInt(lineDetails[0]));
+						try {
+							op.doOp(Integer.parseInt(lineDetails[0].trim()));
+						} catch (InvalidTransactionException e) {
+							System.out.println("Ok, An aborted transaction was attempted.");
+						}
 					}
 					try {
 						line = stateLog.readLine();

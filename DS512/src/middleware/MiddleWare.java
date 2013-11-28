@@ -124,7 +124,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			// create a new Server object
 			obj = new MiddleWare();
-			transactionManager = new TransactionManager(rmFlight, rmCar, rmRoom, obj);
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -141,7 +140,22 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-		obj.initiateFromDisk();
+		
+		try {
+			transactionManager = new TransactionManager();
+			obj.initiateFromDisk();
+			transactionManager.initializeTMFromDisk(rmFlight, rmCar, rmRoom, obj);
+		} catch (RemoteException e2) {
+			System.out.println("God damnit...");
+			e2.printStackTrace();
+		} catch (TransactionAbortedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		while(true){
 			try {
 				if (stdin.ready()) {
@@ -201,6 +215,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	private void initiateFromDisk() {
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
+			stableStorage.memInit(this);
 			lockManager.UnlockAll(0);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -283,6 +298,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.WRITE)){
 				rmList.add(rmFlight);
 				transactionManager.enlist(id, rmList);
+				System.out.println("Enlisted transaction... Now ready to attempt add flight");
 				rmList.clear();
 				return rmFlight.addFlight(id,flightNum,flightSeats,flightPrice);
 			}
@@ -292,6 +308,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println(e.getMessage());
 			throw e;
 		}catch(RemoteException e){
+			System.out.println("Connection with flight failed, retrying...");
 			reconnect("flight");
 			abort(id);
 			return false;
@@ -1117,13 +1134,28 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return newTr;
 	}
 
-	public boolean commit(int transactionId) throws RemoteException{
-		if(transactionManager.commit(transactionId)){
+	public boolean commit(int transactionId) throws InvalidTransactionException, TransactionAbortedException {
+		try {
+		if(transactionManager.commit(transactionId, this)){
 			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
 			lockManager.UnlockAll(transactionId);
 			return false;
+		}
+		} catch(RemoteException e){
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			return commit(transactionId);
+		} catch (TransactionAbortedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
+		} catch (InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
 		}
 	}
 
@@ -1197,8 +1229,20 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	// Might be from a client that just didn't want to commit the transaction.
 	// The 2 cases will need to be treated separately.
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
-		transactionManager.abort(transactionId);
-		System.out.println("Transaction " + transactionId + " has ABORTED.");
+		try {
+			transactionManager.abort(transactionId);
+			System.out.println("Transaction " + transactionId + " has ABORTED.");
+		} catch (RemoteException e) {
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			abort(transactionId);
+		}
 	}
 
 	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
@@ -1249,6 +1293,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	public boolean crash(String which, int transactionId, int option) throws RemoteException{
+		System.out.println("Let the fun begin <=D");
 		if(which.equalsIgnoreCase("flight")){
 			rmFlight.neatCrash(transactionId, option);			
 			return true;
@@ -1302,7 +1347,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		stableStorage.logOperation(id, op);
 	}
 
-	private void reconnect(String rm){
+	public void reconnect(String rm){
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		try {
 			if(rm.equals("flight")){
 				Registry registry1 = LocateRegistry.getRegistry(server1, port1);
@@ -1311,7 +1362,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					System.out.println("Successful");
 					System.out.println("Reconnected to RMFlight");
 				}
-			}else if(rm.equals("flight")){
+			}else if(rm.equals("car")){
 				Registry registry2 = LocateRegistry.getRegistry(server2, port2);
 				rmCar = (ResourceManager)registry2.lookup("Car21ResourceManager");
 				if(rmCar!=null){

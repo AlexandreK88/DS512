@@ -1,7 +1,41 @@
-1, Flight21ResourceManager
-1, Car21ResourceManager
-1, Room21ResourceManager
-1, Resort21ResourceManager
+1,StartedTID
+1, rm, Flight21ResourceManager
+1, rm, Car21ResourceManager
+1, rm, Room21ResourceManager
+1, rm, Resort21ResourceManager
+1,Start2PC
+1,vote,Flight21ResourceManager,true
+1,vote,Car21ResourceManager,true
+1,vote,Room21ResourceManager,true
+1,vote,Resort21ResourceManager,true
+1,decision,YES
+1,commitconfirm,Flight21ResourceManager
+1,commitconfirm,Car21ResourceManager
+1,commitconfirm,Room21ResourceManager
+1,commitconfirm,Resort21ResourceManager
 1, Commit
-2, Flight21ResourceManager
-2, Abort
+2,StartedTID
+2, rm, Flight21ResourceManager
+2,Start2PC
+2,vote,Flight21ResourceManager,true
+2,decision,YES
+3,StartedTID
+1, Commit
+2,decision,YES
+2,commitconfirm,Flight21ResourceManager
+2, Commit
+4,StartedTID
+4, rm, Flight21ResourceManager
+4,Start2PC
+4,vote,Flight21ResourceManager,true
+4,decision,YES
+4,commitconfirm,Flight21ResourceManager
+4, Commit
+5,StartedTID
+5, rm, Flight21ResourceManager
+5,Start2PC
+5,vote,Flight21ResourceManager,true
+5,decision,YES
+6,StartedTID
+6, rm, Flight21ResourceManager
+3, Abort

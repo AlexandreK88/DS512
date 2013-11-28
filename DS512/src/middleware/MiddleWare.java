@@ -144,9 +144,15 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		
 		try {
+			System.out.println("MW generated, starting TM initialization...");
 			transactionManager = new TransactionManager();
+			System.out.println("TM initialized. Starting MW initiation from disk...");
 			obj.initiateFromDisk();
+			System.out.println("**************** MW disk init completed. *********************");
+			System.out.println("**************** TM disk init started... *********************");
 			transactionManager.initializeTMFromDisk(rmFlight, rmCar, rmRoom, obj);
+			System.out.println("**************** TM disk init completed. *********************");
+			
 		} catch (RemoteException e2) {
 			System.out.println("God damnit...");
 			e2.printStackTrace();
@@ -157,7 +163,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		lockManager = new LockManager();
 		while(true){
 			try {
 				if (stdin.ready()) {
@@ -215,10 +221,16 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	private void initiateFromDisk() {
+		System.out.println("MW retrieving disk data...");
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
+			System.out.println("MW disk data retrieved, setting data into memory.");
 			stableStorage.memInit(this);
+			System.out.println("Setting MW data into memory completed, unlocking all 0 locks.");
 			lockManager.UnlockAll(0);
+			System.out.println("Reading MW stored log...");
+			stableStorage.readLog(this);
+			System.out.println("MW log read completed.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -474,9 +486,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
-				rmList.add(rmFlight);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmFlight.queryFlight(id,flightNum);
 			}
 			return 0;
@@ -503,9 +512,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
-				rmList.add(rmFlight);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmFlight.queryFlightPrice(id,flightNum);
 			}
 			return -1;
@@ -533,9 +539,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
-				rmList.add(rmRoom);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmRoom.queryRooms(id,location);
 			}
 			return 0;
@@ -562,9 +565,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
-				rmList.add(rmRoom);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmRoom.queryRoomsPrice(id,location);
 			}
 			return -1;
@@ -591,9 +591,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
-				rmList.add(rmCar);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmCar.queryCars(id,location);
 			}
 			return 0;
@@ -621,9 +618,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
-				rmList.add(rmCar);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmCar.queryCarsPrice(id,location);
 			}
 			return -1;
@@ -1190,8 +1184,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(transactionId, dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 				}
@@ -1203,8 +1201,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(transactionId, dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;
@@ -1233,6 +1235,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		try {
 			transactionManager.abort(transactionId);
+			lockManager.UnlockAll(transactionId);
 			System.out.println("Transaction " + transactionId + " has ABORTED.");
 		} catch (RemoteException e) {
 			try {
@@ -1256,7 +1259,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				}
 			}
 		}
-		lockManager.UnlockAll(transactionId);
 		String operation = transactionId + ", abort\n";
 		try{
 			stableStorage.writeToLog(operation);
@@ -1316,6 +1318,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			neatCrash(transactionId, option);		
 			return true;
 		}else{
+			System.out.println("Dude, crash who?");
 			return false;
 		}
 	}
@@ -1324,7 +1327,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		transactionManager.neatCrash(transactionId, option);
 	}
 
-	private String convertItemLine(int id, String dataName) {
+	
+	private String convertItemLine(String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
 		if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
@@ -1389,6 +1393,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		} catch (Exception e) {    
 			System.err.println("Client exception: " + e.toString());
 		}
+	}
+	
+	public void unlockAll(int i) {
+		lockManager.UnlockAll(i);
 	}
 
 

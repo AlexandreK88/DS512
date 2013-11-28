@@ -1,9 +1,7 @@
 1,newcustomer,123
 1, canCommit, YES 
 1,commit,B
-2,newroom,bob,56,23
-2, canCommit, YES 
-2,commit,A
-3,reserveroom,123,room-bob
-3, canCommit, YES 
-3,commit,B
+4,newroom,bob,78,56
+4, canCommit, YES 
+4,commit,A
+5, abort

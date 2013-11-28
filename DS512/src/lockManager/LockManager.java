@@ -261,7 +261,7 @@ public class LockManager
 					if (dataObj2.getLockType() == DataObj.WRITE) {
 						// transaction is requesting a READ lock and some other transaction
 						// already has a WRITE lock on it ==> conflict
-						System.out.println("Want READ, someone has WRITE");
+						System.out.println("Want READ, someone has WRITE " + dataObj.getXId() + " " + dataObj2.getXId());
 						return true;
 					}
 					else {
@@ -271,7 +271,7 @@ public class LockManager
 				} else if (dataObj.getLockType() == DataObj.WRITE) {
 					// transaction is requesting a WRITE lock and some other transaction has either
 					// a READ or a WRITE lock on it ==> conflict
-					System.out.println("Want WRITE, someone has READ or WRITE");
+					System.out.println("Want WRITE, someone has READ or WRITE" + dataObj.getXId() + " " + dataObj2.getXId());
 					return true;
 				}
 			}

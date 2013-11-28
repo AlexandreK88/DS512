@@ -46,6 +46,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private static AtomicBoolean crashNow;
 
 	public static void main(String args[]) {
+		System.out.println("I STARTED I STARTED");
 		// Figure out where server is running
 		server = "localhost";
 		port = 1099;
@@ -126,6 +127,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
 			stableStorage.memInit(this);
+			stableStorage.readLog(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -304,6 +306,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);			
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 			}
@@ -349,6 +352,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 			}
@@ -394,6 +398,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 			}
@@ -509,6 +514,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			return true;
 		} else {
 			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+			addOperation(id, null);
 			return false;
 		} // else
 			}
@@ -520,6 +526,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		if ( cust == null ) {
 			Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+			addOperation(id, null);
 			return false;
 		} else {            
 			// Increase the reserved numbers of all reservable items which the customer reserved.
@@ -577,6 +584,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 			}
@@ -592,6 +600,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 
@@ -607,6 +616,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			addOperation(id, op);
 			return true;
 		} else {
+			addOperation(id, null);
 			return false;
 		}
 
@@ -825,7 +835,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// if t's status is still ongoing.
 				// Add vote yes to log for trxn t.
 				String operation = transactionId + ", canCommit, YES \n";
-				System.out.println("Yes, I do commit <3");
+				System.out.println("Vote yesh for t" + transactionId);
 				try {
 					stableStorage.writeToLog(operation);
 				} catch (IOException e) {
@@ -838,7 +848,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		if(crashAfterVoting && transactionToCrash == transactionId){
 			crashNow.set(true);
-		}	
+		}
+		if (!canCommit) {
+			System.out.println("Vote nope for t" + transactionId);
+		}
 		return canCommit;
 	}
 
@@ -854,8 +867,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;
@@ -867,8 +884,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;
@@ -955,6 +976,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == id) {
+					if (op == null) {
+						t.addOp(op);
+						return;
+					}
 					t.addOp(op);
 					stableStorage.logOperation(id, op);
 					return;
@@ -962,7 +987,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			}
 		}
 		Transaction t = new Transaction(id);
-		t.addOp(op);
+		if (op != null) {
+			t.addOp(op);
+		}
 		synchronized(ongoingTransactions) {
 			ongoingTransactions.add(t);
 		}

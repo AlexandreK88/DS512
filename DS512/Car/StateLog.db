@@ -1,6 +1,7 @@
 1,newcustomer,123
+1,newcar,bob,78,56
 1, canCommit, YES 
 1,commit,B
-2,newcar,bob,78,89
-2, canCommit, YES 
-2,commit,A
+3,reservecar,123,car-bob
+3, canCommit, YES 
+3,commit,A

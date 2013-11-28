@@ -60,6 +60,7 @@ public class DiskAccess {
 	}
 
 	public void memInit(ResourceManager rm) {
+		System.out.println("RM memory initialization...");
 		try {
 			if (masterRec == recordA) {
 				initializeMemory(recordA, rm);
@@ -75,23 +76,31 @@ public class DiskAccess {
 	
 	public void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
-		String operation = id + "," + op.getOpName();
-		for (String param: op.getParameters()){
-			operation +=  "," + param;
+		String operation = "";
+		if (op == null ) {
+			operation = id + ",failed";
+		} else {
+			operation = id + "," + op.getOpName();
+			for (String param: op.getParameters()){
+				operation +=  "," + param;
+			}
 		}
 		operation += "\n";
 		synchronized(stateLog){
 			try{
+				stateLog.seek(stateLog.length());
 				stateLog.writeBytes(operation);
 				System.out.println("Writing op " + operation);
 				//write_stateLog.newLine();
 			}catch(Exception e){
+				e.printStackTrace();
 				System.out.println("Some god damn exception");
 			}
 		}		
 	}
 
 	public void writeToLog(String operation) throws IOException {
+		stateLog.seek(stateLog.length());
 		stateLog.writeBytes(operation);
 	}
 
@@ -143,7 +152,7 @@ public class DiskAccess {
 				System.out.println("Log file is not empty but has no commit, master record is A");
 				return recordA;
 			}else{
-				if(opElements[2].equalsIgnoreCase("A")){
+				if(lastCommit[2].equalsIgnoreCase("A")){
 					System.out.println("Commit found, master record is A");
 					// Needs to rewrite record B, as it could have been corrupted on a crash.
 					return recordA;
@@ -280,10 +289,10 @@ public class DiskAccess {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-		readLog(rm);
 	}
 	
 	public LinkedList<Transaction> readLog(){
+		System.out.println("TM reading stored log...");
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
 		LinkedList<Integer> completed = new LinkedList<Integer>();
 			String line = "";
@@ -294,11 +303,10 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
+				System.out.println("TM parsing log line for commit or abort...");
 				line = line.trim();
 				String[] lineDetails = line.split(",");
-				System.out.println("Started");
 				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
-					System.out.println(lineDetails[0] + " is already committed.");
 					completed.add(Integer.parseInt(lineDetails[0]));
 				}
 				try {
@@ -322,8 +330,11 @@ public class DiskAccess {
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
+				System.out.println("TM parsing log line for not committed or aborted...");
 				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
+					System.out.println("Line is not part of committed transaction... ID: " + lineDetails[0]);
 					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
+						System.out.println("Transaction " + lineDetails[0] + " was ongoing.");
 						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
 					} else {
 						for (Transaction t: ongoings) {
@@ -333,17 +344,17 @@ public class DiskAccess {
 							}
 						}
 					}
-					try {
-						line = stateLog.readLine();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}	
+				}
+				try {
+					line = stateLog.readLine();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		return ongoings;
 	}
 
-	private	 void readLog(ResourceManager rm){
+	public	 void readLog(ResourceManager rm){
 		if(!isRM){
 			return;
 		}else{
@@ -386,6 +397,7 @@ public class DiskAccess {
 							System.out.println("Transaction executed with id > 0.");
 						} catch (InvalidTransactionException e) {
 							System.out.println("Ok, An aborted transaction was attempted.");
+							rm.abort(Integer.parseInt(lineDetails[0].trim()));
 						}
 					}
 					try {
@@ -467,11 +479,22 @@ public class DiskAccess {
 			while(line != null && line != ""){
 				workingRec.getFileAccess().writeBytes(line);
 				line = masterRec.getFileAccess().readLine();
-			}		
+			}
+			workingRec.getFileAccess().setLength(masterRec.getFileAccess().length());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 	}
 
+	public void deleteData(String dataName) {
+		if (!isRM) {
+			return;
+		}
+		int line = workingRec.getLine(dataName);
+		System.out.println("Line is: " + line);
+		workingRec.deleteLine(line);
+	}
+	
 }

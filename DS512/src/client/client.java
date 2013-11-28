@@ -800,8 +800,11 @@ public class client
 					obj.wrongNumber();
 					break;
 				}
-				rm.commit(transactionID);
-				System.out.println("Transaction with id " + transactionID + " committed successfully.");
+				if (rm.commit(transactionID)) {
+					System.out.println("Transaction with id " + transactionID + " committed successfully.");
+				} else {
+					System.out.println("Transaction with id " + transactionID + " failed to commit.");
+				}
 				transactionID = -1;
 				break;
 			case 25: //abort

@@ -83,13 +83,18 @@ public class TransactionManager {
 				} else if (lineDetails[1].trim().equalsIgnoreCase("Start2PC")) {
 					started2PC = true;
 				} else if (lineDetails[1].trim().equalsIgnoreCase("vote")) {
+					System.out.print("Vote from " + lineDetails[2].trim());
 					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
+						System.out.println(" which is flight.");
 						votesReceived.add(flight);
 					} else if (lineDetails[2].trim().equalsIgnoreCase(car.getName())) {
+						System.out.println(" which is car.");
 						votesReceived.add(car);
 					} else if (lineDetails[2].trim().equalsIgnoreCase(room.getName())) {
+						System.out.println(" which is room.");
 						votesReceived.add(room);
 					} else if (lineDetails[2].trim().equalsIgnoreCase(mw.getName())) {
+						System.out.println(" which is middleware.");
 						votesReceived.add(mw);
 					}
 					if (lineDetails[3].trim().equalsIgnoreCase("false")) {
@@ -124,13 +129,17 @@ public class TransactionManager {
 			} else if (votesReceived.isEmpty()) {
 				// No votes received, but the vote started
 				// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
+				System.out.println("No votes received.");
 				commit(t.getID(), mw);
 			} else if (!decided) {
+				System.out.println("some votes received.");
 				// Votes received, but not all.
 				// Abort if abort vote received, simply keep on asking votes otherwise.
 				if (abortVoteReceived) {
+					System.out.println("Last vote was to abort");
 					abort(t.getID());
 				} else {
+					System.out.println("Run the rest of the votes.");
 					boolean canCommit = true;
 					for (ResourceManager rm: t.getRMList()) {
 						if (!votesReceived.contains(rm)) {
@@ -142,7 +151,6 @@ public class TransactionManager {
 								} catch (IOException e1) {
 									e1.printStackTrace();
 								}
-								// Implement a crash here. Crash after some but not all votes
 								if (!canCommit){
 									break;
 								}
@@ -171,8 +179,6 @@ public class TransactionManager {
 				// Some decisions received, but not all.
 				if (decision) {
 					// commit
-					
-					// Craa-aasssh.
 					for (ResourceManager rm: t.getRMList()) {
 						if (decisionConfirmed.contains(rm)) {
 							continue;
@@ -190,15 +196,11 @@ public class TransactionManager {
 						} catch (IOException e1) {
 							e1.printStackTrace();
 						}
-						// KRRRRRSSSHSHHHSHH. Yes, you read well. CRASH. 
 					}
 					try {
 						// All decisions are sent. Write to log.
 						System.out.println("Transaction " + t.getID() + " committed.");
 						stableStorage.writeToLog(Integer.toString(t.getID()) + ", Commit\n");
-						// Boom! Boom! Boom! Boom! I want you in my crash!...
-						// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
-						// It's just another crash.
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

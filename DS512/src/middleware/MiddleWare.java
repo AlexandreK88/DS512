@@ -486,9 +486,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
-				rmList.add(rmFlight);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmFlight.queryFlight(id,flightNum);
 			}
 			return 0;
@@ -515,9 +512,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Flight"+flightNum, LockManager.READ)){
-				rmList.add(rmFlight);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmFlight.queryFlightPrice(id,flightNum);
 			}
 			return -1;
@@ -545,9 +539,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
-				rmList.add(rmRoom);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmRoom.queryRooms(id,location);
 			}
 			return 0;
@@ -574,9 +565,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Room"+location, LockManager.READ)){
-				rmList.add(rmRoom);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmRoom.queryRoomsPrice(id,location);
 			}
 			return -1;
@@ -603,9 +591,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
-				rmList.add(rmCar);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmCar.queryCars(id,location);
 			}
 			return 0;
@@ -633,9 +618,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try{
 			LinkedList<ResourceManager> rmList = new LinkedList<ResourceManager>();
 			if(lockManager.Lock(id, "Car"+location, LockManager.READ)){
-				rmList.add(rmCar);
-				transactionManager.enlist(id, rmList);
-				rmList.clear();
 				return rmCar.queryCarsPrice(id,location);
 			}
 			return -1;

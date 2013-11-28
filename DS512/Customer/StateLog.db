@@ -1,6 +1,3 @@
-2,newcustomer,123
-2,canCommit,YES 
-2,commit,B
-6,newcustomer,159
-6,canCommit,YES 
-6,commit,A
+1,newcustomer,123
+1,canCommit,YES 
+1,commit,B

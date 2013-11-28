@@ -817,15 +817,12 @@ public class client
 				System.out.println("The interface does not support this command.");
 				break;
 			}//end of switch
-		}catch(RemoteException e){
-			
+		}catch(RemoteException e){			
 			try{
 				Thread.sleep(2000);
-				
-				// get a reference to the rmiregistry
+				System.out.println("Trying to reconnect...");
 				Registry registry = LocateRegistry.getRegistry(server, port);
-				// get the proxy and the remote reference by rmiregistry lookup
-				rm = (ResourceManager) registry.lookup("Resort21ResourceManager");
+				rm = (ResourceManager)registry.lookup("Resort21ResourceManager");				
 				if(rm!=null){
 					System.out.println("Successful");
 					System.out.println("Connected to RM");

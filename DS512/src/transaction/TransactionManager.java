@@ -273,8 +273,7 @@ public class TransactionManager {
 		}
 	}
 
-	public boolean prepare(Transaction t) /*throws RemoteException, 
-	TransactionAbortedException, InvalidTransactionException*/{
+	public boolean prepare(Transaction t){
 		boolean canCommit = true;
 		// Write to log started TID's vote request
 		String prepareStarted = t.getID() + ",Start2PC";

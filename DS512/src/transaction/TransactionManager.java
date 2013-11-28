@@ -280,7 +280,10 @@ public class TransactionManager {
 	}
 
 
-	public boolean prepare(Transaction t) throws RemoteException, TransactionAbortedException, InvalidTransactionException{
+	public boolean prepare(Transaction t, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException{
+		if(crashBeforeSendingRequest && transactionToCrash == t.getID()){
+			mw.selfDestruct();
+		}
 		boolean canCommit = true;
 		// Write to log started TID's vote request
 		String prepareStarted = t.getID() + ",Start2PC\n";
@@ -288,6 +291,9 @@ public class TransactionManager {
 			stableStorage.writeToLog(prepareStarted);
 		} catch (IOException e1) {
 			e1.printStackTrace();
+		}
+		if(crashAfterSendingRequest && transactionToCrash == t.getID()){
+			mw.selfDestruct();
 		}
 		for (ResourceManager rm: t.getRMList()) {
 			canCommit = rm.canCommit(t.getID());
@@ -297,22 +303,25 @@ public class TransactionManager {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			// Implement a crash here. Crash after some but not all votes
+			if(crashAfterSomeReplies && transactionToCrash == t.getID()){
+				mw.selfDestruct();
+			}
 			if (!canCommit){
 				break;
 			}
 		}
-		// Crash here. Crash after all votes but no decision.
+		if(crashAfterAllReplies && transactionToCrash == t.getID()){
+			mw.selfDestruct();
+		}
 		return canCommit;
 	}
 
 	public boolean commit(int tid, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
 				// Or here.
-				if(prepare(t)){
+				if(prepare(t, mw)){
 					doCommit(t, mw);
 					return true;
 				} else{

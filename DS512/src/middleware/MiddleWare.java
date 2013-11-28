@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -38,12 +39,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	// For crash control.
 	static BufferedReader stdin;
 
-	static String server1 = "localhost";
-	static String server2 = "localhost"; 
-	static String server3 = "localhost";
-	static int port1 = 1099;
-	static int port2 = 1099;
-	static int port3 = 1099;
+	static String server1;
+	static String server2; 
+	static String server3;
+	static int port1;
+	static int port2;
+	static int port3;
+	static int portMW;
 
 	private static int SHUTDOWN_TIMEOUT = 300000;
 	private static int TIME_TO_LIVE = 200000;
@@ -58,7 +60,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		port1 = 1099;
 		port2 = 1099;
 		port3 = 1099;
-		int portMW = 1099;
+		portMW = 1099;
 		lockManager = new LockManager();
 		MiddleWare obj = null;
 		name = "Resort21ResourceManager";
@@ -1269,6 +1271,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		try {
 			stdin.close();
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+		Registry registry = LocateRegistry.getRegistry(portMW);
+		// Defining the RM's task
+			registry.unbind(name);
+		} catch (RemoteException | NotBoundException e) {
 			e.printStackTrace();
 		}
 		System.exit(1);

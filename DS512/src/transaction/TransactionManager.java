@@ -47,12 +47,17 @@ public class TransactionManager {
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
 		transactionToCrash = 0;
+		System.out.println("TM initialized.");
 	}
 
 	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+		System.out.println("Reading TM's log data...");
 		ongoingTransactions = stableStorage.readLog();
+		System.out.println("Reading TM's log data done.");
+		System.out.println("Initiating transactions...");
 		while (!ongoingTransactions.isEmpty()) {
 			Transaction t = ongoingTransactions.getFirst();
+			System.out.println("Initiating transaction " + t.getID());
 			LinkedList<String> logLines = t.getLogLines();
 			boolean started2PC = false;
 			boolean abortVoteReceived = false;
@@ -61,6 +66,7 @@ public class TransactionManager {
 			LinkedList<ResourceManager> votesReceived = new LinkedList<ResourceManager>();
 			LinkedList<ResourceManager> decisionConfirmed = new LinkedList<ResourceManager>();
 			for (String line: logLines) {
+				System.out.println("Parsing log lines data to setup t" + t.getID());
 				String[] lineDetails = line.split(",");
 				if (lineDetails[1].trim().equalsIgnoreCase("rm")) {
 					if (lineDetails[2].trim().equalsIgnoreCase(flight.getName())) {
@@ -108,6 +114,7 @@ public class TransactionManager {
 					}					
 				}
 			}
+			System.out.println("Completed transaction " + t.getID() + " setup. Initiating recovery...");
 			// If the 2PC didn't start, transaction can be aborted.
 			if (!started2PC) {
 				abort(t.getID());
@@ -219,9 +226,8 @@ public class TransactionManager {
 					}
 				}
 			}
-		}
-		for (int i = 0; i < latestTransaction.get(); i++ ) {
-			mw.unlockAll(i);
+			System.out.println("Transaction " + t.getID() + " recovered and committed/aborted.");
+			mw.unlockAll(t.getID());
 		}
 	}
 

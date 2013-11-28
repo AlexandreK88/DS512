@@ -5,6 +5,8 @@ import java.rmi.RemoteException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import middleware.MiddleWare;
+
 import server.resInterface.*;
 
 
@@ -47,7 +49,7 @@ public class TransactionManager {
 		transactionToCrash = 0;
 	}
 
-	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, ResourceManager mw) throws RemoteException {
+	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
 		ongoingTransactions = stableStorage.readLog();
 		LinkedList<Transaction> toBeRemoved = new LinkedList<Transaction>();
 		for (Transaction t: ongoingTransactions) {
@@ -112,7 +114,7 @@ public class TransactionManager {
 			} else if (votesReceived.isEmpty()) {
 				// No votes received, but the vote started
 				// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
-				commit(t.getID());
+				commit(t.getID(), mw);
 			} else if (!decided) {
 				// Votes received, but not all.
 				// Abort if abort vote received, simply keep on asking votes otherwise.
@@ -142,7 +144,7 @@ public class TransactionManager {
 						}
 					}
 					if (canCommit) {
-						doCommit(t);
+						doCommit(t, mw);
 					} else{
 						abort(t.getID());
 						// Should complete abort here so log can be updated accordingly.
@@ -158,7 +160,7 @@ public class TransactionManager {
 				// No decisions sent.
 				if (decision) {
 					// commit
-					doCommit(t);
+					doCommit(t, mw);
 				} else {
 					// abort
 					abort(t.getID());
@@ -304,14 +306,14 @@ public class TransactionManager {
 		return canCommit;
 	}
 
-	public boolean commit(int tid) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+	public boolean commit(int tid, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
 		// Implement a crash here. Crash before sending vote req.
 		for (int i=0; i < ongoingTransactions.size(); i++) {
 			Transaction t = ongoingTransactions.get(i);
 			if (t.getID() == tid) {
 				// Or here.
 				if(prepare(t)){
-					doCommit(t);
+					doCommit(t, mw);
 					return true;
 				} else{
 					String voteDecision = t.getID() + ",NOOOOOOO\n";
@@ -328,7 +330,7 @@ public class TransactionManager {
 		return false;	
 	}
 
-	private void doCommit(Transaction t) throws RemoteException {
+	private void doCommit(Transaction t, MiddleWare mw) throws RemoteException {
 		ongoingTransactions.remove(t);
 		String voteDecision = t.getID() + ",decision,YES\n";
 		try {
@@ -338,12 +340,7 @@ public class TransactionManager {
 		}
 		// Craa-aasssh.
 		for (ResourceManager rm: t.getRMList()) {
-			try {
-				rm.doCommit(t.getID());
-			} catch (RemoteException | TransactionAbortedException
-					| InvalidTransactionException e) {
-				e.printStackTrace();
-			}
+			attemptIndividualCommit(rm, mw, t);
 			// Write to log. Confirm decision sent to rm.
 			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName() + "\n";
 			try {
@@ -361,6 +358,26 @@ public class TransactionManager {
 			// http://www.youtube.com/watch?v=llyiQ4I-mcQ yes, the Vengaboys.
 			// It's just another crash.
 		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void attemptIndividualCommit(ResourceManager rm, MiddleWare mw,
+			Transaction t) {
+		try {
+			rm.doCommit(t.getID());
+		} catch (RemoteException e) {
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			mw.reconnect("flight");
+			mw.reconnect("car");
+			mw.reconnect("room");
+			attemptIndividualCommit(rm, mw, t);
+		} catch (TransactionAbortedException | InvalidTransactionException e) {
 			e.printStackTrace();
 		}
 	}

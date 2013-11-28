@@ -148,6 +148,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		} catch (RemoteException e2) {
 			System.out.println("God damnit...");
 			e2.printStackTrace();
+		} catch (TransactionAbortedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 		while(true){
@@ -1041,9 +1047,9 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		return newTr;
 	}
 
-	public boolean commit(int transactionId) {
+	public boolean commit(int transactionId) throws InvalidTransactionException, TransactionAbortedException {
 		try {
-		if(transactionManager.commit(transactionId)){
+		if(transactionManager.commit(transactionId, this)){
 			lockManager.UnlockAll(transactionId);
 			return true;
 		}else{
@@ -1051,11 +1057,18 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			return false;
 		}
 		} catch(RemoteException e){
-			System.out.println("How in the world...");
 			reconnect("flight");
 			reconnect("car");
 			reconnect("room");
 			return commit(transactionId);
+		} catch (TransactionAbortedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
+		} catch (InvalidTransactionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw e;
 		}
 	}
 
@@ -1129,8 +1142,20 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	// Might be from a client that just didn't want to commit the transaction.
 	// The 2 cases will need to be treated separately.
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
-		transactionManager.abort(transactionId);
-		System.out.println("Transaction " + transactionId + " has ABORTED.");
+		try {
+			transactionManager.abort(transactionId);
+			System.out.println("Transaction " + transactionId + " has ABORTED.");
+		} catch (RemoteException e) {
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			reconnect("flight");
+			reconnect("car");
+			reconnect("room");
+			abort(transactionId);
+		}
 	}
 
 	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
@@ -1235,7 +1260,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		stableStorage.logOperation(id, op);
 	}
 
-	private void reconnect(String rm){
+	public void reconnect(String rm){
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e1) {

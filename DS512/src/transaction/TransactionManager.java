@@ -146,13 +146,6 @@ public class TransactionManager {
 						doCommit(t, mw);
 					} else{
 						abort(t.getID());
-						// Should complete abort here so log can be updated accordingly.
-						String voteDecision = t.getID() + ",NOOOOOOO\n";
-						try {
-							stableStorage.writeToLog(voteDecision);
-						} catch (IOException e1) {
-							e1.printStackTrace();
-						}
 					}
 				}
 			} else if (decisionConfirmed.isEmpty()) {
@@ -227,6 +220,9 @@ public class TransactionManager {
 				}
 			}
 		}
+		for (int i = 0; i < latestTransaction.get(); i++ ) {
+			mw.unlockAll(i);
+		}
 	}
 
 	public int start() {
@@ -289,6 +285,14 @@ public class TransactionManager {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+		if (crashAfterSendingRequest) {
+			System.out.println("SOooon... SOOOOON! MUHUHAHHAHA!");
+		}
+		if (t.getID() == transactionToCrash) {
+			System.out.println("VERY SOOOONN HAHAHAHAHAHAH NOOOOOOW!");
+		} else {
+			System.out.println("NOT YET, BUT SOON." + t.getID() + " and " + transactionToCrash);
+		}
 		if(crashAfterSendingRequest && transactionToCrash == t.getID()){
 			mw.selfDestruct();
 		}
@@ -322,12 +326,6 @@ public class TransactionManager {
 					doCommit(t, mw);
 					return true;
 				} else{
-					String voteDecision = t.getID() + ",NOOOOOOO\n";
-					try {
-						stableStorage.writeToLog(voteDecision);
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
 					abort(t.getID());
 					return false;
 				}
@@ -396,6 +394,13 @@ public class TransactionManager {
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
+					// Should complete abort here so log can be updated accordingly.
+					String voteDecision = t.getID() + ",NOOOOOOO\n";
+					try {
+						stableStorage.writeToLog(voteDecision);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
 					for (ResourceManager rm: t.getRMList()) {
 						try {
 							rm.doAbort(tid);

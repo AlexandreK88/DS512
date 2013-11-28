@@ -43,7 +43,7 @@ public class RAFList {
 		int i;
 		String line = "";
 		try {
-			cur.seek(new Long(0));
+			cur.seek(0);
 			line = cur.readLine();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -66,21 +66,36 @@ public class RAFList {
 		try {
 			cur.writeBytes(itemToWrite);
 		} catch(IOException e){
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
 	// Rewrite line in database with information from RMItem
 	public void rewriteLine(int line, String itemToRewrite) {
-		// TODO Auto-generated method stub
 		// set itemToRewrite in readableItemCSVForm
 		try {
 			cur.seek(new Long(line*TransactionManager.LINE_SIZE));
 			cur.writeBytes(itemToRewrite);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+	}
+	
+	public void deleteLine(int line) {
+		try {
+			System.out.println("Deleting line " + line);
+			Long lineToRewrite = new Long(line*TransactionManager.LINE_SIZE);
+			boolean isLastLine = lineToRewrite == cur.length() - TransactionManager.LINE_SIZE;
+			cur.seek(cur.length() - TransactionManager.LINE_SIZE);
+			String lastLine = cur.readLine();
+			cur.setLength(cur.length() - TransactionManager.LINE_SIZE);
+			if (!isLastLine) {
+				cur.seek(lineToRewrite);
+				cur.writeBytes(lastLine);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+				
 		}
 	}
 }

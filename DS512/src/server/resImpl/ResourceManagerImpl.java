@@ -126,6 +126,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
 			stableStorage.memInit(this);
+			stableStorage.readLog(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -854,8 +855,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;
@@ -867,8 +872,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;

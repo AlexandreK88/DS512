@@ -157,7 +157,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		lockManager = new LockManager();
 		while(true){
 			try {
 				if (stdin.ready()) {
@@ -219,6 +219,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			stableStorage = new DiskAccess(this, "Customer");
 			stableStorage.memInit(this);
 			lockManager.UnlockAll(0);
+			stableStorage.readLog(this);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -1190,8 +1191,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(transactionId, dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 				}
@@ -1203,8 +1208,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							String updatedLine = convertItemLine(transactionId, dataName);
-							stableStorage.updateData(dataName, updatedLine);
+							if(ops.get(i).getOpName().equals("deletecustomer")) {
+								stableStorage.deleteData(dataName);
+							} else {
+								String updatedLine = convertItemLine(dataName);
+								stableStorage.updateData(dataName, updatedLine);
+							}
 						}
 					}
 					break;
@@ -1233,6 +1242,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	public void abort(int transactionId) throws RemoteException, InvalidTransactionException {
 		try {
 			transactionManager.abort(transactionId);
+			lockManager.UnlockAll(transactionId);
 			System.out.println("Transaction " + transactionId + " has ABORTED.");
 		} catch (RemoteException e) {
 			try {
@@ -1256,7 +1266,6 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 				}
 			}
 		}
-		lockManager.UnlockAll(transactionId);
 		String operation = transactionId + ", abort\n";
 		try{
 			stableStorage.writeToLog(operation);
@@ -1316,6 +1325,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			neatCrash(transactionId, option);		
 			return true;
 		}else{
+			System.out.println("Dude, crash who?");
 			return false;
 		}
 	}
@@ -1324,7 +1334,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		transactionManager.neatCrash(transactionId, option);
 	}
 
-	private String convertItemLine(int id, String dataName) {
+	
+	private String convertItemLine(String dataName) {
 		String line = "";
 		System.out.println("Name is " + dataName);
 		if (dataName.substring(0, 8).equalsIgnoreCase("Customer")) {
@@ -1389,6 +1400,10 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		} catch (Exception e) {    
 			System.err.println("Client exception: " + e.toString());
 		}
+	}
+	
+	public void unlockAll(int i) {
+		lockManager.UnlockAll(i);
 	}
 
 

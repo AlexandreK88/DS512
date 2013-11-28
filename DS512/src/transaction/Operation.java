@@ -114,10 +114,15 @@ public class Operation {
 		} else if (opName.equals("deletecustomer")) {
 			String[] resType = params[1].split("::");
 			String[] resKey = params[2].split("::");
-			dataNames = new String[resType.length+1];
-			dataNames[0] = "Customer"+params[0];
-			for (int i = 1; i <= resType.length; i++) {
-				dataNames[i] = resType[i-1] + resKey[i-1];
+			if (resType.length == 1 && resType[0].length() == 0) {
+				dataNames = new String[1];
+				dataNames[0] = "Customer"+params[0];
+			} else {
+				dataNames = new String[resType.length+1];
+				dataNames[0] = "Customer"+params[0];
+				for (int i = 1; i <= resType.length; i++) {
+					dataNames[i] = resType[i-1] + resKey[i-1];
+				}
 			}
 		} else if (opName.equals("reserveflight")) {
 			dataNames = new String[2];

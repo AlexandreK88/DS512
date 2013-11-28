@@ -144,9 +144,15 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		
 		try {
+			System.out.println("MW generated, starting TM initialization...");
 			transactionManager = new TransactionManager();
+			System.out.println("TM initialized. Starting MW initiation from disk...");
 			obj.initiateFromDisk();
+			System.out.println("**************** MW disk init completed. *********************");
+			System.out.println("**************** TM disk init started... *********************");
 			transactionManager.initializeTMFromDisk(rmFlight, rmCar, rmRoom, obj);
+			System.out.println("**************** TM disk init completed. *********************");
+			
 		} catch (RemoteException e2) {
 			System.out.println("God damnit...");
 			e2.printStackTrace();
@@ -215,11 +221,16 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	private void initiateFromDisk() {
+		System.out.println("MW retrieving disk data...");
 		try {
 			stableStorage = new DiskAccess(this, "Customer");
+			System.out.println("MW disk data retrieved, setting data into memory.");
 			stableStorage.memInit(this);
+			System.out.println("Setting MW data into memory completed, unlocking all 0 locks.");
 			lockManager.UnlockAll(0);
+			System.out.println("Reading MW stored log...");
 			stableStorage.readLog(this);
+			System.out.println("MW log read completed.");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

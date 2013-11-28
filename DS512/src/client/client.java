@@ -829,9 +829,8 @@ public class client
 				}else{
 					System.out.println("Unsuccessful");
 				}
-			}catch(Exception ex) {    
-				System.err.println("Client exception: " + ex.toString());
-				ex.printStackTrace();
+			}catch(Exception ex) {  
+				System.out.println("Connexion unsuccessful");
 			}
 			readCommand(command);
 		}catch(Exception e){

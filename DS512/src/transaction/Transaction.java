@@ -49,8 +49,11 @@ public class Transaction {
 
 	public void undo() throws RemoteException {
 		while (!writeRequests.isEmpty()) {
+			System.out.println("Undoing op of transaction.");
 			Operation op = writeRequests.pop();
-			op.undoOp();
+			if (op != null) {
+				op.undoOp();
+			}
 		}
 	}
 

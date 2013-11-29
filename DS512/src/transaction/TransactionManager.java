@@ -171,6 +171,7 @@ public class TransactionManager {
 				if (decision) {
 					// commit
 					doCommit(t, mw);
+					ongoingTransactions.remove(t);
 				} else {
 					// abort
 					abort(t.getID());
@@ -185,6 +186,7 @@ public class TransactionManager {
 						}
 						try {
 							rm.doCommit(t.getID());
+							ongoingTransactions.remove(t);
 						} catch (RemoteException | TransactionAbortedException
 								| InvalidTransactionException e) {
 							e.printStackTrace();
@@ -406,7 +408,7 @@ public class TransactionManager {
 				if (ongoingTransactions.get(i).getID() == tid) {
 					Transaction t = ongoingTransactions.remove(i);
 					// Should complete abort here so log can be updated accordingly.
-					String voteDecision = t.getID() + ",NOOOOOOO\n";
+					String voteDecision = t.getID() + ",ABORTING\n";
 					try {
 						stableStorage.writeToLog(voteDecision);
 					} catch (IOException e1) {
@@ -415,7 +417,7 @@ public class TransactionManager {
 					for (ResourceManager rm: t.getRMList()) {
 						try {
 							rm.doAbort(tid);
-						} catch (RemoteException | InvalidTransactionException e) {
+						} catch (InvalidTransactionException e) {
 							e.printStackTrace();
 						}
 						// Write to log. Confirm decision sent to rm.

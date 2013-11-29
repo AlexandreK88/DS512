@@ -1,3 +1,28 @@
 1,newcustomer,123
 1,canCommit,YES 
 1,commit,B
+5,newcustomer,789
+5,newcustomer,789
+5,canCommit,YES 
+5,commit,A
+8,deletecustomer,789,,
+8,canCommit,YES 
+8,commit,B
+9,newcustomer,89
+5,newcustomer,789
+9, abort
+10,newcustomer,456
+5,newcustomer,789
+12,newcustomer,456
+12, abort
+5,newcustomer,789
+14,newcustomer,159
+14,canCommit,YES 
+5,newcustomer,789
+14,commit,A
+5,newcustomer,789
+5,newcustomer,789
+5,newcustomer,789
+5,newcustomer,789
+5,newcustomer,789
+5,newcustomer,789

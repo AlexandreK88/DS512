@@ -1,7 +1,22 @@
 1,newcustomer,123
 1, canCommit, YES 
 1,commit,B
-4,newroom,bob,78,56
-4, canCommit, YES 
-4,commit,A
-5, abort
+5,newcustomer,789
+5, canCommit, YES 
+5,commit,A
+7,newroom,bob,89,23
+7, canCommit, YES 
+7,commit,B
+8,deletecustomer,789,,
+8, canCommit, YES 
+8,commit,A
+9, abort
+12,newcustomer,456
+12, abort
+14,newcustomer,159
+14,newroom,la,89,23
+14, canCommit, YES 
+14,commit,B
+18,failed
+18, canCommit, YES 
+18,commit,A

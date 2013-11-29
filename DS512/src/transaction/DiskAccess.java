@@ -354,9 +354,9 @@ public class DiskAccess {
 		return ongoings;
 	}
 
-	public	 void readLog(ResourceManager rm){
+	public	LinkedList<Integer> readLog(ResourceManager rm){
 		if(!isRM){
-			return;
+			return null;
 		}else{
 			//LinkedList<Integer> starts = new LinkedList<Integer>();
 			LinkedList<Integer> commits = new LinkedList<Integer>();

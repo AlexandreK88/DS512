@@ -44,7 +44,9 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private int transactionToCrash;
 
 	private static AtomicBoolean crashNow;
-
+	LinkedList<Integer> crashedTransaction;
+	
+	
 	public static void main(String args[]) {
 		System.out.println("I STARTED I STARTED");
 		// Figure out where server is running
@@ -127,7 +129,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
 			stableStorage.memInit(this);
-			stableStorage.readLog(this);
+			crashedTransaction = stableStorage.readLog(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

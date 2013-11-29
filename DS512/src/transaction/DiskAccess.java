@@ -358,9 +358,9 @@ public class DiskAccess {
 		if(!isRM){
 			return null;
 		}else{
-			//LinkedList<Integer> starts = new LinkedList<Integer>();
-			LinkedList<Integer> commits = new LinkedList<Integer>();
-			//LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
+			LinkedList<Integer> done = new LinkedList<Integer>();
+			LinkedList<Integer> redo = new LinkedList<Integer>();
+			LinkedList<Integer> pendings = new LinkedList<Integer>();
 			try {
 				String line = "";
 				try {
@@ -371,10 +371,22 @@ public class DiskAccess {
 				while (line != null && line != "") {
 					line = line.trim();
 					String[] lineDetails = line.split(",");
-					if(lineDetails[1].equals("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
-						commits.add(Integer.parseInt(lineDetails[0]));
-					}		
+					if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
+						done.add(Integer.parseInt(lineDetails[0]));
+					}else if(lineDetails[1].trim().equalsIgnoreCase("canCommit")){
+						if(lineDetails[2].trim().equalsIgnoreCase("true")){
+							redo.add(Integer.parseInt(lineDetails[0]));
+						}else{
+							done.add(Integer.parseInt(lineDetails[0]));
+						}
+					}
 				}
+				for(Integer t: redo){
+					if(done.contains(t)){
+						redo.remove(t);
+					}
+				}
+				
 				stateLog.seek(0);
 				
 				try {
@@ -385,19 +397,23 @@ public class DiskAccess {
 				while (line != null && line != "") {
 					line = line.trim();
 					String[] lineDetails = line.split(",");
-					if(!commits.contains(Integer.parseInt(lineDetails[0]))){
+					Integer id = Integer.parseInt(lineDetails[0]);
+					if(redo.contains(id)){
 						String[] params = new String[lineDetails.length-2];
 						for(int i = 0; i < lineDetails.length - 2; i++){
 							params[i] = lineDetails[i+2].trim();
 						}
 						Operation op = new Operation(lineDetails[1], params, rm);
-						//ongoings.get(Integer.parseInt(lineDetails[0])).addOp(op);
 						try {
-							op.doOp(Integer.parseInt(lineDetails[0].trim()));
+							op.doOp(id);
 							System.out.println("Transaction executed with id > 0.");
 						} catch (InvalidTransactionException e) {
 							System.out.println("Ok, An aborted transaction was attempted.");
 							rm.abort(Integer.parseInt(lineDetails[0].trim()));
+						}
+					}else if(!done.contains(id)){
+						if(!pendings.contains(id)){
+							pendings.add(id);
 						}
 					}
 					try {
@@ -410,7 +426,8 @@ public class DiskAccess {
 			}catch(Exception e){
 				e.printStackTrace();
 			}
-		}
+			return pendings;
+		}		
 	}
 
 	public void updateData(String dataName, String updatedLine) {

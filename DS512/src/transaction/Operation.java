@@ -31,27 +31,27 @@ public class Operation {
 	public void doOp(int id) throws RemoteException, InvalidTransactionException {
 		try{
 			if (opName.equals("newflight")) {
-				rm.addFlight(id, Integer.parseInt(params[0]), Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				rm.addFlight(0, Integer.parseInt(params[0]), Integer.parseInt(params[1]), Integer.parseInt(params[2]));
 			} else if (opName.equals("newcar")) {
-				rm.addCars(id, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				rm.addCars(0, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
 			} else if (opName.equals("newroom")) {
-				rm.addRooms(id, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				rm.addRooms(0, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
 			} else if (opName.equals("newcustomer")) {
-				rm.newCustomer(id, Integer.parseInt(params[0]));
+				rm.newCustomer(0, Integer.parseInt(params[0]));
 			} else if (opName.equals("deleteflight")) {
-				rm.deleteFlight(id, Integer.parseInt(params[0]));
+				rm.deleteFlight(0, Integer.parseInt(params[0]));
 			} else if (opName.equals("deletecar")) {
-				rm.deleteCars(id, params[1]);
+				rm.deleteCars(0, params[1]);
 			} else if (opName.equals("deleteroom")) {
-				rm.deleteRooms(id, params[0]);
+				rm.deleteRooms(0, params[0]);
 			} else if (opName.equals("deletecustomer")) {
-				rm.deleteCustomer(id, Integer.parseInt(params[0]));
+				rm.deleteCustomer(0, Integer.parseInt(params[0]));
 			} else if (opName.equals("reserveflight")) {
-				rm.reserveFlight(id, Integer.parseInt(params[0]), Integer.parseInt(params[1]));
+				rm.reserveFlight(0, Integer.parseInt(params[0]), Integer.parseInt(params[1].substring(7)));
 			} else if (opName.equals("reservecar")) {
-				rm.reserveCar(id, Integer.parseInt(params[0]),params[1]);
+				rm.reserveCar(0, Integer.parseInt(params[0]),params[1].substring(4));
 			} else if (opName.equals("reserveroom")) {
-				rm.reserveRoom(id, Integer.parseInt(params[0]),params[1]);
+				rm.reserveRoom(0, Integer.parseInt(params[0]),params[1].substring(5));
 			}
 		}
 		catch (InvalidTransactionException e) {

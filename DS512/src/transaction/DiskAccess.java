@@ -20,7 +20,8 @@ public class DiskAccess {
 	private RAFList masterRec;
 	private RAFList workingRec;
 	private RandomAccessFile stateLog;
-
+	private LinkedList<Transaction> redoneTransactions;
+	
 	private int txnMaster;
 	String task;
 	boolean isRM;
@@ -72,6 +73,7 @@ public class DiskAccess {
 		} catch (InvalidTransactionException e) {
 			e.printStackTrace();
 		}
+		System.out.println("RM memory initialization done.");
 	}
 	
 	public void logOperation(int id, Operation op) {
@@ -199,6 +201,7 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
+				
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[0].startsWith("Room")) {
@@ -277,11 +280,11 @@ public class DiskAccess {
 
 						}
 					}
-					try {
-						line = record.getFileAccess().readLine();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+				}
+				try {
+					line = record.getFileAccess().readLine();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		} catch (NumberFormatException e) {
@@ -303,7 +306,6 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
-				System.out.println("TM parsing log line for commit or abort...");
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
@@ -330,9 +332,7 @@ public class DiskAccess {
 			while (line != null && line != "") {
 				line = line.trim();
 				String[] lineDetails = line.split(",");
-				System.out.println("TM parsing log line for not committed or aborted...");
 				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
-					System.out.println("Line is not part of committed transaction... ID: " + lineDetails[0]);
 					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
 						System.out.println("Transaction " + lineDetails[0] + " was ongoing.");
 						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
@@ -361,8 +361,10 @@ public class DiskAccess {
 			LinkedList<Integer> done = new LinkedList<Integer>();
 			LinkedList<Integer> redo = new LinkedList<Integer>();
 			LinkedList<Integer> pendings = new LinkedList<Integer>();
+			redoneTransactions = new LinkedList<Transaction>();
 			try {
 				String line = "";
+				stateLog.seek(0);
 				try {
 					line = stateLog.readLine();
 				} catch (IOException e) {
@@ -374,19 +376,19 @@ public class DiskAccess {
 					if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")){
 						done.add(Integer.parseInt(lineDetails[0]));
 					}else if(lineDetails[1].trim().equalsIgnoreCase("canCommit")){
-						if(lineDetails[2].trim().equalsIgnoreCase("true")){
+						if(lineDetails[2].trim().equalsIgnoreCase("YES")){
 							redo.add(Integer.parseInt(lineDetails[0]));
 						}else{
 							done.add(Integer.parseInt(lineDetails[0]));
 						}
 					}
-				}
-				for(Integer t: redo){
-					if(done.contains(t)){
-						redo.remove(t);
+					try {
+						line = stateLog.readLine();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
 				}
-				
+				redo.removeAll(done);
 				stateLog.seek(0);
 				
 				try {
@@ -404,8 +406,21 @@ public class DiskAccess {
 							params[i] = lineDetails[i+2].trim();
 						}
 						Operation op = new Operation(lineDetails[1], params, rm);
+						boolean opAdded = false;
+						for (Transaction t: redoneTransactions) {
+							if (t.getID() == id.intValue()) {
+								t.addOp(op);
+								opAdded = true;
+								break;
+							}
+						}
+						if (!opAdded) {
+							Transaction t = new Transaction(id);
+							t.addOp(op);
+							redoneTransactions.add(t);
+						}
 						try {
-							op.doOp(id);
+							op.doOp(0);
 							System.out.println("Transaction executed with id > 0.");
 						} catch (InvalidTransactionException e) {
 							System.out.println("Ok, An aborted transaction was attempted.");
@@ -416,8 +431,10 @@ public class DiskAccess {
 							pendings.add(id);
 						}
 					}
+
 					try {
 						line = stateLog.readLine();
+						System.out.println(line);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -426,6 +443,16 @@ public class DiskAccess {
 			}catch(Exception e){
 				e.printStackTrace();
 			}
+			System.out.print("Pending list: "); 
+			for (Integer integ: pendings) {
+				System.out.print(integ + ", ");
+			}
+			System.out.println("");
+			System.out.print("Ongoing txns list: "); 
+			for (Transaction t: redoneTransactions) {
+				System.out.print(t.getID() + ", ");
+			}
+			System.out.println("");
 			return pendings;
 		}		
 	}
@@ -512,6 +539,10 @@ public class DiskAccess {
 		int line = workingRec.getLine(dataName);
 		System.out.println("Line is: " + line);
 		workingRec.deleteLine(line);
+	}
+	
+	public LinkedList<Transaction> getRedoneTransactions() {
+		return redoneTransactions;
 	}
 	
 }

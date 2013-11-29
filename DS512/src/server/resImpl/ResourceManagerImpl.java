@@ -8,10 +8,8 @@ package server.resImpl;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -92,21 +90,28 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		obj.initiateFromDisk();
 		try {
-			Thread.sleep(10000);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		System.out.println("Done setup of resource manager.");
+		int counter = 0;
 		while(true){
+			
 			try {
-				Thread.sleep(2);
+				counter++;
+				Thread.sleep(100);
+				if (counter%20 == 0) {
+					System.out.println("Still running");
+					counter = 0;
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			if(crashNow.get()){
 				try {
-					Thread.sleep(2);
+					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -895,7 +900,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 						System.out.println("Operation simply failed, will not be brought to disk. (working space 1)");
 					}
 					for (String dataName: ops.get(i).getDataNames()) {
-						if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
+						if((ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust"))
+						|| ops.get(i).getOpName().equals("deleteflight") || ops.get(i).getOpName().equals("deleteroom") || ops.get(i).getOpName().equals("deletecar")){
 							stableStorage.deleteData(dataName);
 						} else {
 							String updatedLine = convertItemLine(dataName);
@@ -915,7 +921,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 						System.out.println("Operation simply failed, will not be brought to disk. (working space2)");
 					}
 					for (String dataName: ops.get(i).getDataNames()) {
-						if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
+						if((ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust"))
+						|| ops.get(i).getOpName().equals("deleteflight") || ops.get(i).getOpName().equals("deleteroom") || ops.get(i).getOpName().equals("deletecar")){
 							stableStorage.deleteData(dataName);
 						} else {
 							String updatedLine = convertItemLine(dataName);
@@ -999,7 +1006,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		System.exit(1);
 	}
 
-	private void addOperation(int id, Operation op) {
+	public void addOperation(int id, Operation op) {
 		if (id == 0) {return;}
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {

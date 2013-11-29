@@ -311,6 +311,12 @@ public class TransactionManager {
 		}
 		for (ResourceManager rm: t.getRMList()) {
 			canCommit = rm.canCommit(t.getID());
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";
 			try {
 				stableStorage.writeToLog(voteResponse);

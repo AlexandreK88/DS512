@@ -1142,6 +1142,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			return false;
 		}
 		} catch(RemoteException e){
+			System.out.println(e.getClass());
+			e.printStackTrace();
 			reconnect("flight");
 			reconnect("car");
 			reconnect("room");
@@ -1351,12 +1353,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			return true;
 		}else{
 			System.out.println("Not an appropriate victim. Please, try again and aim correctly!");
-			System.out.println("(Appropriate victims are: flight car room mw");
+			System.out.println("(Appropriate victims are: flight car room mw)");
 			return false;
 		}
 	}
 
 	public void neatCrash(int transactionId, int option){
+		System.out.println("... and that's me. :(");
 		transactionManager.neatCrash(transactionId, option);
 	}
 
@@ -1375,7 +1378,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 
-	private void addOperation(int id, Operation op) {
+	public void addOperation(int id, Operation op) {
 		if (id == 0) {return;}
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == id) {
@@ -1402,29 +1405,31 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		}
 		try {
 			if(rm.equals("flight")){
+				rmFlight = null;
 				Registry registry1 = LocateRegistry.getRegistry(server1, port1);
-				rmFlight = (ResourceManager) registry1.lookup("Flight21ResourceManager");
-				if(rmFlight!=null){
-					System.out.println("Successful");
-					System.out.println("Reconnected to RMFlight");
-				}
+				rmFlight = (ResourceManager)registry1.lookup("Flight21ResourceManager");
+				System.out.println(rmFlight.getName());
+				System.out.println("Successful");
+				System.out.println("Reconnected to RMFlight");
 			}else if(rm.equals("car")){
+				rmCar = null;
 				Registry registry2 = LocateRegistry.getRegistry(server2, port2);
 				rmCar = (ResourceManager)registry2.lookup("Car21ResourceManager");
-				if(rmCar!=null){
-					System.out.println("Successful");
-					System.out.println("Reconnected to RMCar");
-				}
-			}else{
+				System.out.println(rmCar.getName());
+				System.out.println("Successful");
+				System.out.println("Reconnected to RMCar");
+			}else if (rm.equals("room")){
+				rmRoom = null;
 				Registry registry3 = LocateRegistry.getRegistry(server3, port3);
 				rmRoom = (ResourceManager) registry3.lookup("Room21ResourceManager");
-				if(rmRoom!=null){
-					System.out.println("Successful");
-					System.out.println("Reconnected to RMRoom");
-				}
+				System.out.println(rmRoom.getName());
+				System.out.println("Successful");
+				System.out.println("Reconnected to RMRoom");
 			}
 		} catch (Exception e) {    
-			System.err.println("Client exception: " + e.toString());
+			System.err.println("Unsuccessful");
+			System.err.println(e.getClass());
+			reconnect(rm);
 		}
 	}
 	

@@ -1,7 +1,7 @@
-1,newcustomer,123
-1,newcar,bob,78,56
-1, canCommit, YES 
-1,commit,B
-3,reservecar,123,car-bob
+2,newcustomer,456
+2,newcar,montreal,78,56
+2, canCommit, YES 
+2,commit,B
+3,newcar,toronto,89,78
 3, canCommit, YES 
 3,commit,A

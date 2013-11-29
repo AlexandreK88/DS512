@@ -44,7 +44,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	private int transactionToCrash;
 
 	private static AtomicBoolean crashNow;
-	LinkedList<Integer> crashedTransaction;
+	LinkedList<Integer> crashedTransactions;
 	
 	
 	public static void main(String args[]) {
@@ -129,7 +129,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		try {
 			stableStorage = new DiskAccess(this, responsibility);
 			stableStorage.memInit(this);
-			crashedTransaction = stableStorage.readLog(this);
+			crashedTransactions = stableStorage.readLog(this);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -834,6 +834,23 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 
 		for (Transaction t: ongoingTransactions) {
 			if (t.getID() == transactionId) {
+				for (int i = 0; i < crashedTransactions.size(); i++) {
+					int crashed = crashedTransactions.get(i);
+					if (transactionId == crashed) {
+						String operation = transactionId + ", canCommit, NO \n";
+						System.out.println("Commit transaction" + transactionId + ": vote NO.");
+						try {
+							stableStorage.writeToLog(operation);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						if(crashAfterVoting && transactionToCrash == transactionId){
+							crashNow.set(true);
+						}
+						return false;						
+					}
+				}
 				// if t's status is still ongoing.
 				// Add vote yes to log for trxn t.
 				String operation = transactionId + ", canCommit, YES \n";
@@ -848,11 +865,18 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				break;
 			}
 		}
+		if (!canCommit) {
+			String operation = transactionId + ", canCommit, NO \n";
+			System.out.println("Commit transaction" + transactionId + ": vote NO.");
+			try {
+				stableStorage.writeToLog(operation);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		if(crashAfterVoting && transactionToCrash == transactionId){
 			crashNow.set(true);
-		}
-		if (!canCommit) {
-			System.out.println("Commit transaction" + transactionId + ": vote NO.");
 		}
 		return canCommit;
 	}
@@ -935,10 +959,10 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	}
 
 	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
+		abort(transactionId);
 		if(crashAfterDecision && transactionToCrash == transactionId){
 			selfDestruct();
 		}
-		abort(transactionId);
 	}
 
 	public void neatCrash(int transactionId, int option){

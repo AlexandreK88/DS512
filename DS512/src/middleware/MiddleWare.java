@@ -33,6 +33,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	static LockManager lockManager;
 	static TransactionManager transactionManager;
 	LinkedList<Transaction> ongoingTransactions;
+	LinkedList<Integer> crashedTransactions;
 	DiskAccess stableStorage;
 	int trCount;
 	static String name;
@@ -171,7 +172,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					String[] crashArgs = input.split(" ");
 					if (crashArgs[0].equalsIgnoreCase("crash")) {
 						if (crashArgs.length != 4) {
-							System.out.println("Dude, listen. You don't write your thing correctly. Here's how you do it: ");
+							System.out.println("Incorrect parameters. Correct parameters are: ");
 							System.out.println("crash [victim] [tID] [timing] ");
 							System.out.println("Victim is a name (mw, car, room, flight), tID and timing are ints.\n");
 							System.out.println("Timings for mw are: 1 is crash before start 2PC, \n" +
@@ -184,13 +185,13 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 							System.out.println("Timings for the others are: 1 is before voting, \n" +
 											   "2 is after voting, \n" +
 											   "3 is after decision.\n");
-							System.out.println("And don't be an idiot, make your tID a positive nonzero integer.");
-							System.out.println("Now be awesome and do it properly!");
+							System.out.println("Make tID a positive nonzero integer.");
+							System.out.println("Please, try again!");
 						} else {
 							obj.crash(crashArgs[1], Integer.parseInt(crashArgs[2]), Integer.parseInt(crashArgs[3]));
 						}
 					} else {
-						System.out.println("Command unknown (hint: so far, there exists only the crash command...");
+						System.out.println("Command unknown (hint: so far, there exists only the crash command...)");
 					}
 
 				}
@@ -229,7 +230,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			System.out.println("Setting MW data into memory completed, unlocking all 0 locks.");
 			lockManager.UnlockAll(0);
 			System.out.println("Reading MW stored log...");
-			stableStorage.readLog(this);
+			crashedTransactions = stableStorage.readLog(this);
 			System.out.println("MW log read completed.");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -1162,6 +1163,21 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 		synchronized(ongoingTransactions) {
 			for (Transaction t: ongoingTransactions) {
 				if (t.getID() == transactionId) {
+					for (int i = 0; i < crashedTransactions.size(); i++) {
+						int crashed = crashedTransactions.get(i);
+						if (transactionId == crashed) {
+							String operation = transactionId + ", canCommit, NO \n";
+							System.out.println("Commit transaction" + transactionId + ": vote NO.");
+							try {
+								stableStorage.writeToLog(operation);
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							doAbort(transactionId);
+							return false;				
+						}
+					}
 					String operation = transactionId + ",canCommit,YES \n";
 					System.out.println("Can commit, sent vote YES.");
 					try {
@@ -1172,8 +1188,23 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					return true;
 				}		
 			}
-		} 
-		return false;
+			for (int i = 0; i < crashedTransactions.size(); i++) {
+				int crashed = crashedTransactions.get(i);
+				if (transactionId == crashed) {
+					String operation = transactionId + ", canCommit, NO \n";
+					System.out.println("Commit transaction" + transactionId + ": vote NO.");
+					try {
+						stableStorage.writeToLog(operation);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					doAbort(transactionId);
+					return false;				
+				}
+			}
+			return false;
+		}
 	}
 
 	@Override
@@ -1265,12 +1296,12 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			stableStorage.writeToLog(operation);
 			System.out.println("Writing op");
 		}catch(Exception e){
-			System.out.println("Some god damn exception");
+			System.out.println("Some exception");
 		}
 	}
 
 	public void selfDestruct(){
-		System.out.println("ME?!? YOU ARE CRASHING ME?!? THE MOST IMPORTANT PIECE OF THE SYSTEM! WHAT THE HELL?");
+		System.out.println("Farewell, evil world. :(");
 		try {
 			stdin.close();
 		} catch (IOException e) {
@@ -1305,7 +1336,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 	}
 
 	public boolean crash(String which, int transactionId, int option) throws RemoteException{
-		System.out.println("Let the fun begin <=D");
+		System.out.println("Planning to crash someone...");
 		if(which.equalsIgnoreCase("flight")){
 			rmFlight.neatCrash(transactionId, option);			
 			return true;
@@ -1319,7 +1350,8 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 			neatCrash(transactionId, option);		
 			return true;
 		}else{
-			System.out.println("Dude, crash who?");
+			System.out.println("Not an appropriate victim. Please, try again and aim correctly!");
+			System.out.println("(Appropriate victims are: flight car room mw");
 			return false;
 		}
 	}

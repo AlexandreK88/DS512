@@ -803,7 +803,7 @@ public class client
 				if (rm.commit(transactionID)) {
 					System.out.println("Transaction with id " + transactionID + " committed successfully.");
 				} else {
-					System.out.println("Transaction with id " + transactionID + " failed to commit.");
+					System.out.println("Transaction with id " + transactionID + " failed to commit, it was aborted.");
 				}
 				transactionID = -1;
 				break;
@@ -820,22 +820,27 @@ public class client
 				System.out.println("The interface does not support this command.");
 				break;
 			}//end of switch
-		}catch(RemoteException e){			
-			try{
-				Thread.sleep(2000);
-				System.out.println("Trying to reconnect...");
-				Registry registry = LocateRegistry.getRegistry(server, port);
-				rm = (ResourceManager)registry.lookup("Resort21ResourceManager");				
-				if(rm!=null){
-					System.out.println("Successful");
-					System.out.println("Connected to RM");
-				}else{
+		}catch(RemoteException e){					
+			boolean failingToConnect = true;
+			while (failingToConnect) {
+				try {
+					Thread.sleep(2000);
+					System.out.println("Trying to reconnect...");
+					Registry registry = LocateRegistry.getRegistry(server, port);
+					rm = (ResourceManager)registry.lookup("Resort21ResourceManager");
+					failingToConnect = false;
+				} catch (Exception ex) {
 					System.out.println("Unsuccessful");
 				}
-			}catch(Exception ex) {  
-				System.out.println("Connexion unsuccessful");
 			}
-			readCommand(command);
+			System.out.println("Successful");
+			System.out.println("Connected to RM");
+			if(obj.findChoice(arguments.elementAt(0).toString()) == 24){
+				System.out.println("Transaction may have committed or aborted.");
+			}else{
+				System.out.println("Transaction was aborted.");
+			}
+			transactionID = -1;		
 		}catch(Exception e){
 			e.printStackTrace();
 		}

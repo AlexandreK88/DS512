@@ -835,7 +835,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// if t's status is still ongoing.
 				// Add vote yes to log for trxn t.
 				String operation = transactionId + ", canCommit, YES \n";
-				System.out.println("Vote yesh for t" + transactionId);
+				System.out.println("Commit transaction" + transactionId + ": vote YES.");
 				try {
 					stableStorage.writeToLog(operation);
 				} catch (IOException e) {
@@ -850,7 +850,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			crashNow.set(true);
 		}
 		if (!canCommit) {
-			System.out.println("Vote nope for t" + transactionId);
+			System.out.println("Commit transaction" + transactionId + ": vote NO.");
 		}
 		return canCommit;
 	}

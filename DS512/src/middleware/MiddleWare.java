@@ -1078,6 +1078,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 
 	public void cancelNewCustomer(String[] parameters) {
 		// Generate a globally unique ID for the new customer
+		System.out.println("Customer was removed");
 		removeData(0, Customer.getKey(Integer.parseInt(parameters[0])));
 	}
 
@@ -1184,7 +1185,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							if(ops.get(i).getOpName().equals("deletecustomer")) {
+							if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
 								stableStorage.deleteData(dataName);
 							} else {
 								String updatedLine = convertItemLine(dataName);
@@ -1201,7 +1202,7 @@ public class MiddleWare implements server.resInterface.ResourceManager {
 					List<Operation> ops = t.getOperations(); 
 					for (int i = ops.size()-1; i >= 0; i--) {
 						for (String dataName: ops.get(i).getDataNames()) {
-							if(ops.get(i).getOpName().equals("deletecustomer")) {
+							if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
 								stableStorage.deleteData(dataName);
 							} else {
 								String updatedLine = convertItemLine(dataName);

@@ -22,24 +22,153 @@
 2,commitconfirm,Flight21ResourceManager
 2, Commit
 3,StartedTID
-3, rm, Car21ResourceManager
 3,Start2PC
-3,vote,Car21ResourceManager,true
 3,decision,YES
-3,commitconfirm,Car21ResourceManager
 3, Commit
 4,StartedTID
-4, rm, Room21ResourceManager
-4,Start2PC
-4,Start2PC
-4,vote,Room21ResourceManager,true
-4,decision,YES
-4,commitconfirm,Room21ResourceManager
-4, Commit
+4, rm, Car21ResourceManager
+4,NOOOOOOO
+4,abortconfirm,Car21ResourceManager
+4, Abort
 5,StartedTID
+5, rm, Flight21ResourceManager
+5, rm, Car21ResourceManager
 5, rm, Room21ResourceManager
+5, rm, Resort21ResourceManager
 5,Start2PC
-5,vote,Room21ResourceManager,false
-5,NOOOOOOO
-5,abortconfirm,Room21ResourceManager
-5, Abort
+5,vote,Flight21ResourceManager,true
+5,vote,Car21ResourceManager,true
+5,vote,Room21ResourceManager,true
+5,vote,Resort21ResourceManager,true
+5,decision,YES
+5,commitconfirm,Flight21ResourceManager
+5,commitconfirm,Car21ResourceManager
+5,commitconfirm,Room21ResourceManager
+5,commitconfirm,Resort21ResourceManager
+5, Commit
+6,StartedTID
+6, rm, Flight21ResourceManager
+6,Start2PC
+6,vote,Flight21ResourceManager,true
+6,decision,YES
+6,commitconfirm,Flight21ResourceManager
+6, Commit
+7,StartedTID
+7, rm, Room21ResourceManager
+7,Start2PC
+7,vote,Room21ResourceManager,true
+7,decision,YES
+7,commitconfirm,Room21ResourceManager
+7, Commit
+8,StartedTID
+8, rm, Flight21ResourceManager
+8, rm, Car21ResourceManager
+8, rm, Room21ResourceManager
+8, rm, Resort21ResourceManager
+8,Start2PC
+8,vote,Flight21ResourceManager,true
+8,vote,Car21ResourceManager,true
+8,vote,Room21ResourceManager,true
+8,vote,Resort21ResourceManager,true
+8,decision,YES
+8,commitconfirm,Flight21ResourceManager
+8,commitconfirm,Car21ResourceManager
+8,commitconfirm,Room21ResourceManager
+8,commitconfirm,Resort21ResourceManager
+8, Commit
+9,StartedTID
+9, rm, Car21ResourceManager
+9, rm, Room21ResourceManager
+9, rm, Resort21ResourceManager
+9,NOOOOOOO
+10,StartedTID
+10,NOOOOOOO
+10, Abort
+9,NOOOOOOO
+9,abortconfirm,Car21ResourceManager
+9,abortconfirm,Room21ResourceManager
+9,abortconfirm,Resort21ResourceManager
+9, Abort
+11,StartedTID
+11,Start2PC
+11,decision,YES
+11, Commit
+12,StartedTID
+12, rm, Flight21ResourceManager
+12, rm, Car21ResourceManager
+12, rm, Room21ResourceManager
+12, rm, Resort21ResourceManager
+12,NOOOOOOO
+12,abortconfirm,Flight21ResourceManager
+12,abortconfirm,Car21ResourceManager
+12,abortconfirm,Room21ResourceManager
+12,abortconfirm,Resort21ResourceManager
+12, Abort
+13,StartedTID
+13,NOOOOOOO
+13, Abort
+14,StartedTID
+14, rm, Flight21ResourceManager
+14, rm, Car21ResourceManager
+14, rm, Room21ResourceManager
+14, rm, Resort21ResourceManager
+14,Start2PC
+14,vote,Flight21ResourceManager,true
+14,vote,Car21ResourceManager,true
+14,vote,Room21ResourceManager,true
+14,vote,Resort21ResourceManager,true
+14,decision,YES
+14,commitconfirm,Flight21ResourceManager
+14,commitconfirm,Car21ResourceManager
+14,commitconfirm,Room21ResourceManager
+14,commitconfirm,Resort21ResourceManager
+14, Commit
+15,StartedTID
+15,ABORTING
+15, Abort
+16,StartedTID
+16, rm, Car21ResourceManager
+16,Start2PC
+16,vote,Car21ResourceManager,true
+16,decision,YES
+16,commitconfirm,Car21ResourceManager
+16, Commit
+17,StartedTID
+17, rm, Flight21ResourceManager
+17,Start2PC
+17,vote,Flight21ResourceManager,true
+17,decision,YES
+17,decision,YES
+17,commitconfirm,Flight21ResourceManager
+17, Commit
+18,StartedTID
+18, rm, Room21ResourceManager
+18, rm, Car21ResourceManager
+18,Start2PC
+18,vote,Room21ResourceManager,true
+18,vote,Car21ResourceManager,true
+18,decision,YES
+18,commitconfirm,Room21ResourceManager
+18,commitconfirm,Car21ResourceManager
+18, Commit
+19,StartedTID
+19, rm, Car21ResourceManager
+19,Start2PC
+19,vote,Car21ResourceManager,true
+19,decision,YES
+19,commitconfirm,Car21ResourceManager
+19, Commit
+20,StartedTID
+21,StartedTID
+21, rm, Flight21ResourceManager
+21,Start2PC
+20,ABORTING
+20, Abort
+21,Start2PC
+21,vote,Flight21ResourceManager,true
+21,decision,YES
+21,commitconfirm,Flight21ResourceManager
+21, Commit
+22,StartedTID
+22,ABORTING
+22, Abort

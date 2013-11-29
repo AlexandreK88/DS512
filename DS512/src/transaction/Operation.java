@@ -71,6 +71,7 @@ public class Operation {
 		} else if (opName.equals("newroom")) {
 			rm.cancelNewRoom(params);
 		} else if (opName.equals("newcustomer")) {
+			System.out.println("undoing customer creation.");
 			rm.cancelNewCustomer(params);
 		} else if (opName.equals("deleteflight")) {
 			rm.cancelFlightDeletion(params);

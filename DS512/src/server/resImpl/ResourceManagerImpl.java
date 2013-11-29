@@ -861,42 +861,44 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		if(crashAfterDecision && transactionToCrash == transactionId){
 			selfDestruct();
 		}
-		try{	
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							if(ops.get(i).getOpName().equals("deletecustomer")) {
-								stableStorage.deleteData(dataName);
-							} else {
-								String updatedLine = convertItemLine(dataName);
-								stableStorage.updateData(dataName, updatedLine);
-							}
+		for (Transaction t: ongoingTransactions) {
+			if (t.getID() == transactionId) {
+				List<Operation> ops = t.getOperations(); 
+				for (int i = ops.size()-1; i >= 0; i--) {
+					if (ops == null) {
+						System.out.println("Operation simply failed, will not be brought to disk. (working space 1)");
+					}
+					for (String dataName: ops.get(i).getDataNames()) {
+						if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
+							stableStorage.deleteData(dataName);
+						} else {
+							String updatedLine = convertItemLine(dataName);
+							stableStorage.updateData(dataName, updatedLine);
 						}
 					}
-					break;
 				}
+				break;
 			}
-			stableStorage.masterSwitch(transactionId);
-			for (Transaction t: ongoingTransactions) {
-				if (t.getID() == transactionId) {
-					List<Operation> ops = t.getOperations(); 
-					for (int i = ops.size()-1; i >= 0; i--) {
-						for (String dataName: ops.get(i).getDataNames()) {
-							if(ops.get(i).getOpName().equals("deletecustomer")) {
-								stableStorage.deleteData(dataName);
-							} else {
-								String updatedLine = convertItemLine(dataName);
-								stableStorage.updateData(dataName, updatedLine);
-							}
+		}
+		stableStorage.masterSwitch(transactionId);
+		for (Transaction t: ongoingTransactions) {
+			if (t.getID() == transactionId) {
+				List<Operation> ops = t.getOperations(); 
+				for (int i = ops.size()-1; i >= 0; i--) {
+					if (ops == null) {
+						System.out.println("Operation simply failed, will not be brought to disk. (working space2)");
+					}
+					for (String dataName: ops.get(i).getDataNames()) {
+						if(ops.get(i).getOpName().equals("deletecustomer") && dataName.substring(0, 4).equalsIgnoreCase("Cust")) {
+							stableStorage.deleteData(dataName);
+						} else {
+							String updatedLine = convertItemLine(dataName);
+							stableStorage.updateData(dataName, updatedLine);
 						}
 					}
-					break;
 				}
+				break;
 			}
-		}catch(Exception e){
-			e.printStackTrace();
 		}
 		synchronized(ongoingTransactions) {
 			for (int i = 0; i < ongoingTransactions.size(); i++) {
@@ -929,7 +931,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			System.out.println("Some god damn exception");
 		}
 	}
-	
+
 	public void doAbort(int transactionId) throws RemoteException, InvalidTransactionException {
 		if(crashAfterDecision && transactionToCrash == transactionId){
 			selfDestruct();
@@ -962,8 +964,8 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 	public void selfDestruct(){
 		System.out.println("Why me?? :(");
 		try {
-		Registry registry = LocateRegistry.getRegistry(port);
-		// Defining the RM's task
+			Registry registry = LocateRegistry.getRegistry(port);
+			// Defining the RM's task
 			registry.unbind(name);
 		} catch (RemoteException | NotBoundException e) {
 			e.printStackTrace();

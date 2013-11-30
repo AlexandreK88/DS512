@@ -1,12 +1,12 @@
 1,StartedTID
 1, rm, Flight21ResourceManager
-1,Start2PC
-1,Start2PC
-1,Start2PC
-1,Start2PC
-1,vote,Flight21ResourceManager,false
+1, rm, Room21ResourceManager
+1, rm, Resort21ResourceManager
+1,ABORTING
 1,ABORTING
 1,abortconfirm,Flight21ResourceManager
+1,abortconfirm,Room21ResourceManager
+1,abortconfirm,Resort21ResourceManager
 1, Abort
 2,StartedTID
 2, rm, Flight21ResourceManager
@@ -25,9 +25,96 @@
 2,commitconfirm,Resort21ResourceManager
 2, Commit
 3,StartedTID
-3, rm, Car21ResourceManager
+3, rm, Flight21ResourceManager
+3, rm, Room21ResourceManager
 3,Start2PC
-3,vote,Car21ResourceManager,true
-3,decision,YES
-3,commitconfirm,Car21ResourceManager
-3, Commit
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,Start2PC
+3,ABORTING
+3,Start2PC
+3,vote,Flight21ResourceManager,false
+3,ABORTING
+3,abortconfirm,Flight21ResourceManager
+3,abortconfirm,Room21ResourceManager
+3, Abort
+4,StartedTID
+4, rm, Flight21ResourceManager
+4, rm, Car21ResourceManager
+4, rm, Room21ResourceManager
+4, rm, Resort21ResourceManager
+4,Start2PC
+4,vote,Flight21ResourceManager,true
+4,vote,Car21ResourceManager,true
+4,vote,Room21ResourceManager,true
+4,vote,Resort21ResourceManager,true
+4,decision,YES
+4,commitconfirm,Flight21ResourceManager
+4,commitconfirm,Car21ResourceManager
+4,commitconfirm,Room21ResourceManager
+4,commitconfirm,Resort21ResourceManager
+4, Commit
+5,StartedTID
+5, rm, Flight21ResourceManager
+5,Start2PC
+5,ABORTING
+5, Abort
+6,StartedTID
+6, rm, Car21ResourceManager
+6, rm, Flight21ResourceManager
+6,Start2PC
+6,vote,Car21ResourceManager,true
+6,vote,Flight21ResourceManager,true
+6,decision,YES
+6,commitconfirm,Flight21ResourceManager
+6, Commit
+7,StartedTID
+8,StartedTID
+7,ABORTING
+7, Abort
+8,ABORTING
+8, Abort
+9,StartedTID
+9, rm, Car21ResourceManager
+9, rm, Room21ResourceManager
+9, rm, Flight21ResourceManager
+9, rm, Resort21ResourceManager
+9,Start2PC
+9,vote,Car21ResourceManager,true
+9,vote,Room21ResourceManager,true
+9,vote,Flight21ResourceManager,true
+9,vote,Resort21ResourceManager,true
+9,decision,YES
+9,commitconfirm,Room21ResourceManager
+9,commitconfirm,Flight21ResourceManager
+9,commitconfirm,Resort21ResourceManager
+9, Commit
+10,StartedTID
+10,ABORTING
+10, Abort

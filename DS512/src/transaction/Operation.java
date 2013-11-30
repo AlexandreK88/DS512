@@ -28,31 +28,43 @@ public class Operation {
 		return params;
 	}
 
-	public void doOp(int id) throws RemoteException, InvalidTransactionException {
+	public boolean doOp(int id) throws RemoteException, InvalidTransactionException {
 		try{
 			if (opName.equals("newflight")) {
 				rm.addFlight(0, Integer.parseInt(params[0]), Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				return true;
 			} else if (opName.equals("newcar")) {
 				rm.addCars(0, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				return true;
 			} else if (opName.equals("newroom")) {
 				rm.addRooms(0, params[0], Integer.parseInt(params[1]), Integer.parseInt(params[2]));
+				return true;
 			} else if (opName.equals("newcustomer")) {
 				rm.newCustomer(0, Integer.parseInt(params[0]));
+				return true;
 			} else if (opName.equals("deleteflight")) {
 				rm.deleteFlight(0, Integer.parseInt(params[0]));
+				return true;
 			} else if (opName.equals("deletecar")) {
 				rm.deleteCars(0, params[1]);
+				return true;
 			} else if (opName.equals("deleteroom")) {
 				rm.deleteRooms(0, params[0]);
+				return true;
 			} else if (opName.equals("deletecustomer")) {
 				rm.deleteCustomer(0, Integer.parseInt(params[0]));
+				return true;
 			} else if (opName.equals("reserveflight")) {
 				rm.reserveFlight(0, Integer.parseInt(params[0]), Integer.parseInt(params[1].substring(7)));
+				return true;
 			} else if (opName.equals("reservecar")) {
 				rm.reserveCar(0, Integer.parseInt(params[0]),params[1].substring(4));
+				return true;
 			} else if (opName.equals("reserveroom")) {
 				rm.reserveRoom(0, Integer.parseInt(params[0]),params[1].substring(5));
+				return true;
 			}
+			return false;
 		}
 		catch (InvalidTransactionException e) {
 			e.printStackTrace();
@@ -61,6 +73,7 @@ public class Operation {
 		catch (DeadlockException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 
 	public void undoOp() throws RemoteException {

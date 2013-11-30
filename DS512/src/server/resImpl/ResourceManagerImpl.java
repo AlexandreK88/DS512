@@ -51,19 +51,25 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		server = "localhost";
 		port = 1099;
 		responsibility = "";
+		String mwServer = "lab2-1";
+		int mwPort = 10121;
 
 		if (args.length > 0) {
 			responsibility = args[0];           
 		}
 		if (args.length > 1){
-			server = server + ":" + args[1];
 			port = Integer.parseInt(args[1]);
 		}
-		if (args.length > 2) {
+		if (args.length > 3) {
+			mwServer = args[2];
+			mwPort = Integer.parseInt(args[3]);
+		}
+		if (args.length > 4 || args.length == 0) {
 			System.err.println ("Wrong usage");
-			System.out.println("Usage: java ResImpl.ResourceManagerImpl responsibility [port] ");
+			System.out.println("Usage: java ResImpl.ResourceManagerImpl responsibility [port] [mwServer] [mwPort]");
 			System.exit(1);
 		}
+		
 		ResourceManagerImpl obj = null;
 		try {
 			// create a new Server object
@@ -88,7 +94,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new RMISecurityManager());
 		}
-		obj.initiateFromDisk();
+		obj.initiateFromDisk(mwServer, mwPort);
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
@@ -103,7 +109,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				counter++;
 				Thread.sleep(100);
 				if (counter%20 == 0) {
-					System.out.println("Still running");
+//					System.out.println("Still running");
 					counter = 0;
 				}
 			} catch (InterruptedException e) {
@@ -130,11 +136,12 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		crashNow = new AtomicBoolean();
 	}
 
-	private void initiateFromDisk() {
+	private void initiateFromDisk(String mwServer, int mwPort) {
 		try {
-			stableStorage = new DiskAccess(this, responsibility);
+			stableStorage = new DiskAccess(this, responsibility, mwPort, mwServer);
 			stableStorage.memInit(this);
 			crashedTransactions = stableStorage.readLog(this);
+			ongoingTransactions = stableStorage.getRedoneTransactions();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -843,7 +850,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 					int crashed = crashedTransactions.get(i);
 					if (transactionId == crashed) {
 						String operation = transactionId + ", canCommit, NO \n";
-						System.out.println("Commit transaction" + transactionId + ": vote NO.");
+						System.out.println("Commit transaction " + transactionId + ": vote NO.");
 						try {
 							stableStorage.writeToLog(operation);
 						} catch (IOException e) {
@@ -859,7 +866,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 				// if t's status is still ongoing.
 				// Add vote yes to log for trxn t.
 				String operation = transactionId + ", canCommit, YES \n";
-				System.out.println("Commit transaction" + transactionId + ": vote YES.");
+				System.out.println("Commit transaction " + transactionId + ": vote YES.");
 				try {
 					stableStorage.writeToLog(operation);
 				} catch (IOException e) {
@@ -872,7 +879,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 		}
 		if (!canCommit) {
 			String operation = transactionId + ", canCommit, NO \n";
-			System.out.println("Commit transaction" + transactionId + ": vote NO.");
+			System.out.println("Commit transaction " + transactionId + ": vote NO.");
 			try {
 				stableStorage.writeToLog(operation);
 			} catch (IOException e) {
@@ -896,7 +903,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			if (t.getID() == transactionId) {
 				List<Operation> ops = t.getOperations(); 
 				for (int i = ops.size()-1; i >= 0; i--) {
-					if (ops == null) {
+					if (ops.get(i) == null) {
 						System.out.println("Operation simply failed, will not be brought to disk. (working space 1)");
 					}
 					for (String dataName: ops.get(i).getDataNames()) {
@@ -990,7 +997,7 @@ public class ResourceManagerImpl implements server.resInterface.ResourceManager
 			crashAfterDecision = true;
 			break;
 		default:
-			System.out.println("What are you talking about, this option is not an option.");
+			System.out.println("This is not a defined moment to crash. I won't crash.");
 		}
 	}
 

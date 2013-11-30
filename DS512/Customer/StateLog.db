@@ -1,3 +1,11 @@
-2,newcustomer,456
+1,newcustomer,1
+1, abort
+2,newcustomer,1
 2,canCommit,YES 
 2,commit,B
+4,newcustomer,123
+4,canCommit,YES 
+4,commit,A
+9,newcustomer,124
+9,canCommit,YES 
+9,commit,B

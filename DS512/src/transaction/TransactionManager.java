@@ -2,15 +2,20 @@ package transaction;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import coordinatorInterface.Coordinator;
 
 import middleware.MiddleWare;
 
 import server.resInterface.*;
 
 
-public class TransactionManager {
+public class TransactionManager implements coordinatorInterface.Coordinator {
 
 	public static final int READ_REQUEST = 0;
 	public static final int WRITE_REQUEST = 1;
@@ -48,6 +53,7 @@ public class TransactionManager {
 		crashAfterSendingSomeDecisions = false;
 		crashAfterSendingAllDecisions = false;
 		transactionToCrash = 0;
+
 	}
 
 	public void initializeTMFromDisk(ResourceManager flight, ResourceManager car, ResourceManager room, MiddleWare mw) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
@@ -125,7 +131,7 @@ public class TransactionManager {
 			// If the 2PC didn't start, transaction can be aborted.
 			if (!started2PC) {
 				System.out.println(t.getID() + " since 2PC didn't start, was aborted.");
-				abort(t.getID());
+				abort(t.getID(), mw);
 			} else if (votesReceived.isEmpty()) {
 				// No votes received, but the vote started
 				// Resend votes. Assumed it doesn't matter if start2PC is logged twice.
@@ -137,7 +143,7 @@ public class TransactionManager {
 				// Abort if abort vote received, simply keep on asking votes otherwise.
 				if (abortVoteReceived) {
 					System.out.println("Last vote was to abort");
-					abort(t.getID());
+					abort(t.getID(), mw);
 				} else {
 					System.out.println("Run the rest of the votes.");
 					boolean canCommit = true;
@@ -163,7 +169,7 @@ public class TransactionManager {
 					if (canCommit) {
 						doCommit(t, mw);
 					} else{
-						abort(t.getID());
+						abort(t.getID(), mw);
 					}
 				}
 			} else if (decisionConfirmed.isEmpty()) {
@@ -174,7 +180,7 @@ public class TransactionManager {
 					ongoingTransactions.remove(t);
 				} else {
 					// abort
-					abort(t.getID());
+					abort(t.getID(), mw);
 				}
 			} else {
 				// Some decisions received, but not all.
@@ -298,37 +304,41 @@ public class TransactionManager {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		if (crashAfterSendingRequest) {
-			System.out.println("SOooon... SOOOOON! MUHUHAHHAHA!");
-		}
-		if (t.getID() == transactionToCrash) {
-			System.out.println("VERY SOOOONN HAHAHAHAHAHAH NOOOOOOW!");
-		} else {
-			System.out.println("NOT YET, BUT SOON." + t.getID() + " and " + transactionToCrash);
-		}
+
 		if(crashAfterSendingRequest && transactionToCrash == t.getID()){
 			mw.selfDestruct();
 		}
-		for (ResourceManager rm: t.getRMList()) {
-			canCommit = rm.canCommit(t.getID());
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		try {
+			for (ResourceManager rm: t.getRMList()) {
+				canCommit = rm.canCommit(t.getID());
+				String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";
+				try {
+					stableStorage.writeToLog(voteResponse);
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if(crashAfterSomeReplies && transactionToCrash == t.getID()){
+					mw.selfDestruct();
+				}
+				if (!canCommit){
+					break;
+				}
 			}
-			String voteResponse = t.getID() + ",vote," + rm.getName() + "," + canCommit + "\n";
+		}	catch (RemoteException e) {
 			try {
-				stableStorage.writeToLog(voteResponse);
-			} catch (IOException e1) {
+				Thread.sleep(2000);
+			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
-			if(crashAfterSomeReplies && transactionToCrash == t.getID()){
-				mw.selfDestruct();
-			}
-			if (!canCommit){
-				break;
-			}
+			mw.reconnect("flight");
+			mw.reconnect("car");
+			mw.reconnect("room");
+			canCommit = false;
 		}
 		if(crashAfterAllReplies && transactionToCrash == t.getID()){
 			mw.selfDestruct();
@@ -345,7 +355,7 @@ public class TransactionManager {
 					doCommit(t, mw);
 					return true;
 				} else{
-					abort(t.getID());
+					abort(t.getID(), mw);
 					return false;
 				}
 			}
@@ -366,13 +376,6 @@ public class TransactionManager {
 		}
 		for (ResourceManager rm: t.getRMList()) {
 			attemptIndividualCommit(rm, mw, t);
-			// Write to log. Confirm decision sent to rm.
-			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName() + "\n";
-			try {
-				stableStorage.writeToLog(rmCommit);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
 			if (t.getID() == transactionToCrash && this.crashAfterSendingSomeDecisions) {
 				mw.selfDestruct();
 			}
@@ -393,6 +396,13 @@ public class TransactionManager {
 			Transaction t) {
 		try {
 			rm.doCommit(t.getID());
+			// Write to log. Confirm decision sent to rm.
+			String rmCommit = t.getID() + ",commitconfirm,"+ rm.getName() + "\n";
+			try {
+				stableStorage.writeToLog(rmCommit);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		} catch (RemoteException e) {
 			try {
 				Thread.sleep(2000);
@@ -402,13 +412,12 @@ public class TransactionManager {
 			mw.reconnect("flight");
 			mw.reconnect("car");
 			mw.reconnect("room");
-			attemptIndividualCommit(rm, mw, t);
 		} catch (TransactionAbortedException | InvalidTransactionException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void abort(int tid) throws RemoteException {
+	public void abort(int tid, MiddleWare mw) throws RemoteException {
 		synchronized(ongoingTransactions) { 
 			for (int i=0; i < ongoingTransactions.size(); i++) {
 				if (ongoingTransactions.get(i).getID() == tid) {
@@ -423,15 +432,19 @@ public class TransactionManager {
 					for (ResourceManager rm: t.getRMList()) {
 						try {
 							rm.doAbort(tid);
+							// Write to log. Confirm decision sent to rm.
+							String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName() + "\n";
+							try {
+								stableStorage.writeToLog(rmAbort);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
 						} catch (InvalidTransactionException e) {
 							e.printStackTrace();
-						}
-						// Write to log. Confirm decision sent to rm.
-						String rmAbort = t.getID() + ",abortconfirm,"+ rm.getName() + "\n";
-						try {
-							stableStorage.writeToLog(rmAbort);
-						} catch (IOException e1) {
-							e1.printStackTrace();
+						} catch (RemoteException e) {
+							mw.reconnect("flight");
+							mw.reconnect("car");
+							mw.reconnect("room");
 						}
 					}
 					try {
@@ -490,6 +503,10 @@ public class TransactionManager {
 			System.out.println("What are you talking about, this option is not an option.");
 		}
 
+	}
+
+	public boolean transactionCommitted(int id) {
+		return stableStorage.transactionCommitted(id);
 	}
 
 }

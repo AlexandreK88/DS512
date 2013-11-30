@@ -4,8 +4,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.LinkedList;
+
+import coordinatorInterface.Coordinator;
 import lockManager.DeadlockException;
 import server.resInterface.InvalidTransactionException;
 import server.resInterface.ResourceManager;
@@ -21,10 +27,13 @@ public class DiskAccess {
 	private RAFList workingRec;
 	private RandomAccessFile stateLog;
 	private LinkedList<Transaction> redoneTransactions;
-	
+
 	private int txnMaster;
 	String task;
 	boolean isRM;
+
+	int coordPort;
+	String coordName;
 
 
 	public DiskAccess() throws IOException {
@@ -33,16 +42,18 @@ public class DiskAccess {
 		File file = new File(location);
 		boolean readData = !file.createNewFile();
 		stateLog = new RandomAccessFile(location, "rwd");
+
 	}
 
-	public DiskAccess(ResourceManager rm, String t) throws IOException {
+	public DiskAccess(ResourceManager rm, String t, int cp, String cn) throws IOException {
 		isRM = true;
 		txnMaster = -1;
 		task = t;
 		String locationA = PATHING + task + "/RecordA.db";
 		String locationB = PATHING + task + "/RecordB.db";
 		String locationLog = PATHING + task + "/StateLog.db";
-
+		coordPort = cp;
+		coordName = cn;
 		System.out.println(locationA + " is location.");
 		System.out.println(PATHING);
 		File file = new File(locationA);
@@ -75,7 +86,7 @@ public class DiskAccess {
 		}
 		System.out.println("RM memory initialization done.");
 	}
-	
+
 	public void logOperation(int id, Operation op) {
 		//Add operation on stateLog file
 		String operation = "";
@@ -96,7 +107,6 @@ public class DiskAccess {
 				//write_stateLog.newLine();
 			}catch(Exception e){
 				e.printStackTrace();
-				System.out.println("Some god damn exception");
 			}
 		}		
 	}
@@ -201,7 +211,7 @@ public class DiskAccess {
 				e.printStackTrace();
 			}
 			while (line != null && line != "") {
-				
+
 				line = line.trim();
 				String[] lineDetails = line.split(",");
 				if(lineDetails[0].startsWith("Room")) {
@@ -293,64 +303,64 @@ public class DiskAccess {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public LinkedList<Transaction> readLog(){
 		System.out.println("TM reading stored log...");
 		LinkedList<Transaction> ongoings = new LinkedList<Transaction>();
 		LinkedList<Integer> completed = new LinkedList<Integer>();
-			String line = "";
-			try {
-				stateLog.seek(0);
-				line = stateLog.readLine();
-			} catch (IOException e) {
-				e.printStackTrace();
+		String line = "";
+		try {
+			stateLog.seek(0);
+			line = stateLog.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		while (line != null && line != "") {
+			line = line.trim();
+			String[] lineDetails = line.split(",");
+			if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
+				completed.add(Integer.parseInt(lineDetails[0]));
 			}
-			while (line != null && line != "") {
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(lineDetails[1].trim().equalsIgnoreCase("commit") || lineDetails[1].trim().equalsIgnoreCase("abort")) {
-					completed.add(Integer.parseInt(lineDetails[0]));
-				}
-				try {
-					line = stateLog.readLine();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			
-			try {
-				stateLog.seek(0);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			
 			try {
 				line = stateLog.readLine();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			while (line != null && line != "") {
-				line = line.trim();
-				String[] lineDetails = line.split(",");
-				if(!completed.contains(Integer.parseInt(lineDetails[0]))){
-					if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
-						System.out.println("Transaction " + lineDetails[0] + " was ongoing.");
-						ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
-					} else {
-						for (Transaction t: ongoings) {
-							if (t.getID() == Integer.parseInt(lineDetails[0])) {
-								t.addLogLine(line);
-								break;
-							}
+		}
+
+		try {
+			stateLog.seek(0);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+
+		try {
+			line = stateLog.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		while (line != null && line != "") {
+			line = line.trim();
+			String[] lineDetails = line.split(",");
+			if(!completed.contains(Integer.parseInt(lineDetails[0]))){
+				if (lineDetails[1].trim().equalsIgnoreCase("startedtid")) {
+					System.out.println("Transaction " + lineDetails[0] + " was ongoing.");
+					ongoings.add(new Transaction(Integer.parseInt(lineDetails[0])));
+				} else {
+					for (Transaction t: ongoings) {
+						if (t.getID() == Integer.parseInt(lineDetails[0])) {
+							t.addLogLine(line);
+							break;
 						}
 					}
 				}
-				try {
-					line = stateLog.readLine();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 			}
+			try {
+				line = stateLog.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 		return ongoings;
 	}
 
@@ -390,41 +400,58 @@ public class DiskAccess {
 				}
 				redo.removeAll(done);
 				stateLog.seek(0);
-				
+
 				try {
 					line = stateLog.readLine();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				Coordinator coord = connectToCoordinator();
+
 				while (line != null && line != "") {
 					line = line.trim();
 					String[] lineDetails = line.split(",");
 					Integer id = Integer.parseInt(lineDetails[0]);
 					if(redo.contains(id)){
-						String[] params = new String[lineDetails.length-2];
-						for(int i = 0; i < lineDetails.length - 2; i++){
-							params[i] = lineDetails[i+2].trim();
-						}
-						Operation op = new Operation(lineDetails[1], params, rm);
-						boolean opAdded = false;
-						for (Transaction t: redoneTransactions) {
-							if (t.getID() == id.intValue()) {
-								t.addOp(op);
-								opAdded = true;
-								break;
+						if(coord.transactionCommitted(id)) {
+							String[] params = new String[lineDetails.length-2];
+							for(int i = 0; i < lineDetails.length - 2; i++){
+								params[i] = lineDetails[i+2].trim();
 							}
-						}
-						if (!opAdded) {
-							Transaction t = new Transaction(id);
-							t.addOp(op);
-							redoneTransactions.add(t);
-						}
-						try {
-							op.doOp(0);
-							System.out.println("Transaction executed with id > 0.");
-						} catch (InvalidTransactionException e) {
-							System.out.println("Ok, An aborted transaction was attempted.");
-							rm.abort(Integer.parseInt(lineDetails[0].trim()));
+							Operation op = new Operation(lineDetails[1], params, rm);
+							try {
+								if (op.doOp(0)) {
+									boolean opAdded = false;
+									for (Transaction t: redoneTransactions) {
+										if (t.getID() == id.intValue()) {
+											t.addOp(op);
+											opAdded = true;
+											break;
+										}
+									}
+									if (!opAdded) {
+										Transaction t = new Transaction(id);
+										t.addOp(op);
+										redoneTransactions.add(t);
+									}
+								}
+								System.out.println("Transaction executed with id > 0.");
+							} catch (InvalidTransactionException e) {
+								System.out.println("Ok, An aborted transaction was attempted.");
+								rm.abort(Integer.parseInt(lineDetails[0].trim()));
+							}
+						} else {
+							redo.remove(id);
+							long currentLocation = stateLog.getFilePointer();
+							stateLog.seek(stateLog.length());
+							try{
+								String operation = id + ", abort\n";
+								writeToLog(operation);
+								System.out.println("Writing op");
+							}catch(Exception e){
+								System.out.println("Some god damn exception");
+							}
+							stateLog.seek(currentLocation);
 						}
 					}else if(!done.contains(id)){
 						if(!pendings.contains(id)){
@@ -434,12 +461,11 @@ public class DiskAccess {
 
 					try {
 						line = stateLog.readLine();
-						System.out.println(line);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 				}
-				
+
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -513,7 +539,7 @@ public class DiskAccess {
 		theTemp.renameTo(theLog);
 		theLog.delete();
 	}
-	
+
 	private void resetWorking(){
 		try {
 			masterRec.getFileAccess().seek(0);
@@ -529,7 +555,7 @@ public class DiskAccess {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	public void deleteData(String dataName) {
@@ -540,9 +566,79 @@ public class DiskAccess {
 		System.out.println("Line is: " + line);
 		workingRec.deleteLine(line);
 	}
-	
+
 	public LinkedList<Transaction> getRedoneTransactions() {
 		return redoneTransactions;
 	}
-	
+
+	private Coordinator connectToCoordinator() {
+		Coordinator coord = null;
+		boolean connectionFailed = true;
+		while (connectionFailed) {
+			try {
+
+				// get a reference to the rmiregistry
+				Registry registry = LocateRegistry.getRegistry(coordName, coordPort);
+
+				// This should be put in a function so that upon crash, an RM can be looked up again. 
+				// get the proxy and the remote reference by rmiregistry lookup
+				coord = (Coordinator) registry.lookup("Coord21");
+				if(coord != null)
+				{
+					System.out.println("Successful");
+					System.out.println("Connected to coordinator");
+					connectionFailed = false;
+				}
+				else{
+					System.out.println("Unsuccessful");
+				}//if
+			} catch (Exception e) {
+				System.out.println("Could not connect to coordinator. Retrying...");
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		}
+		return coord;
+	}
+
+	public boolean transactionCommitted(int id) {
+		try {
+			String line = "";
+			stateLog.seek(0);
+			try {
+				line = stateLog.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			while (line != null && line != "") {
+				line = line.trim();
+				String[] lineDetails = line.split(",");
+				if (Integer.parseInt(lineDetails[0].trim()) == id) {
+					System.out.println(line + ": is in log");
+					if (lineDetails[1].trim().equalsIgnoreCase("commit")) {
+						System.out.println(" committed ");
+						return true;
+					}
+					if (lineDetails[1].trim().equalsIgnoreCase("abort")) {
+						System.out.println(" aborted ");
+						return false;
+					}					
+				}
+				try {
+					line = stateLog.readLine();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 }

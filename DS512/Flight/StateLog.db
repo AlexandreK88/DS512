@@ -1,6 +1,19 @@
-1,newflight,1,45,23
-1, canCommit, NO 
+1,newcustomer,1
 1, abort
-2,newcustomer,456
+2,newcustomer,1
 2, canCommit, YES 
 2,commit,B
+3,newflight,101,100,1000
+3, canCommit, NO 
+3, abort
+4,newcustomer,123
+4,newflight,101,10,1000
+4, canCommit, YES 
+4,commit,A
+5,reserveflight,123,flight-101
+6,newflight,102,100,500
+6, canCommit, YES 
+6,commit,B
+9,newcustomer,124
+9, canCommit, YES 
+9,commit,A

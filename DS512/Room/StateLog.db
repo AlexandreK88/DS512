@@ -1,3 +1,13 @@
-2,newcustomer,456
+1, abort
+2,newcustomer,1
 2, canCommit, YES 
 2,commit,B
+3,newroom,ny,50,150
+3, abort
+4,newcustomer,123
+4, canCommit, YES 
+4,commit,A
+9,newroom,mtl,50,50
+9,newcustomer,124
+9, canCommit, YES 
+9,commit,B
